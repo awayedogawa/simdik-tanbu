@@ -166,6 +166,8 @@
             width: 18px;
             height: 18px;
         }
+        .link-btn { color: var(--primary-color); }
+        .link-btn:hover { background-color: #DBEAFE; }
         .edit-btn { color: var(--warning-color); }
         .edit-btn:hover { background-color: #FEF3C7; }
         .delete-btn { color: var(--danger-color); }
@@ -392,6 +394,9 @@
                         <td>${getStatus(kegiatan.tanggalMulai, kegiatan.tanggalBerakhir)}</td>
                         <td>
                             <div class="action-button-group">
+                                <button class="icon-button link-btn" data-id="${docId}" title="Salin Link Pendaftaran">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-5 h-5"><path d="M12.232 4.232a2.5 2.5 0 013.536 3.536l-1.225 1.224a.75.75 0 001.061 1.06l1.224-1.224a4 4 0 00-5.656-5.656l-3 3a4 4 0 00.225 5.865.75.75 0 00.977-1.138 2.5 2.5 0 01-.142-3.665l3-3z" /><path d="M8.603 3.799a4.49 4.49 0 014.49 4.49l-4.49 4.49a4.49 4.49 0 01-6.35 0A4.49 4.49 0 012 8.289l4.49-4.49a4.49 4.49 0 012.113-.79z" /></svg>
+                                </button>
                                 <button class="icon-button edit-btn" data-id="${docId}" title="Edit">
                                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z" /><path fill-rule="evenodd" d="M2 6a2 2 0 012-2h4a1 1 0 010 2H4v10h10v-4a1 1 0 112 0v4a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" clip-rule="evenodd" /></svg>
                                 </button>
@@ -432,6 +437,29 @@
 
             const docId = target.dataset.id;
             
+            if (target.classList.contains('link-btn')) {
+                const link = `${window.location.origin}${window.location.pathname.replace('index.html', '')}daftar.html?id=${docId}`;
+                
+                try {
+                    await navigator.clipboard.writeText(link);
+                    alert('Link pendaftaran telah disalin!');
+                } catch (err) {
+                    console.error('Gagal menyalin link: ', err);
+                    const textArea = document.createElement("textarea");
+                    textArea.value = link;
+                    document.body.appendChild(textArea);
+                    textArea.focus();
+                    textArea.select();
+                    try {
+                        document.execCommand('copy');
+                        alert('Link pendaftaran telah disalin! (fallback)');
+                    } catch (fallbackErr) {
+                        console.error('Fallback gagal: ', fallbackErr);
+                    }
+                    document.body.removeChild(textArea);
+                }
+            }
+
             if (target.classList.contains('delete-btn')) {
                 const namaKegiatan = target.dataset.nama;
                 if (confirm(`Apakah Anda yakin ingin menghapus kegiatan "${namaKegiatan}"?`)) {
