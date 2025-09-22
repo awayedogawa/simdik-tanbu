@@ -210,11 +210,11 @@
                     </tr>
                 </thead>
                 <tbody id="kegiatanTableBody">
-                    <!-- Data akan dimasukkan di sini oleh JavaScript -->
+                    <!-- Data dari Firebase akan ditampilkan di sini -->
                 </tbody>
             </table>
             <div id="emptyState" class="empty-state">
-                <p>Belum ada data. Silakan klik "Input Kegiatan".</p>
+                <p>Memuat data...</p>
             </div>
         </main>
     </div>
@@ -225,6 +225,7 @@
             <span class="close-button">&times;</span>
             <h2 id="modalTitle">Input Data Kegiatan</h2>
             <form id="kegiatanForm">
+                <input type="hidden" id="kegiatanId"> <!-- Untuk menyimpan ID dokumen saat edit -->
                 <div class="form-group">
                     <label for="namaKegiatan">Nama Kegiatan:</label>
                     <input type="text" id="namaKegiatan" required>
@@ -260,7 +261,29 @@
         </div>
     </div>
 
-    <script>
+    <!-- Firebase SDK Scripts -->
+    <script type="module">
+        // Import fungsi yang kita butuhkan dari Firebase SDK
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js";
+        import { getFirestore, collection, addDoc, onSnapshot, doc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore.js";
+
+        // --- KONFIGURASI FIREBASE ANDA ---
+        // Ganti objek ini dengan kode konfigurasi yang Anda salin dari Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyBM4RhHUdQxSEPVBGhjf4R8UGfzMmD7egU",
+            authDomain: "dashboard-kegiatan-saya.firebaseapp.com",
+            projectId: "dashboard-kegiatan-saya",
+            storageBucket: "dashboard-kegiatan-saya.appspot.com",
+            messagingSenderId: "1078549240220",
+            appId: "1:1078549240220:web:7d372e7b50b6f9545a9059"
+        };
+
+        // Inisialisasi Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const kegiatanCollection = collection(db, "kegiatan");
+
+        // --- ELEMEN HTML ---
         const modal = document.getElementById('dataModal');
         const openBtn = document.getElementById('tambahDataBtn');
         const closeBtn = document.querySelector('.close-button');
@@ -269,31 +292,24 @@
         const emptyState = document.getElementById('emptyState');
         const modalTitle = document.getElementById('modalTitle');
         const submitBtn = document.getElementById('submitBtn');
+        const kegiatanIdInput = document.getElementById('kegiatanId');
 
-        let dataKegiatan = [];
-        let currentlyEditingIndex = null; // Penanda untuk mode edit
-
-        // Fungsi untuk membuka modal dalam mode "Tambah Data"
+        // --- FUNGSI-FUNGSI UTAMA ---
         const openAddModal = () => {
-            currentlyEditingIndex = null;
             form.reset();
+            kegiatanIdInput.value = '';
             modalTitle.textContent = 'Input Data Kegiatan';
             submitBtn.textContent = 'Simpan Data';
             modal.style.display = 'block';
         }
 
-        const closeModal = () => {
-            modal.style.display = 'none';
-        }
-
+        const closeModal = () => { modal.style.display = 'none'; }
         openBtn.onclick = openAddModal;
         closeBtn.onclick = closeModal;
         window.onclick = (event) => {
-            if (event.target == modal) {
-                closeModal();
-            }
+            if (event.target == modal) closeModal();
         }
-        
+
         const formatDate = (dateString) => {
             if (!dateString) return '';
             const date = new Date(dateString);
@@ -302,36 +318,36 @@
             const year = date.getUTCFullYear();
             return `${day}/${month}/${year}`;
         }
-        
+
         const getStatus = (tanggalMulai, tanggalBerakhir) => {
             const today = new Date();
             const startDate = new Date(tanggalMulai);
             const endDate = new Date(tanggalBerakhir);
-
             today.setHours(0, 0, 0, 0);
             startDate.setHours(0, 0, 0, 0);
             endDate.setHours(0, 0, 0, 0);
 
-            if (today < startDate) {
-                return '<span class="status-badge status-belum">Belum</span>';
-            } else if (today >= startDate && today <= endDate) {
-                return '<span class="status-badge status-berlangsung">Sedang Berlangsung</span>';
-            } else {
-                return '<span class="status-badge status-selesai">Selesai</span>';
-            }
+            if (today < startDate) return '<span class="status-badge status-belum">Belum</span>';
+            if (today >= startDate && today <= endDate) return '<span class="status-badge status-berlangsung">Sedang Berlangsung</span>';
+            return '<span class="status-badge status-selesai">Selesai</span>';
         }
 
-        const renderTable = () => {
+        // --- RENDER TABEL DARI FIREBASE (REAL-TIME) ---
+        onSnapshot(kegiatanCollection, (snapshot) => {
             tableBody.innerHTML = '';
-            
-            if (dataKegiatan.length === 0) {
+            const allDocs = snapshot.docs;
+
+            if (allDocs.length === 0) {
+                emptyState.innerHTML = '<p>Belum ada data. Silakan klik "Input Kegiatan".</p>';
                 emptyState.style.display = 'block';
             } else {
                 emptyState.style.display = 'none';
-                dataKegiatan.forEach((kegiatan, index) => {
-                    const row = tableBody.insertRow();
+                allDocs.forEach((document, index) => {
+                    const kegiatan = document.data();
+                    const docId = document.id;
                     const tanggalPelaksanaan = `${formatDate(kegiatan.tanggalMulai)} - ${formatDate(kegiatan.tanggalBerakhir)}`;
-                    
+
+                    const row = tableBody.insertRow();
                     row.innerHTML = `
                         <td>${index + 1}</td>
                         <td>${kegiatan.nama}</td>
@@ -342,15 +358,16 @@
                         <td>${kegiatan.peserta}</td>
                         <td>${getStatus(kegiatan.tanggalMulai, kegiatan.tanggalBerakhir)}</td>
                         <td>
-                            <button class="action-button edit-btn" data-index="${index}">Edit</button>
-                            <button class="action-button delete-btn" data-index="${index}">Hapus</button>
+                            <button class="action-button edit-btn" data-id="${docId}">Edit</button>
+                            <button class="action-button delete-btn" data-id="${docId}" data-nama="${kegiatan.nama}">Hapus</button>
                         </td>
                     `;
                 });
             }
-        }
+        });
 
-        form.addEventListener('submit', (event) => {
+        // --- SIMPAN ATAU UPDATE DATA KE FIREBASE ---
+        form.addEventListener('submit', async (event) => {
             event.preventDefault();
 
             const kegiatanData = {
@@ -363,53 +380,77 @@
                 peserta: document.getElementById('jumlahPeserta').value
             };
             
-            if (currentlyEditingIndex !== null) {
-                // Mode Edit: perbarui data di index yang ada
-                dataKegiatan[currentlyEditingIndex] = kegiatanData;
+            const docId = kegiatanIdInput.value;
+
+            if (docId) {
+                // Mode Edit: update dokumen yang ada
+                const docRef = doc(db, "kegiatan", docId);
+                await updateDoc(docRef, kegiatanData);
             } else {
-                // Mode Tambah: tambahkan data baru ke array
-                dataKegiatan.push(kegiatanData);
+                // Mode Tambah: buat dokumen baru
+                await addDoc(kegiatanCollection, kegiatanData);
             }
             
-            renderTable();
             closeModal();
         });
         
-        // Event Listener untuk tombol di dalam tabel (Edit & Hapus)
-        tableBody.addEventListener('click', (event) => {
+        // --- EDIT DAN HAPUS DATA DARI FIREBASE ---
+        tableBody.addEventListener('click', async (event) => {
             const target = event.target;
-            const index = target.dataset.index;
+            const docId = target.dataset.id;
+            
+            if (!docId) return;
 
             if (target.classList.contains('delete-btn')) {
-                if (confirm(`Apakah Anda yakin ingin menghapus kegiatan "${dataKegiatan[index].nama}"?`)) {
-                    dataKegiatan.splice(index, 1);
-                    renderTable();
+                const namaKegiatan = target.dataset.nama;
+                if (confirm(`Apakah Anda yakin ingin menghapus kegiatan "${namaKegiatan}"?`)) {
+                    await deleteDoc(doc(db, "kegiatan", docId));
                 }
             }
 
             if (target.classList.contains('edit-btn')) {
-                currentlyEditingIndex = parseInt(index);
-                const kegiatan = dataKegiatan[currentlyEditingIndex];
+                // Ambil data dari tabel untuk mengisi form
+                const row = target.closest('tr');
+                const cells = row.getElementsByTagName('td');
                 
-                // Isi form dengan data yang akan diedit
-                document.getElementById('namaKegiatan').value = kegiatan.nama;
-                document.getElementById('tanggalMulai').value = kegiatan.tanggalMulai;
-                document.getElementById('tanggalBerakhir').value = kegiatan.tanggalBerakhir;
-                document.getElementById('tempat').value = kegiatan.tempat;
-                document.getElementById('bidang').value = kegiatan.bidang;
-                document.getElementById('penanggungJawab').value = kegiatan.pj;
-                document.getElementById('jumlahPeserta').value = kegiatan.peserta;
+                // Cari dokumen di Firestore berdasarkan ID (cara yang lebih aman)
+                // Di sini kita pakai cara cepat dengan data dari tabel
+                 const docRef = doc(db, "kegiatan", docId);
+                 // Untuk mengisi form, kita perlu mengambil datanya lagi, atau menyimpannya di array
+                 // Untuk simplicity, kita akan mengasumsikan data di array sinkron
+                 
+                 // Cari data di array lokal yang disinkronkan onSnapshot
+                 const allDocs = await getDocsFromServer(kegiatanCollection); // Ini tidak ideal, cara onSnapshot lebih baik
+                 // Cara yang lebih baik adalah menyimpan data di array saat onSnapshot
+                 
+                 // Mari kita sederhanakan, kita simpan data di tombol
+                 // Ini kurang ideal tapi berfungsi untuk contoh ini
+                 const docToEdit = allDocs.docs.find(d => d.id === docId)?.data();
 
-                // Ubah judul & tombol modal ke mode edit
-                modalTitle.textContent = 'Edit Data Kegiatan';
-                submitBtn.textContent = 'Update Data';
-                modal.style.display = 'block';
+                 if (docToEdit) {
+                    kegiatanIdInput.value = docId;
+                    document.getElementById('namaKegiatan').value = docToEdit.nama;
+                    document.getElementById('tanggalMulai').value = docToEdit.tanggalMulai;
+                    document.getElementById('tanggalBerakhir').value = docToEdit.tanggalBerakhir;
+                    document.getElementById('tempat').value = docToEdit.tempat;
+                    document.getElementById('bidang').value = docToEdit.bidang;
+                    document.getElementById('penanggungJawab').value = docToEdit.pj;
+                    document.getElementById('jumlahPeserta').value = docToEdit.peserta;
+
+                    modalTitle.textContent = 'Edit Data Kegiatan';
+                    submitBtn.textContent = 'Update Data';
+                    modal.style.display = 'block';
+                 }
             }
         });
+        
+        // Fungsi helper untuk mengambil data terbaru saat edit (kurang efisien, onSnapshot lebih baik)
+        async function getDocsFromServer(collection) {
+            const { getDocs } = await import("https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore.js");
+            return getDocs(collection);
+        }
 
-        renderTable();
     </script>
-
 </body>
 </html>
 
