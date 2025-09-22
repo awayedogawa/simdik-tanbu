@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Daftar Peserta</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #4F46E5;
+            --primary-hover: #4338CA;
+            --gray-100: #F3F4F6;
+            --gray-200: #E5E7EB;
+            --gray-500: #6B7280;
+            --gray-700: #374151;
+            --gray-900: #111827;
+            --background-color: #F9FAFB;
+            --card-background: #FFFFFF;
+            --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+            --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--background-color);
+            margin: 0;
+            padding: 2rem;
+            color: var(--gray-700);
+        }
+        .container {
+            max-width: 1280px;
+            margin: 0 auto;
+        }
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+        header h1 {
+            color: var(--gray-900);
+            margin: 0;
+            font-size: 1.875rem;
+            font-weight: 700;
+        }
+         header h1 small {
+            display: block;
+            font-size: 1rem;
+            color: var(--gray-500);
+            font-weight: 400;
+            margin-top: 4px;
+        }
+        .secondary-button {
+            background-color: var(--card-background);
+            color: var(--gray-700);
+            border: 1px solid var(--gray-200);
+            padding: 10px 16px;
+            font-size: 14px;
+            font-weight: 500;
+            border-radius: 6px;
+            cursor: pointer;
+            text-decoration: none;
+            transition: background-color 0.2s ease, box-shadow 0.2s ease;
+        }
+        .secondary-button:hover {
+            background-color: var(--gray-100);
+            box-shadow: var(--shadow-sm);
+        }
+        main {
+            background-color: var(--card-background);
+            border-radius: 8px;
+            box-shadow: var(--shadow-md);
+            overflow: hidden;
+        }
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .data-table th, .data-table td {
+            padding: 16px;
+            text-align: left;
+            vertical-align: middle;
+            border-bottom: 1px solid var(--gray-200);
+            font-size: 14px;
+        }
+        .data-table th {
+            background-color: var(--gray-100);
+            color: var(--gray-500);
+            font-size: 12px;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        .empty-state {
+            text-align: center;
+            padding: 48px;
+            color: var(--gray-500);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1 id="headerTitle">Memuat data... <small>Daftar Peserta</small></h1>
+            <a href="index.html" class="secondary-button">Kembali ke Dashboard</a>
+        </header>
+        <main>
+             <div style="overflow-x:auto;">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>No</th>
+                            <th>Nama Lengkap</th>
+                            <th>NIP</th>
+                            <th>Asal Instansi/Sekolah</th>
+                            <th>NPSN</th>
+                            <th>Jabatan</th>
+                            <th>No. Telepon/WA</th>
+                        </tr>
+                    </thead>
+                    <tbody id="pesertaTableBody"></tbody>
+                </table>
+            </div>
+             <div id="emptyState" class="empty-state">
+                <p>Memuat data peserta...</p>
+            </div>
+        </main>
+    </div>
+
+     <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js";
+        import { getFirestore, doc, getDoc, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyBM4RhHUdQxSEPVBGhjf4R8UGfzMmD7egU",
+            authDomain: "dashboard-kegiatan-saya.firebaseapp.com",
+            projectId: "dashboard-kegiatan-saya",
+            storageBucket: "dashboard-kegiatan-saya.appspot.com",
+            messagingSenderId: "1078549240220",
+            appId: "1:1078549240220:web:7d372e7b50b6f9545a9059"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        const headerTitle = document.getElementById('headerTitle');
+        const tableBody = document.getElementById('pesertaTableBody');
+        const emptyState = document.getElementById('emptyState');
+        const dataTable = document.querySelector('.data-table');
+
+        const getKegiatanId = () => {
+            const params = new URLSearchParams(window.location.search);
+            return params.get('id');
+        }
+
+        const loadPeserta = async () => {
+            const kegiatanId = getKegiatanId();
+            if (!kegiatanId) {
+                headerTitle.innerHTML = 'Kegiatan tidak valid <small>Error</small>';
+                emptyState.innerHTML = '<p>ID kegiatan tidak ditemukan di URL.</p>';
+                dataTable.style.display = 'none';
+                return;
+            }
+
+            // 1. Ambil data kegiatan utama untuk judul
+            const kegiatanDocRef = doc(db, "kegiatan", kegiatanId);
+            const kegiatanDocSnap = await getDoc(kegiatanDocRef);
+
+            if (kegiatanDocSnap.exists()) {
+                headerTitle.innerHTML = `${kegiatanDocSnap.data().nama} <small>Daftar Peserta</small>`;
+            } else {
+                 headerTitle.innerHTML = 'Kegiatan tidak ditemukan <small>Error</small>';
+            }
+
+            // 2. Ambil data peserta (real-time)
+            const pesertaCollectionRef = collection(db, "kegiatan", kegiatanId, "peserta");
+            onSnapshot(pesertaCollectionRef, (snapshot) => {
+                const allDocs = snapshot.docs;
+                tableBody.innerHTML = '';
+
+                if (allDocs.length === 0) {
+                    emptyState.innerHTML = '<p>Belum ada peserta yang mendaftar.</p>';
+                    emptyState.style.display = 'block';
+                    dataTable.style.display = 'none';
+                } else {
+                    emptyState.style.display = 'none';
+                    dataTable.style.display = 'table';
+                    allDocs.forEach((document, index) => {
+                        const peserta = document.data();
+                        const row = tableBody.insertRow();
+                        row.innerHTML = `
+                            <td>${index + 1}</td>
+                            <td>${peserta.namaLengkap || ''}</td>
+                            <td>${peserta.nip || '-'}</td>
+                            <td>${peserta.asalInstansi || ''}</td>
+                            <td>${peserta.npsn || '-'}</td>
+                            <td>${peserta.jabatan || ''}</td>
+                            <td>${peserta.nomorTelepon || ''}</td>
+                        `;
+                    });
+                }
+            });
+        }
+
+        loadPeserta();
+    </script>
+</body>
+</html>
