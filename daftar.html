@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pendaftaran Kegiatan</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #4F46E5;
+            --gray-100: #F3F4F6;
+            --gray-500: #6B7280;
+            --gray-700: #374151;
+            --gray-900: #111827;
+            --background-color: #F9FAFB;
+            --card-background: #FFFFFF;
+            --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--background-color);
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 2rem;
+            box-sizing: border-box;
+        }
+        .container {
+            width: 100%;
+            max-width: 500px;
+            background-color: var(--card-background);
+            padding: 32px;
+            border-radius: 8px;
+            box-shadow: var(--shadow-md);
+        }
+        #loadingState, #errorState, #successState {
+            text-align: center;
+            padding: 2rem;
+            color: var(--gray-500);
+        }
+        .hidden {
+            display: none;
+        }
+        h1 {
+            color: var(--gray-900);
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-top: 0;
+            margin-bottom: 8px;
+        }
+        #detailKegiatan p {
+            margin: 4px 0;
+            color: var(--gray-500);
+            font-size: 14px;
+        }
+        hr {
+            border: none;
+            border-top: 1px solid var(--gray-100);
+            margin: 24px 0;
+        }
+        .form-group { margin-bottom: 20px; }
+        .form-group label {
+            display: block; margin-bottom: 8px; font-weight: 500;
+            font-size: 14px; color: var(--gray-700);
+        }
+        .form-group input {
+            width: 100%; padding: 10px 12px; box-sizing: border-box;
+            border: 1px solid #E5E7EB; border-radius: 6px;
+        }
+        .primary-button {
+            background-color: var(--primary-color);
+            color: white; border: none; padding: 12px 20px;
+            font-size: 14px; font-weight: 500; border-radius: 6px;
+            cursor: pointer; width: 100%;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <!-- State Awal: Loading -->
+        <div id="loadingState">
+            <p>Memuat detail kegiatan...</p>
+        </div>
+
+        <!-- State Error: Kegiatan tidak ditemukan -->
+        <div id="errorState" class="hidden">
+            <h2>Kegiatan Tidak Ditemukan</h2>
+            <p>Link pendaftaran mungkin salah atau kegiatan telah dihapus.</p>
+        </div>
+
+        <!-- State Sukses: Form Pendaftaran -->
+        <div id="registrationContent" class="hidden">
+            <div id="detailKegiatan">
+                <h1 id="namaKegiatanDisplay"></h1>
+                <p><strong>Tanggal:</strong> <span id="tanggalDisplay"></span></p>
+                <p><strong>Tempat:</strong> <span id="tempatDisplay"></span></p>
+            </div>
+            <hr>
+            <form id="formPendaftaran">
+                <h2>Form Pendaftaran Peserta</h2>
+                <div class="form-group">
+                    <label for="namaPeserta">Nama Lengkap</label>
+                    <input type="text" id="namaPeserta" required>
+                </div>
+                <div class="form-group">
+                    <label for="emailPeserta">Alamat Email</label>
+                    <input type="email" id="emailPeserta" required>
+                </div>
+                <button type="submit" class="primary-button">Daftar Sekarang</button>
+            </form>
+        </div>
+
+        <!-- State Selesai: Pendaftaran berhasil -->
+        <div id="successState" class="hidden">
+            <h2>Pendaftaran Berhasil!</h2>
+            <p>Terima kasih, data Anda telah kami terima. Sampai jumpa di acara!</p>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js";
+        import { getFirestore, doc, getDoc, collection, addDoc } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyBM4RhHUdQxSEPVBGhjf4R8UGfzMmD7egU",
+            authDomain: "dashboard-kegiatan-saya.firebaseapp.com",
+            projectId: "dashboard-kegiatan-saya",
+            storageBucket: "dashboard-kegiatan-saya.appspot.com",
+            messagingSenderId: "1078549240220",
+            appId: "1:1078549240220:web:7d372e7b50b6f9545a9059"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        const loadingState = document.getElementById('loadingState');
+        const errorState = document.getElementById('errorState');
+        const registrationContent = document.getElementById('registrationContent');
+        const successState = document.getElementById('successState');
+        const formPendaftaran = document.getElementById('formPendaftaran');
+
+        // Fungsi untuk mengambil ID dari URL
+        const getKegiatanId = () => {
+            const params = new URLSearchParams(window.location.search);
+            return params.get('id');
+        }
+
+        const formatDate = (dateString) => {
+            if (!dateString) return '';
+            const date = new Date(dateString);
+            return new Intl.DateTimeFormat('id-ID', { dateStyle: 'full' }).format(date);
+        }
+
+        // Fungsi utama untuk memuat data kegiatan
+        const loadKegiatanData = async () => {
+            const kegiatanId = getKegiatanId();
+            if (!kegiatanId) {
+                loadingState.classList.add('hidden');
+                errorState.classList.remove('hidden');
+                return;
+            }
+
+            const docRef = doc(db, "kegiatan", kegiatanId);
+            const docSnap = await getDoc(docRef);
+
+            if (docSnap.exists()) {
+                const data = docSnap.data();
+                document.getElementById('namaKegiatanDisplay').textContent = data.nama;
+                document.getElementById('tanggalDisplay').textContent = `${formatDate(data.tanggalMulai)} - ${formatDate(data.tanggalBerakhir)}`;
+                document.getElementById('tempatDisplay').textContent = data.tempat;
+                
+                loadingState.classList.add('hidden');
+                registrationContent.classList.remove('hidden');
+            } else {
+                loadingState.classList.add('hidden');
+                errorState.classList.remove('hidden');
+            }
+        };
+
+        // Fungsi untuk submit pendaftaran
+        formPendaftaran.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const kegiatanId = getKegiatanId();
+            const nama = document.getElementById('namaPeserta').value;
+            const email = document.getElementById('emailPeserta').value;
+
+            try {
+                // Simpan data ke sub-koleksi 'peserta' di dalam dokumen kegiatan
+                const pesertaCollectionRef = collection(db, "kegiatan", kegiatanId, "peserta");
+                await addDoc(pesertaCollectionRef, {
+                    nama: nama,
+                    email: email,
+                    tanggalDaftar: new Date()
+                });
+
+                registrationContent.classList.add('hidden');
+                successState.classList.remove('hidden');
+            } catch (error) {
+                console.error("Error adding document: ", error);
+                alert("Pendaftaran gagal, silakan coba lagi.");
+            }
+        });
+
+        // Jalankan fungsi saat halaman dimuat
+        loadKegiatanData();
+    </script>
+
+</body>
+</html>
