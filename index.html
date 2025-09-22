@@ -3,35 +3,39 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard Sederhana</title>
+    <title>Dashboard Data Pegawai</title>
     <style>
         /* Gaya Dasar untuk Halaman */
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             background-color: #f4f7f9;
             margin: 0;
-            padding: 0;
+            padding: 2rem;
             color: #333;
         }
 
         /* Kontainer Utama Dashboard */
         .dashboard-container {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
+            max-width: 1000px;
+            margin: 0 auto;
+            background-color: #ffffff;
             padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.07);
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            border-bottom: 1px solid #e0e0e0;
+            padding-bottom: 1rem;
         }
 
         header h1 {
             color: #2c3e50;
-        }
-
-        main {
-            background-color: #ffffff;
-            padding: 2rem;
-            border-radius: 8px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
-            text-align: center;
+            margin: 0;
         }
 
         /* Gaya untuk Tombol Utama */
@@ -49,56 +53,73 @@
         .primary-button:hover {
             background-color: #2980b9;
         }
+        
+        /* Gaya untuk Tabel */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        
+        .data-table th, .data-table td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+        
+        .data-table th {
+            background-color: #f2f2f2;
+            font-weight: 600;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 20px;
+            color: #777;
+        }
 
         /* Gaya untuk Modal (Pop-up) */
         .modal {
-            display: none; /* Modal disembunyikan secara default */
+            display: none;
             position: fixed;
-            z-index: 1;
+            z-index: 1000;
             left: 0;
             top: 0;
             width: 100%;
             height: 100%;
             overflow: auto;
-            background-color: rgba(0, 0, 0, 0.5); /* Latar belakang semi-transparan */
+            background-color: rgba(0, 0, 0, 0.5);
         }
 
-        /* Konten di dalam Modal */
         .modal-content {
             background-color: #fefefe;
-            margin: 15% auto;
+            margin: 10% auto;
             padding: 20px;
-            border: 1px solid #888;
-            width: 80%;
-            max-width: 400px;
             border-radius: 8px;
+            width: 90%;
+            max-width: 500px;
             position: relative;
             animation: fadeIn 0.3s;
         }
 
         @keyframes fadeIn {
-            from {opacity: 0; transform: scale(0.9);}
-            to {opacity: 1; transform: scale(1);}
+            from {opacity: 0; transform: translateY(-20px);}
+            to {opacity: 1; transform: translateY(0);}
         }
 
-        /* Tombol Close (X) pada Modal */
         .close-button {
             color: #aaa;
-            float: right;
+            position: absolute;
+            top: 10px;
+            right: 20px;
             font-size: 28px;
             font-weight: bold;
             cursor: pointer;
-        }
-
-        .close-button:hover,
-        .close-button:focus {
-            color: black;
         }
         
         /* Gaya untuk Form Isian */
         .form-group {
             margin-bottom: 15px;
-            text-align: left;
         }
         
         .form-group label {
@@ -109,26 +130,43 @@
         
         .form-group input {
             width: 100%;
-            padding: 8px;
-            box-sizing: border-box; /* Agar padding tidak menambah lebar */
+            padding: 10px;
+            box-sizing: border-box;
             border: 1px solid #ccc;
             border-radius: 4px;
         }
-
     </style>
 </head>
 <body>
 
     <div class="dashboard-container">
         <header>
-            <h1>Selamat Datang di Dashboard</h1>
+            <h1>Data Pegawai</h1>
+            <button id="tambahDataBtn" class="primary-button">Tambah Data Baru</button>
         </header>
+        
         <main>
-            <p>Klik tombol di bawah untuk menambahkan data pegawai baru.</p>
-            <button id="tambahDataBtn" class="primary-button">Tambah Data Pegawai</button>
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Nama</th>
+                        <th>NIP</th>
+                        <th>Jabatan</th>
+                        <th>Unit Kerja</th>
+                        <th>Kecamatan</th>
+                    </tr>
+                </thead>
+                <tbody id="pegawaiTableBody">
+                    <!-- Data akan dimasukkan di sini oleh JavaScript -->
+                </tbody>
+            </table>
+            <div id="emptyState" class="empty-state">
+                <p>Belum ada data. Silakan klik "Tambah Data Baru".</p>
+            </div>
         </main>
     </div>
 
+    <!-- Modal (Pop-up Form) -->
     <div id="dataModal" class="modal">
         <div class="modal-content">
             <span class="close-button">&times;</span>
@@ -142,7 +180,19 @@
                     <label for="nip">NIP:</label>
                     <input type="text" id="nip" name="nip" required>
                 </div>
-                <button type="submit" class="primary-button">Simpan</button>
+                <div class="form-group">
+                    <label for="jabatan">Jabatan:</label>
+                    <input type="text" id="jabatan" name="jabatan" required>
+                </div>
+                <div class="form-group">
+                    <label for="unitKerja">Unit Kerja:</label>
+                    <input type="text" id="unitKerja" name="unitKerja" required>
+                </div>
+                <div class="form-group">
+                    <label for="kecamatan">Kecamatan:</label>
+                    <input type="text" id="kecamatan" name="kecamatan" required>
+                </div>
+                <button type="submit" class="primary-button">Simpan Data</button>
             </form>
         </div>
     </div>
@@ -150,46 +200,83 @@
     <script>
         // --- LOGIKA JAVASCRIPT ---
 
-        // 1. Mengambil elemen-elemen HTML yang dibutuhkan
+        // Mengambil elemen-elemen HTML
         const modal = document.getElementById('dataModal');
         const openBtn = document.getElementById('tambahDataBtn');
         const closeBtn = document.querySelector('.close-button');
         const form = document.getElementById('pegawaiForm');
+        const tableBody = document.getElementById('pegawaiTableBody');
+        const emptyState = document.getElementById('emptyState');
 
-        // 2. Fungsi untuk menampilkan modal
-        openBtn.onclick = function() {
+        // Variabel untuk menyimpan data sementara di memori browser
+        let dataPegawai = [];
+
+        // Fungsi untuk membuka modal
+        openBtn.onclick = () => {
             modal.style.display = 'block';
         }
 
-        // 3. Fungsi untuk menyembunyikan modal ketika tombol 'x' diklik
-        closeBtn.onclick = function() {
+        // Fungsi untuk menutup modal
+        const closeModal = () => {
             modal.style.display = 'none';
         }
-
-        // 4. Fungsi untuk menyembunyikan modal ketika area di luar modal diklik
-        window.onclick = function(event) {
+        closeBtn.onclick = closeModal;
+        window.onclick = (event) => {
             if (event.target == modal) {
-                modal.style.display = 'none';
+                closeModal();
             }
         }
         
-        // 5. Fungsi ketika form di-submit
-        form.addEventListener('submit', function(event) {
-            event.preventDefault(); // Mencegah halaman refresh saat form disubmit
+        // Fungsi untuk me-render atau menampilkan ulang data di tabel
+        const renderTable = () => {
+            // Kosongkan isi tabel terlebih dahulu
+            tableBody.innerHTML = '';
+            
+            // Cek apakah ada data
+            if (dataPegawai.length === 0) {
+                emptyState.style.display = 'block';
+            } else {
+                emptyState.style.display = 'none';
+                // Loop setiap data pegawai dan buat baris baru di tabel
+                dataPegawai.forEach(pegawai => {
+                    const row = tableBody.insertRow();
+                    row.innerHTML = `
+                        <td>${pegawai.nama}</td>
+                        <td>${pegawai.nip}</td>
+                        <td>${pegawai.jabatan}</td>
+                        <td>${pegawai.unitKerja}</td>
+                        <td>${pegawai.kecamatan}</td>
+                    `;
+                });
+            }
+        }
 
-            // Mengambil nilai dari input
-            const nama = document.getElementById('nama').value;
-            const nip = document.getElementById('nip').value;
+        // Fungsi saat form di-submit
+        form.addEventListener('submit', (event) => {
+            event.preventDefault(); // Mencegah refresh halaman
+
+            // Membuat objek pegawai baru dari nilai form
+            const pegawaiBaru = {
+                nama: document.getElementById('nama').value,
+                nip: document.getElementById('nip').value,
+                jabatan: document.getElementById('jabatan').value,
+                unitKerja: document.getElementById('unitKerja').value,
+                kecamatan: document.getElementById('kecamatan').value
+            };
             
-            // Menampilkan data menggunakan alert sederhana
-            alert(`Data Tersimpan!\nNama: ${nama}\nNIP: ${nip}`);
+            // Menambahkan data baru ke array dataPegawai
+            dataPegawai.push(pegawaiBaru);
             
-            // Menutup modal
-            modal.style.display = 'none';
+            // Merender ulang tabel dengan data terbaru
+            renderTable();
             
-            // Mengosongkan isian form
+            // Menutup modal dan mereset form
+            closeModal();
             form.reset();
         });
+        
+        // Panggil renderTable saat halaman pertama kali dimuat
+        renderTable();
 
     </script>
 
