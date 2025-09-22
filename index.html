@@ -255,10 +255,22 @@
         form.addEventListener('submit', (event) => {
             event.preventDefault(); // Mencegah refresh halaman
 
-            // Membuat objek pegawai baru dari nilai form
+            // Ambil nilai NIP dari form
+            const nipInput = document.getElementById('nip').value;
+
+            // Cek apakah NIP sudah ada di dalam array dataPegawai
+            const isNipExist = dataPegawai.some(pegawai => pegawai.nip === nipInput);
+
+            // Jika NIP sudah ada, tampilkan peringatan dan hentikan proses
+            if (isNipExist) {
+                alert('NIP sudah terdaftar. Data gagal disimpan.');
+                return; // Hentikan eksekusi fungsi
+            }
+
+            // Jika NIP unik, lanjutkan proses penyimpanan
             const pegawaiBaru = {
                 nama: document.getElementById('nama').value,
-                nip: document.getElementById('nip').value,
+                nip: nipInput, // Gunakan NIP yang sudah diambil
                 jabatan: document.getElementById('jabatan').value,
                 unitKerja: document.getElementById('unitKerja').value,
                 kecamatan: document.getElementById('kecamatan').value
@@ -282,3 +294,4 @@
 
 </body>
 </html>
+
