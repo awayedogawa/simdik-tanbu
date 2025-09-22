@@ -5,11 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SIMDIK-TANBU Dashboard</title>
     
-    <!-- Skrip Penjaga Halaman -->
     <script>
-        const userRole = sessionStorage.getItem('userRole');
-        if (!userRole) {
-            // Jika tidak ada sesi login, alihkan ke halaman login
+        if (!sessionStorage.getItem('userRole')) {
             window.location.href = 'login.html';
         }
     </script>
@@ -19,185 +16,82 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            --primary-color: #4F46E5; /* Indigo */
-            --primary-hover: #4338CA;
-            --danger-color: #EF4444; /* Red */
-            --danger-hover: #DC2626;
-            --warning-color: #F59E0B; /* Amber */
-            --warning-hover: #D97706;
-            --info-color: #3B82F6; /* Blue */
-            --info-hover: #EBF1FF;
-            --gray-100: #F3F4F6;
-            --gray-200: #E5E7EB;
-            --gray-500: #6B7280;
-            --gray-700: #374151;
-            --gray-900: #111827;
-            --background-color: #F9FAFB;
-            --card-background: #FFFFFF;
+            --primary-color: #4F46E5; --primary-hover: #4338CA;
+            --danger-color: #EF4444; --danger-hover: #DC2626;
+            --warning-color: #F59E0B; --warning-hover: #D97706;
+            --info-color: #3B82F6; --info-hover: #EBF1FF;
+            --gray-100: #F3F4F6; --gray-200: #E5E7EB; --gray-500: #6B7280;
+            --gray-700: #374151; --gray-900: #111827;
+            --background-color: #F9FAFB; --card-background: #FFFFFF;
             --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
             --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
         }
-
         body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            background-color: var(--background-color);
-            margin: 0;
-            color: var(--gray-700);
-            -webkit-font-smoothing: antialiased;
-            -moz-osx-font-smoothing: grayscale;
+            font-family: 'Inter', sans-serif; background-color: var(--background-color);
+            margin: 0; color: var(--gray-700);
         }
-        
         .hero {
-            text-align: center;
-            padding: 2rem 1.5rem;
-            background-color: var(--card-background);
-            border-bottom: 1px solid var(--gray-200);
-            position: relative;
+            text-align: center; padding: 2rem 1.5rem; background-color: var(--card-background);
+            border-bottom: 1px solid var(--gray-200); position: relative;
         }
-        .hero-logo {
-            width: 80px;
-            height: 96px;
-            margin: 0 auto 1rem auto;
-        }
+        .hero-logo { width: 80px; height: 96px; margin: 0 auto 1rem auto; }
         .hero h1 {
-            color: var(--gray-900);
-            font-size: 2.25rem;
-            font-weight: 700;
-            margin: 0;
-            letter-spacing: -0.025em;
+            color: var(--gray-900); font-size: 2.25rem; font-weight: 700;
+            margin: 0; letter-spacing: -0.025em;
         }
         .hero p {
-            margin: 0.5rem 0 0 0;
-            color: var(--gray-500);
-            font-size: 1.125rem;
-            max-width: 600px;
-            margin-left: auto;
-            margin-right: auto;
+            margin: 0.5rem 0 0 0; color: var(--gray-500); font-size: 1.125rem;
+            max-width: 600px; margin-left: auto; margin-right: auto;
         }
-        .hero .subtitle {
-             font-size: 1rem;
-        }
-
-        /* Info Pengguna & Logout */
+        .hero .subtitle { font-size: 1rem; }
         .user-info {
-            position: absolute;
-            top: 1rem;
-            right: 1.5rem;
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-            font-size: 14px;
+            position: absolute; top: 1rem; right: 1.5rem; display: flex;
+            align-items: center; gap: 1rem; font-size: 14px;
         }
-        .user-info span {
-            color: var(--gray-700);
-            font-weight: 500;
-        }
+        .user-info span { color: var(--gray-700); font-weight: 500; }
         .logout-button {
-            background: none;
-            border: none;
-            color: var(--primary-color);
-            font-weight: 500;
-            cursor: pointer;
-            text-decoration: underline;
-            padding: 0;
-            font-size: 14px;
+            background: none; border: none; color: var(--primary-color);
+            font-weight: 500; cursor: pointer; text-decoration: underline;
+            padding: 0; font-size: 14px;
         }
-        
-        .dashboard-container {
-            max-width: 1280px;
-            margin: 0 auto;
-            padding: 2rem;
-        }
-
+        .dashboard-container { max-width: 1280px; margin: 0 auto; padding: 2rem; }
         header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+            display: flex; justify-content: space-between; align-items: center;
             margin-bottom: 2rem;
         }
-
         header h2 {
-            color: var(--gray-900);
-            margin: 0;
-            font-size: 1.5rem;
-            font-weight: 600;
+            color: var(--gray-900); margin: 0; font-size: 1.5rem; font-weight: 600;
         }
-
         .primary-button {
-            background-color: var(--primary-color);
-            color: white;
-            border: none;
-            padding: 12px 20px;
-            font-size: 14px;
-            font-weight: 500;
-            border-radius: 6px;
-            cursor: pointer;
-            transition: background-color 0.2s ease;
-            display: flex;
-            align-items: center;
-            gap: 8px;
+            background-color: var(--primary-color); color: white; border: none;
+            padding: 12px 20px; font-size: 14px; font-weight: 500;
+            border-radius: 6px; cursor: pointer; transition: background-color 0.2s ease;
+            display: flex; align-items: center; gap: 8px;
         }
-
-        .primary-button:hover {
-            background-color: var(--primary-hover);
-        }
-
+        .primary-button:hover { background-color: var(--primary-hover); }
         main {
-            background-color: var(--card-background);
-            border-radius: 8px;
-            box-shadow: var(--shadow-md);
-            overflow: hidden;
+            background-color: var(--card-background); border-radius: 8px;
+            box-shadow: var(--shadow-md); overflow: hidden;
         }
-        
-        .data-table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-        
+        .data-table { width: 100%; border-collapse: collapse; }
         .data-table th, .data-table td {
-            padding: 16px;
-            text-align: left;
-            vertical-align: middle;
+            padding: 16px; text-align: left; vertical-align: middle;
             border-bottom: 1px solid var(--gray-200);
         }
-        
         .data-table th {
-            background-color: var(--gray-100);
-            color: var(--gray-500);
-            font-size: 12px;
-            font-weight: 500;
-            text-transform: uppercase;
+            background-color: var(--gray-100); color: var(--gray-500);
+            font-size: 12px; font-weight: 500; text-transform: uppercase;
             letter-spacing: 0.05em;
         }
-
-        .data-table tbody tr:hover {
-            background-color: var(--gray-100);
-        }
-
-        .data-table td {
-            font-size: 14px;
-        }
-
-        .action-button-group {
-            display: flex;
-            justify-content: flex-end;
-            gap: 12px;
-        }
+        .data-table tbody tr:hover { background-color: var(--gray-100); }
+        .data-table td { font-size: 14px; }
+        .action-button-group { display: flex; justify-content: flex-end; gap: 12px; }
         .icon-button {
-            background: none;
-            border: none;
-            cursor: pointer;
-            padding: 4px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: background-color 0.2s ease;
+            background: none; border: none; cursor: pointer; padding: 4px;
+            border-radius: 50%; display: flex; align-items: center;
+            justify-content: center; transition: background-color 0.2s ease;
         }
-        .icon-button svg {
-            width: 18px;
-            height: 18px;
-        }
+        .icon-button svg { width: 18px; height: 18px; }
         .view-btn { color: var(--info-color); }
         .view-btn:hover { background-color: var(--info-hover); }
         .link-btn { color: var(--primary-color); }
@@ -206,18 +100,15 @@
         .edit-btn:hover { background-color: #FEF3C7; }
         .delete-btn { color: var(--danger-color); }
         .delete-btn:hover { background-color: #FEE2E2; }
-        
         .modal {
             display: none; position: fixed; z-index: 1000; left: 0; top: 0;
             width: 100%; height: 100%; overflow: auto;
-            background-color: rgba(17, 24, 39, 0.6);
-            backdrop-filter: blur(4px);
+            background-color: rgba(17, 24, 39, 0.6); backdrop-filter: blur(4px);
         }
         .modal-content {
-            background-color: var(--card-background); margin: 5% auto;
-            padding: 32px; border-radius: 8px; width: 90%; max-width: 600px;
-            position: relative; box-shadow: var(--shadow-md);
-            animation: fadeIn 0.3s ease-out;
+            background-color: var(--card-background); margin: 5% auto; padding: 32px;
+            border-radius: 8px; width: 90%; max-width: 600px; position: relative;
+            box-shadow: var(--shadow-md); animation: fadeIn 0.3s ease-out;
         }
         @keyframes fadeIn {
             from {opacity: 0; transform: translateY(-20px) scale(0.98);}
@@ -247,8 +138,8 @@
         .form-row .form-group { flex: 1; }
         .empty-state { text-align: center; padding: 48px; color: var(--gray-500); }
         .status-badge {
-            padding: 4px 12px; border-radius: 9999px; font-size: 12px;
-            font-weight: 500; display: inline-flex; align-items: center; gap: 6px;
+            padding: 4px 12px; border-radius: 9999px; font-size: 12px; font-weight: 500;
+            display: inline-flex; align-items: center; gap: 6px;
         }
         .status-badge::before { content: ''; width: 8px; height: 8px; border-radius: 50%; }
         .status-belum { background-color: #FEF3C7; color: #92400E; }
@@ -257,14 +148,13 @@
         .status-berlangsung::before { background-color: #3B82F6; }
         .status-selesai { background-color: #D1FAE5; color: #065F46; }
         .status-selesai::before { background-color: #10B981; }
-
-        /* Sembunyikan elemen untuk peran Pelaksana */
-        .pelaksana-hidden {
-            display: none !important;
-        }
+        .admin-only { display: table-cell; } 
+        body.pelaksana-mode .admin-only { display: none !important; }
+        .form-group.admin-only-form { display: block; }
+        body.pelaksana-mode .form-group.admin-only-form { display: none !important; }
     </style>
 </head>
-<body style="display: none;"> <!-- Body disembunyikan sementara -->
+<body style="display: none;">
 
     <div class="hero">
         <div class="user-info">
@@ -299,8 +189,8 @@
                             <th>Kegiatan</th>
                             <th>Tanggal Pelaksanaan</th>
                             <th>Tempat</th>
-                            <th>Bidang Pelaksana</th>
-                            <th>Penanggung Jawab</th>
+                            <th class="admin-only">Bidang Pelaksana</th>
+                            <th class="admin-only">Penanggung Jawab</th>
                             <th>Peserta</th>
                             <th>Status</th>
                             <th>Aksi</th>
@@ -339,13 +229,13 @@
                     <label for="tempat">Tempat Kegiatan</label>
                     <input type="text" id="tempat" required>
                 </div>
-                <div class="form-group">
+                <div class="form-group admin-only-form">
                     <label for="bidang">Bidang Pelaksana</label>
-                    <input type="text" id="bidang" required>
+                    <input type="text" id="bidang">
                 </div>
-                 <div class="form-group">
+                 <div class="form-group admin-only-form">
                     <label for="penanggungJawab">Penanggung Jawab</label>
-                    <input type="text" id="penanggungJawab" required>
+                    <input type="text" id="penanggungJawab">
                 </div>
                 <button type="submit" id="submitBtn" class="primary-button" style="width: 100%; justify-content: center; padding-top: 14px; padding-bottom: 14px;">Simpan Data</button>
             </form>
@@ -354,24 +244,21 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js";
-        import { getFirestore, collection, onSnapshot, getDocs, doc, getDoc, addDoc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore.js";
+        import { getFirestore, collection, query, where, onSnapshot, getDocs, doc, getDoc, addDoc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore.js";
 
-        // --- Cek Sesi dan Peran Pengguna ---
         const userRole = sessionStorage.getItem('userRole');
         const userName = sessionStorage.getItem('userName');
+        const userNip = sessionStorage.getItem('userNip');
+        const userBidang = sessionStorage.getItem('userBidang');
         
-        // Tampilkan body setelah pengecekan selesai
         document.body.style.display = 'block';
-        
         document.getElementById('userNameDisplay').textContent = `Halo, ${userName}`;
         
-        const logoutButton = document.getElementById('logoutButton');
-        logoutButton.addEventListener('click', () => {
+        document.getElementById('logoutButton').addEventListener('click', () => {
             sessionStorage.clear();
             window.location.href = 'login.html';
         });
 
-        // --- Inisialisasi Firebase ---
         const firebaseConfig = {
             apiKey: "AIzaSyBM4RhHUdQxSEPVBGhjf4R8UGfzMmD7egU",
             authDomain: "dashboard-kegiatan-saya.firebaseapp.com",
@@ -382,8 +269,7 @@
         };
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
-        const kegiatanCollection = collection(db, "kegiatan");
-
+        
         const modal = document.getElementById('dataModal');
         const openBtn = document.getElementById('tambahDataBtn');
         const closeBtn = document.querySelector('.close-button');
@@ -391,58 +277,185 @@
         const tableBody = document.getElementById('kegiatanTableBody');
         const emptyState = document.getElementById('emptyState');
         const modalTitle = document.getElementById('modalTitle');
-        const submitBtn = document.getElementById('submitBtn');
         const kegiatanIdInput = document.getElementById('kegiatanId');
-        
-        // ... (fungsi open/close modal, formatDate, getStatus tetap sama) ...
-        const openAddModal = () => { /* ... */ };
-        const closeModal = () => { /* ... */ };
+
+        const openAddModal = () => {
+            form.reset();
+            kegiatanIdInput.value = '';
+            modalTitle.textContent = 'Input Data Kegiatan';
+            document.getElementById('submitBtn').textContent = 'Simpan Data';
+            modal.style.display = 'flex';
+        }
+
+        const closeModal = () => { modal.style.display = 'none'; }
         openBtn.onclick = openAddModal;
         closeBtn.onclick = closeModal;
         window.onclick = (event) => { if (event.target == modal) closeModal(); }
-        const formatDate = (dateString) => { /* ... */ };
-        const getStatus = (tanggalMulai, tanggalBerakhir) => { /* ... */ };
 
-        // --- Pembatasan Akses Berdasarkan Peran ---
-        function applyRolePermissions() {
-            if (userRole === 'pelaksana') {
-                document.getElementById('tambahDataBtn').classList.add('pelaksana-hidden');
-                document.querySelectorAll('.edit-btn, .delete-btn').forEach(btn => {
-                    btn.classList.add('pelaksana-hidden');
-                });
-            }
+        const formatDate = (dateString) => {
+            if (!dateString) return '';
+            const date = new Date(dateString);
+            const day = String(date.getUTCDate()).padStart(2, '0');
+            const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+            const year = date.getUTCFullYear();
+            return `${day}/${month}/${year}`;
         }
 
-        onSnapshot(kegiatanCollection, async (snapshot) => {
+        const getStatus = (tanggalMulai, tanggalBerakhir) => {
+            const today = new Date();
+            const startDate = new Date(tanggalMulai);
+            const endDate = new Date(tanggalBerakhir);
+            today.setHours(0, 0, 0, 0);
+            startDate.setHours(0, 0, 0, 0);
+            endDate.setHours(0, 0, 0, 0);
+            if (today < startDate) return '<span class="status-badge status-belum">Belum</span>';
+            if (today >= startDate && today <= endDate) return '<span class="status-badge status-berlangsung">Sedang Berlangsung</span>';
+            return '<span class="status-badge status-selesai">Selesai</span>';
+        }
+        
+        if (userRole === 'pelaksana') {
+            document.body.classList.add('pelaksana-mode');
+        }
+
+        const kegiatanCollectionRef = collection(db, "kegiatan");
+        let q;
+        if (userRole === 'admin') {
+            q = kegiatanCollectionRef; 
+        } else {
+            q = query(kegiatanCollectionRef, where("createdBy", "==", userNip));
+        }
+
+        onSnapshot(q, async (snapshot) => {
             const allDocs = snapshot.docs;
             tableBody.innerHTML = '';
 
             if (allDocs.length === 0) {
-                emptyState.innerHTML = '<p>Belum ada data. Silakan klik "Input Kegiatan".</p>';
+                emptyState.innerHTML = userRole === 'admin' ? '<p>Belum ada data. Silakan klik "Input Kegiatan".</p>' : '<p>Anda belum membuat kegiatan.</p>';
                 emptyState.style.display = 'block';
                 document.querySelector('.data-table').style.display = 'none';
             } else {
-                const kegiatanWithCountsPromises = allDocs.map(async (doc) => {
-                    const pesertaCollectionRef = collection(db, "kegiatan", doc.id, "peserta");
-                    const pesertaSnapshot = await getDocs(pesertaCollectionRef);
-                    return { id: doc.id, data: doc.data(), participantCount: pesertaSnapshot.size };
+                const promises = allDocs.map(async (doc) => {
+                    const pesertaRef = collection(db, "kegiatan", doc.id, "peserta");
+                    const pesertaSnap = await getDocs(pesertaRef);
+                    return { id: doc.id, data: doc.data(), count: pesertaSnap.size };
                 });
-
-                const kegiatanWithCounts = await Promise.all(kegiatanWithCountsPromises);
+                const kegiatanWithCounts = await Promise.all(promises);
 
                 emptyState.style.display = 'none';
                 document.querySelector('.data-table').style.display = 'table';
                 
                 kegiatanWithCounts.forEach((item, index) => {
-                    // ... (logika render baris tabel tetap sama)
+                    const kegiatan = item.data;
+                    const docId = item.id;
+                    const tanggalPelaksanaan = `${formatDate(kegiatan.tanggalMulai)} - ${formatDate(kegiatan.tanggalBerakhir)}`;
+                    const row = tableBody.insertRow();
+                    
+                    row.innerHTML = `
+                        <td>${index + 1}</td>
+                        <td>${kegiatan.nama}</td>
+                        <td>${tanggalPelaksanaan}</td>
+                        <td>${kegiatan.tempat}</td>
+                        <td class="admin-only">${kegiatan.bidang}</td>
+                        <td class="admin-only">${kegiatan.pj}</td>
+                        <td>${item.count}</td>
+                        <td>${getStatus(kegiatan.tanggalMulai, kegiatan.tanggalBerakhir)}</td>
+                        <td>
+                            <div class="action-button-group">
+                                <a href="peserta.html?id=${docId}" class="icon-button view-btn" title="Lihat Peserta"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M10 8a3 3 0 100-6 3 3 0 000 6zM3.465 14.493a1.23 1.23 0 00.41 1.412A9.957 9.957 0 0010 18c2.31 0 4.438-.784 6.131-2.095a1.23 1.23 0 00.41-1.412A9.99 9.99 0 0010 12.001c-2.31 0-4.438.784-6.131 2.094z" /></svg></a>
+                                <button class="icon-button link-btn" data-id="${docId}" title="Salin Link Pendaftaran"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M12.232 4.232a2.5 2.5 0 013.536 3.536l-1.225 1.224a.75.75 0 001.061 1.06l1.224-1.224a4 4 0 00-5.656-5.656l-3 3a4 4 0 00.225 5.865.75.75 0 00.977-1.138 2.5 2.5 0 01-.142-3.665l3-3z" /><path d="M8.603 3.799a4.49 4.49 0 014.49 4.49l-4.49 4.49a4.49 4.49 0 01-6.35 0A4.49 4.49 0 012 8.289l4.49-4.49a4.49 4.49 0 012.113-.79z" /></svg></button>
+                                <button class="icon-button edit-btn" data-id="${docId}" title="Edit"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z" /><path fill-rule="evenodd" d="M2 6a2 2 0 012-2h4a1 1 0 010 2H4v10h10v-4a1 1 0 112 0v4a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" clip-rule="evenodd" /></svg></button>
+                                <button class="icon-button delete-btn" data-id="${docId}" data-nama="${kegiatan.nama}" title="Hapus"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" /></svg></button>
+                            </div>
+                        </td>
+                    `;
                 });
             }
-            // Panggil fungsi pembatasan setelah tabel selesai dirender
-            applyRolePermissions(); 
         });
 
-        // ... (event listener untuk form submit dan klik tabel tetap sama) ...
+        form.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            let kegiatanData = {
+                nama: document.getElementById('namaKegiatan').value,
+                tanggalMulai: document.getElementById('tanggalMulai').value,
+                tanggalBerakhir: document.getElementById('tanggalBerakhir').value,
+                tempat: document.getElementById('tempat').value,
+            };
 
+            if (userRole === 'admin') {
+                kegiatanData.bidang = document.getElementById('bidang').value;
+                kegiatanData.pj = document.getElementById('penanggungJawab').value;
+            } else {
+                kegiatanData.bidang = userBidang;
+                kegiatanData.pj = userName;
+                kegiatanData.createdBy = userNip;
+            }
+
+            const docId = kegiatanIdInput.value;
+            if (docId) {
+                await updateDoc(doc(db, "kegiatan", docId), kegiatanData);
+            } else {
+                await addDoc(collection(db, "kegiatan"), kegiatanData);
+            }
+            closeModal();
+        });
+        
+        tableBody.addEventListener('click', async (event) => {
+            const target = event.target.closest('.icon-button, a.icon-button');
+            if (!target) return;
+            
+            if (target.tagName === 'BUTTON') {
+                event.preventDefault();
+            }
+
+            const docId = target.dataset.id;
+            
+            if (target.classList.contains('link-btn')) {
+                const link = `${window.location.origin}${window.location.pathname.replace('index.html', '')}daftar.html?id=${docId}`;
+                try {
+                    await navigator.clipboard.writeText(link);
+                    alert('Link pendaftaran telah disalin!');
+                } catch (err) { console.error('Gagal menyalin link: ', err); }
+            }
+
+            if (target.classList.contains('delete-btn')) {
+                if (userRole !== 'admin') {
+                    const docRef = doc(db, 'kegiatan', docId);
+                    const docSnap = await getDoc(docRef);
+                    if (docSnap.data().createdBy !== userNip) {
+                        alert('Anda tidak memiliki izin untuk menghapus kegiatan ini.');
+                        return;
+                    }
+                }
+                const namaKegiatan = target.dataset.nama;
+                if (confirm(`Apakah Anda yakin ingin menghapus kegiatan "${namaKegiatan}"?`)) {
+                    await deleteDoc(doc(db, "kegiatan", docId));
+                }
+            }
+
+            if (target.classList.contains('edit-btn')) {
+                 const docRef = doc(db, 'kegiatan', docId);
+                 const docSnap = await getDoc(docRef);
+                 if (docSnap.exists()) {
+                    if (userRole !== 'admin' && docSnap.data().createdBy !== userNip) {
+                        alert('Anda tidak memiliki izin untuk mengedit kegiatan ini.');
+                        return;
+                    }
+                    const kegiatan = docSnap.data();
+                    kegiatanIdInput.value = docId;
+                    document.getElementById('namaKegiatan').value = kegiatan.nama;
+                    document.getElementById('tanggalMulai').value = kegiatan.tanggalMulai;
+                    document.getElementById('tanggalBerakhir').value = kegiatan.tanggalBerakhir;
+                    document.getElementById('tempat').value = kegiatan.tempat;
+                    if (userRole === 'admin') {
+                        document.getElementById('bidang').value = kegiatan.bidang;
+                        document.getElementById('penanggungJawab').value = kegiatan.pj;
+                    }
+                    modalTitle.textContent = 'Edit Data Kegiatan';
+                    document.getElementById('submitBtn').textContent = 'Update Data';
+                    modal.style.display = 'flex';
+                 }
+            }
+        });
     </script>
 </body>
 </html>
