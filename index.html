@@ -64,7 +64,7 @@
         .data-table th, .data-table td {
             border: 1px solid #ddd;
             padding: 12px;
-            text-align: left;
+            text-align: center; /* Teks di tengah */
             vertical-align: middle;
         }
         
@@ -72,6 +72,11 @@
             background-color: #f2f2f2;
             font-weight: 600;
         }
+        
+        .data-table td:nth-child(2) {
+             text-align: left; /* Kolom KEGIATAN rata kiri */
+        }
+
 
         .empty-state {
             text-align: center;
@@ -87,10 +92,32 @@
             font-size: 12px;
             font-weight: bold;
             text-align: center;
+            display: inline-block;
         }
         .status-belum { background-color: #f39c12; } /* Orange */
         .status-berlangsung { background-color: #3498db; } /* Blue */
         .status-selesai { background-color: #2ecc71; } /* Green */
+
+        /* Gaya untuk Tombol Aksi */
+        .action-button {
+            border: none;
+            padding: 8px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            color: white;
+            font-size: 12px;
+            margin: 0 4px;
+            transition: opacity 0.3s ease;
+        }
+        .action-button:hover {
+            opacity: 0.8;
+        }
+        .edit-btn {
+            background-color: #f39c12; /* Orange */
+        }
+        .delete-btn {
+            background-color: #e74c3c; /* Red */
+        }
 
 
         /* Gaya untuk Modal (Pop-up) */
@@ -179,6 +206,7 @@
                         <th>PENANGGUNG JAWAB</th>
                         <th>JUMLAH PESERTA</th>
                         <th>STATUS</th>
+                        <th>AKSI</th>
                     </tr>
                 </thead>
                 <tbody id="kegiatanTableBody">
@@ -195,7 +223,7 @@
     <div id="dataModal" class="modal">
         <div class="modal-content">
             <span class="close-button">&times;</span>
-            <h2>Input Data Kegiatan</h2>
+            <h2 id="modalTitle">Input Data Kegiatan</h2>
             <form id="kegiatanForm">
                 <div class="form-group">
                     <label for="namaKegiatan">Nama Kegiatan:</label>
@@ -227,25 +255,38 @@
                     <label for="jumlahPeserta">Jumlah Peserta:</label>
                     <input type="number" id="jumlahPeserta" min="0" required>
                 </div>
-                <button type="submit" class="primary-button">Simpan Data</button>
+                <button type="submit" id="submitBtn" class="primary-button">Simpan Data</button>
             </form>
         </div>
     </div>
 
     <script>
-        // --- LOGIKA JAVASCRIPT ---
-
         const modal = document.getElementById('dataModal');
         const openBtn = document.getElementById('tambahDataBtn');
         const closeBtn = document.querySelector('.close-button');
         const form = document.getElementById('kegiatanForm');
         const tableBody = document.getElementById('kegiatanTableBody');
         const emptyState = document.getElementById('emptyState');
+        const modalTitle = document.getElementById('modalTitle');
+        const submitBtn = document.getElementById('submitBtn');
 
         let dataKegiatan = [];
+        let currentlyEditingIndex = null; // Penanda untuk mode edit
 
-        openBtn.onclick = () => { modal.style.display = 'block'; }
-        const closeModal = () => { modal.style.display = 'none'; }
+        // Fungsi untuk membuka modal dalam mode "Tambah Data"
+        const openAddModal = () => {
+            currentlyEditingIndex = null;
+            form.reset();
+            modalTitle.textContent = 'Input Data Kegiatan';
+            submitBtn.textContent = 'Simpan Data';
+            modal.style.display = 'block';
+        }
+
+        const closeModal = () => {
+            modal.style.display = 'none';
+        }
+
+        openBtn.onclick = openAddModal;
         closeBtn.onclick = closeModal;
         window.onclick = (event) => {
             if (event.target == modal) {
@@ -253,22 +294,20 @@
             }
         }
         
-        // Fungsi untuk format tanggal menjadi DD/MM/YYYY
         const formatDate = (dateString) => {
+            if (!dateString) return '';
             const date = new Date(dateString);
-            const day = String(date.getDate()).padStart(2, '0');
-            const month = String(date.getMonth() + 1).padStart(2, '0');
-            const year = date.getFullYear();
+            const day = String(date.getUTCDate()).padStart(2, '0');
+            const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+            const year = date.getUTCFullYear();
             return `${day}/${month}/${year}`;
         }
         
-        // Fungsi untuk menentukan status kegiatan
         const getStatus = (tanggalMulai, tanggalBerakhir) => {
             const today = new Date();
             const startDate = new Date(tanggalMulai);
             const endDate = new Date(tanggalBerakhir);
 
-            // Set waktu ke 00:00:00 untuk perbandingan tanggal yang akurat
             today.setHours(0, 0, 0, 0);
             startDate.setHours(0, 0, 0, 0);
             endDate.setHours(0, 0, 0, 0);
@@ -302,6 +341,10 @@
                         <td>${kegiatan.pj}</td>
                         <td>${kegiatan.peserta}</td>
                         <td>${getStatus(kegiatan.tanggalMulai, kegiatan.tanggalBerakhir)}</td>
+                        <td>
+                            <button class="action-button edit-btn" data-index="${index}">Edit</button>
+                            <button class="action-button delete-btn" data-index="${index}">Hapus</button>
+                        </td>
                     `;
                 });
             }
@@ -310,7 +353,7 @@
         form.addEventListener('submit', (event) => {
             event.preventDefault();
 
-            const kegiatanBaru = {
+            const kegiatanData = {
                 nama: document.getElementById('namaKegiatan').value,
                 tanggalMulai: document.getElementById('tanggalMulai').value,
                 tanggalBerakhir: document.getElementById('tanggalBerakhir').value,
@@ -320,16 +363,51 @@
                 peserta: document.getElementById('jumlahPeserta').value
             };
             
-            dataKegiatan.push(kegiatanBaru);
+            if (currentlyEditingIndex !== null) {
+                // Mode Edit: perbarui data di index yang ada
+                dataKegiatan[currentlyEditingIndex] = kegiatanData;
+            } else {
+                // Mode Tambah: tambahkan data baru ke array
+                dataKegiatan.push(kegiatanData);
+            }
             
             renderTable();
-            
             closeModal();
-            form.reset();
         });
         
-        renderTable();
+        // Event Listener untuk tombol di dalam tabel (Edit & Hapus)
+        tableBody.addEventListener('click', (event) => {
+            const target = event.target;
+            const index = target.dataset.index;
 
+            if (target.classList.contains('delete-btn')) {
+                if (confirm(`Apakah Anda yakin ingin menghapus kegiatan "${dataKegiatan[index].nama}"?`)) {
+                    dataKegiatan.splice(index, 1);
+                    renderTable();
+                }
+            }
+
+            if (target.classList.contains('edit-btn')) {
+                currentlyEditingIndex = parseInt(index);
+                const kegiatan = dataKegiatan[currentlyEditingIndex];
+                
+                // Isi form dengan data yang akan diedit
+                document.getElementById('namaKegiatan').value = kegiatan.nama;
+                document.getElementById('tanggalMulai').value = kegiatan.tanggalMulai;
+                document.getElementById('tanggalBerakhir').value = kegiatan.tanggalBerakhir;
+                document.getElementById('tempat').value = kegiatan.tempat;
+                document.getElementById('bidang').value = kegiatan.bidang;
+                document.getElementById('penanggungJawab').value = kegiatan.pj;
+                document.getElementById('jumlahPeserta').value = kegiatan.peserta;
+
+                // Ubah judul & tombol modal ke mode edit
+                modalTitle.textContent = 'Edit Data Kegiatan';
+                submitBtn.textContent = 'Update Data';
+                modal.style.display = 'block';
+            }
+        });
+
+        renderTable();
     </script>
 
 </body>
