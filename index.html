@@ -299,10 +299,7 @@
                     <label for="penanggungJawab">Penanggung Jawab</label>
                     <input type="text" id="penanggungJawab" required>
                 </div>
-                <div class="form-group">
-                    <label for="jumlahPeserta">Jumlah Peserta</label>
-                    <input type="number" id="jumlahPeserta" min="0" required>
-                </div>
+                <!-- Isian Jumlah Peserta dihapus dari sini -->
                 <button type="submit" id="submitBtn" class="primary-button" style="width: 100%; justify-content: center; padding-top: 14px; padding-bottom: 14px;">Simpan Data</button>
             </form>
         </div>
@@ -310,8 +307,9 @@
 
     <!-- Firebase SDK Scripts -->
     <script type="module">
+        // getDocs ditambahkan untuk mengambil data sub-koleksi
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js";
-        import { getFirestore, collection, addDoc, onSnapshot, doc, updateDoc, deleteDoc, getDoc } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, onSnapshot, doc, updateDoc, deleteDoc, getDoc, getDocs } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyBM4RhHUdQxSEPVBGhjf4R8UGfzMmD7egU",
@@ -326,6 +324,7 @@
         const db = getFirestore(app);
         const kegiatanCollection = collection(db, "kegiatan");
 
+        // ... (Elemen-elemen lain tetap sama)
         const modal = document.getElementById('dataModal');
         const openBtn = document.getElementById('tambahDataBtn');
         const closeBtn = document.querySelector('.close-button');
@@ -371,7 +370,8 @@
             return '<span class="status-badge status-selesai">Selesai</span>';
         }
         
-        onSnapshot(kegiatanCollection, (snapshot) => {
+        // --- LOGIKA UTAMA DIPERBARUI DI SINI ---
+        onSnapshot(kegiatanCollection, async (snapshot) => {
             const allDocs = snapshot.docs;
             tableBody.innerHTML = '';
 
@@ -380,13 +380,33 @@
                 emptyState.style.display = 'block';
                 document.querySelector('.data-table').style.display = 'none';
             } else {
+                // Membuat array promise untuk mengambil jumlah peserta untuk setiap kegiatan
+                const kegiatanWithCountsPromises = allDocs.map(async (doc) => {
+                    const kegiatan = doc.data();
+                    const docId = doc.id;
+                    const pesertaCollectionRef = collection(db, "kegiatan", docId, "peserta");
+                    const pesertaSnapshot = await getDocs(pesertaCollectionRef);
+                    
+                    return {
+                        id: docId,
+                        data: kegiatan,
+                        participantCount: pesertaSnapshot.size // Menghitung jumlah dokumen peserta
+                    };
+                });
+
+                // Menunggu semua promise selesai
+                const kegiatanWithCounts = await Promise.all(kegiatanWithCountsPromises);
+
                 emptyState.style.display = 'none';
                 document.querySelector('.data-table').style.display = 'table';
-                allDocs.forEach((document, index) => {
-                    const kegiatan = document.data();
-                    const docId = document.id;
+                
+                kegiatanWithCounts.forEach((kegiatanItem, index) => {
+                    const kegiatan = kegiatanItem.data;
+                    const docId = kegiatanItem.id;
+                    const participantCount = kegiatanItem.participantCount; // Menggunakan jumlah dinamis
                     const tanggalPelaksanaan = `${formatDate(kegiatan.tanggalMulai)} - ${formatDate(kegiatan.tanggalBerakhir)}`;
                     const row = tableBody.insertRow();
+                    
                     row.innerHTML = `
                         <td>${index + 1}</td>
                         <td>${kegiatan.nama}</td>
@@ -394,7 +414,7 @@
                         <td>${kegiatan.tempat}</td>
                         <td>${kegiatan.bidang}</td>
                         <td>${kegiatan.pj}</td>
-                        <td>${kegiatan.peserta}</td>
+                        <td>${participantCount}</td> <!-- Menampilkan jumlah pendaftar aktual -->
                         <td>${getStatus(kegiatan.tanggalMulai, kegiatan.tanggalBerakhir)}</td>
                         <td>
                             <div class="action-button-group">
@@ -426,7 +446,7 @@
                 tempat: document.getElementById('tempat').value,
                 bidang: document.getElementById('bidang').value,
                 pj: document.getElementById('penanggungJawab').value,
-                peserta: document.getElementById('jumlahPeserta').value
+                // Jumlah Peserta tidak lagi disimpan di sini
             };
             const docId = kegiatanIdInput.value;
             if (docId) {
@@ -440,30 +460,19 @@
         
         tableBody.addEventListener('click', async (event) => {
             const target = event.target.closest('.icon-button');
+            if (!target && event.target.closest('a')) return; // Allow link to work
             if (!target) return;
 
             const docId = target.dataset.id;
             
             if (target.classList.contains('link-btn')) {
+                // ... (kode salin link tetap sama)
                 const link = `${window.location.origin}${window.location.pathname.replace('index.html', '')}daftar.html?id=${docId}`;
-                
                 try {
                     await navigator.clipboard.writeText(link);
                     alert('Link pendaftaran telah disalin!');
                 } catch (err) {
                     console.error('Gagal menyalin link: ', err);
-                    const textArea = document.createElement("textarea");
-                    textArea.value = link;
-                    document.body.appendChild(textArea);
-                    textArea.focus();
-                    textArea.select();
-                    try {
-                        document.execCommand('copy');
-                        alert('Link pendaftaran telah disalin! (fallback)');
-                    } catch (fallbackErr) {
-                        console.error('Fallback gagal: ', fallbackErr);
-                    }
-                    document.body.removeChild(textArea);
                 }
             }
 
@@ -487,8 +496,7 @@
                     document.getElementById('tempat').value = kegiatan.tempat;
                     document.getElementById('bidang').value = kegiatan.bidang;
                     document.getElementById('penanggungJawab').value = kegiatan.pj;
-                    document.getElementById('jumlahPeserta').value = kegiatan.peserta;
-
+                    // Jumlah Peserta tidak diisi lagi
                     modalTitle.textContent = 'Edit Data Kegiatan';
                     submitBtn.textContent = 'Update Data';
                     modal.style.display = 'flex';
