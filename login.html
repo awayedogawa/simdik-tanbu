@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - SIMDIK-TANBU</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #4F46E5;
+            --primary-hover: #4338CA;
+            --gray-100: #F3F4F6;
+            --gray-200: #E5E7EB;
+            --gray-500: #6B7280;
+            --gray-700: #374151;
+            --gray-900: #111827;
+            --danger-color: #FEE2E2;
+            --danger-text: #991B1B;
+            --background-color: #F9FAFB;
+            --card-background: #FFFFFF;
+            --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--background-color);
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 2rem;
+            box-sizing: border-box;
+        }
+        .login-container {
+            width: 100%;
+            max-width: 400px;
+        }
+        .hero-logo {
+            width: 64px;
+            height: 76px;
+            margin: 0 auto 1.5rem auto;
+        }
+        .login-card {
+            background-color: var(--card-background);
+            padding: 32px;
+            border-radius: 8px;
+            box-shadow: var(--shadow-md);
+        }
+        h1 {
+            text-align: center;
+            color: var(--gray-900);
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-top: 0;
+            margin-bottom: 24px;
+        }
+        .form-group { margin-bottom: 20px; }
+        .form-group label {
+            display: block; margin-bottom: 8px; font-weight: 500;
+            font-size: 14px; color: var(--gray-700);
+        }
+        .form-group input {
+            width: 100%; padding: 10px 12px; box-sizing: border-box;
+            border: 1px solid var(--gray-200); border-radius: 6px;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+        .form-group input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.2);
+        }
+        .primary-button {
+            background-color: var(--primary-color);
+            color: white; border: none; padding: 12px 20px;
+            font-size: 14px; font-weight: 500; border-radius: 6px;
+            cursor: pointer; width: 100%;
+            transition: background-color 0.2s ease;
+        }
+        .primary-button:hover {
+            background-color: var(--primary-hover);
+        }
+        .error-message {
+            background-color: var(--danger-color);
+            color: var(--danger-text);
+            padding: 12px;
+            border-radius: 6px;
+            font-size: 14px;
+            margin-top: 20px;
+            text-align: center;
+            display: none; /* Hidden by default */
+        }
+        .login-toggle {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 24px;
+            background-color: var(--gray-100);
+            border-radius: 6px;
+            padding: 4px;
+        }
+        .toggle-btn {
+            flex: 1;
+            padding: 8px 12px;
+            border: none;
+            background-color: transparent;
+            cursor: pointer;
+            border-radius: 4px;
+            font-weight: 500;
+            transition: background-color 0.2s, color 0.2s;
+        }
+        .toggle-btn.active {
+            background-color: var(--card-background);
+            color: var(--primary-color);
+            box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="login-container">
+        <div class="hero-logo">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/7/74/Coats_of_arms_of_Tanah_Bumbu.svg/500px-Coats_of_arms_of_Tanah_Bumbu.svg.png" alt="Logo Kabupaten Tanah Bumbu" style="width: 100%; height: 100%; object-fit: contain;">
+       </div>
+        <div class="login-card">
+            <h1>Login SIMDIK-TANBU</h1>
+
+            <div class="login-toggle">
+                <button id="adminToggle" class="toggle-btn active">Admin</button>
+                <button id="pelaksanaToggle" class="toggle-btn">Pelaksana</button>
+            </div>
+
+            <!-- Form Login Admin -->
+            <form id="adminForm">
+                <div class="form-group">
+                    <!-- Label diubah dari "Password Admin" menjadi "Password" -->
+                    <label for="adminPassword">Password</label>
+                    <input type="password" id="adminPassword" required>
+                </div>
+                <button type="submit" class="primary-button">Login sebagai Admin</button>
+            </form>
+
+            <!-- Form Login Pelaksana -->
+            <form id="pelaksanaForm" style="display: none;">
+                 <div class="form-group">
+                    <label for="pelaksanaPassword">Password</label>
+                    <input type="password" id="pelaksanaPassword" required>
+                </div>
+                <button type="submit" class="primary-button">Login sebagai Pelaksana</button>
+            </form>
+
+            <div id="errorMessage" class="error-message"></div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js";
+        import { getFirestore, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyBM4RhHUdQxSEPVBGhjf4R8UGfzMmD7egU",
+            authDomain: "dashboard-kegiatan-saya.firebaseapp.com",
+            projectId: "dashboard-kegiatan-saya",
+            storageBucket: "dashboard-kegiatan-saya.appspot.com",
+            messagingSenderId: "1078549240220",
+            appId: "1:1078549240220:web:7d372e7b50b6f9545a9059"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        // Password Admin diubah menjadi "1986"
+        const ADMIN_PASSWORD = "1986"; 
+
+        const adminToggle = document.getElementById('adminToggle');
+        const pelaksanaToggle = document.getElementById('pelaksanaToggle');
+        const adminForm = document.getElementById('adminForm');
+        const pelaksanaForm = document.getElementById('pelaksanaForm');
+        const errorMessage = document.getElementById('errorMessage');
+
+        adminToggle.addEventListener('click', () => {
+            adminToggle.classList.add('active');
+            pelaksanaToggle.classList.remove('active');
+            adminForm.style.display = 'block';
+            pelaksanaForm.style.display = 'none';
+        });
+
+        pelaksanaToggle.addEventListener('click', () => {
+            pelaksanaToggle.classList.add('active');
+            adminToggle.classList.remove('active');
+            pelaksanaForm.style.display = 'block';
+            adminForm.style.display = 'none';
+        });
+
+        adminForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const password = document.getElementById('adminPassword').value;
+            
+            if (password === ADMIN_PASSWORD) {
+                sessionStorage.setItem('userRole', 'admin');
+                sessionStorage.setItem('userName', 'Admin Utama');
+                window.location.href = 'index.html';
+            } else {
+                showError('Password Admin salah.');
+            }
+        });
+
+        pelaksanaForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const nip = document.getElementById('pelaksanaPassword').value;
+
+            if (!nip) {
+                showError('Password tidak boleh kosong.');
+                return;
+            }
+
+            try {
+                const pelaksanaRef = collection(db, "pelaksana");
+                const q = query(pelaksanaRef, where("nip", "==", nip));
+                const querySnapshot = await getDocs(q);
+
+                if (!querySnapshot.empty) {
+                    const pelaksanaDoc = querySnapshot.docs[0];
+                    const pelaksanaData = pelaksanaDoc.data();
+                    
+                    sessionStorage.setItem('userRole', 'pelaksana');
+                    sessionStorage.setItem('userName', pelaksanaData.nama);
+                    
+                    window.location.href = 'index.html';
+                } else {
+                    showError('Password (NIP/NIK) tidak terdaftar.');
+                }
+            } catch (error) {
+                console.error("Error saat login pelaksana: ", error);
+                showError('Terjadi kesalahan. Silakan coba lagi.');
+            }
+        });
+        
+        function showError(message) {
+            errorMessage.textContent = message;
+            errorMessage.style.display = 'block';
+        }
+
+    </script>
+</body>
+</html>
+
