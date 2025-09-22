@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard Data Pegawai</title>
+    <title>Dashboard Pemantauan Kegiatan</title>
     <style>
         /* Gaya Dasar untuk Halaman */
         body {
@@ -16,7 +16,7 @@
 
         /* Kontainer Utama Dashboard */
         .dashboard-container {
-            max-width: 1000px;
+            max-width: 1200px;
             margin: 0 auto;
             background-color: #ffffff;
             padding: 2rem;
@@ -40,7 +40,7 @@
 
         /* Gaya untuk Tombol Utama */
         .primary-button {
-            background-color: #3498db;
+            background-color: #27ae60;
             color: white;
             border: none;
             padding: 12px 24px;
@@ -51,7 +51,7 @@
         }
 
         .primary-button:hover {
-            background-color: #2980b9;
+            background-color: #229954;
         }
         
         /* Gaya untuk Tabel */
@@ -65,6 +65,7 @@
             border: 1px solid #ddd;
             padding: 12px;
             text-align: left;
+            vertical-align: middle;
         }
         
         .data-table th {
@@ -77,6 +78,20 @@
             padding: 20px;
             color: #777;
         }
+        
+        /* Gaya untuk Status Badge */
+        .status-badge {
+            padding: 5px 10px;
+            border-radius: 15px;
+            color: white;
+            font-size: 12px;
+            font-weight: bold;
+            text-align: center;
+        }
+        .status-belum { background-color: #f39c12; } /* Orange */
+        .status-berlangsung { background-color: #3498db; } /* Blue */
+        .status-selesai { background-color: #2ecc71; } /* Green */
+
 
         /* Gaya untuk Modal (Pop-up) */
         .modal {
@@ -93,11 +108,11 @@
 
         .modal-content {
             background-color: #fefefe;
-            margin: 10% auto;
-            padding: 20px;
+            margin: 5% auto;
+            padding: 25px;
             border-radius: 8px;
             width: 90%;
-            max-width: 500px;
+            max-width: 600px;
             position: relative;
             animation: fadeIn 0.3s;
         }
@@ -128,12 +143,19 @@
             font-weight: 600;
         }
         
-        .form-group input {
+        .form-group input, .form-group select {
             width: 100%;
             padding: 10px;
             box-sizing: border-box;
             border: 1px solid #ccc;
             border-radius: 4px;
+        }
+        .form-row {
+            display: flex;
+            gap: 15px;
+        }
+        .form-row .form-group {
+            flex: 1;
         }
     </style>
 </head>
@@ -141,27 +163,30 @@
 
     <div class="dashboard-container">
         <header>
-            <h1>Data Pegawai</h1>
-            <button id="tambahDataBtn" class="primary-button">Tambah Data Baru</button>
+            <h1>Data Kegiatan</h1>
+            <button id="tambahDataBtn" class="primary-button">Input Kegiatan</button>
         </header>
         
         <main>
             <table class="data-table">
                 <thead>
                     <tr>
-                        <th>Nama</th>
-                        <th>NIP</th>
-                        <th>Jabatan</th>
-                        <th>Unit Kerja</th>
-                        <th>Kecamatan</th>
+                        <th>NO</th>
+                        <th>KEGIATAN</th>
+                        <th>TANGGAL PELAKSANAAN</th>
+                        <th>TEMPAT</th>
+                        <th>BIDANG PELAKSANA</th>
+                        <th>PENANGGUNG JAWAB</th>
+                        <th>JUMLAH PESERTA</th>
+                        <th>STATUS</th>
                     </tr>
                 </thead>
-                <tbody id="pegawaiTableBody">
+                <tbody id="kegiatanTableBody">
                     <!-- Data akan dimasukkan di sini oleh JavaScript -->
                 </tbody>
             </table>
             <div id="emptyState" class="empty-state">
-                <p>Belum ada data. Silakan klik "Tambah Data Baru".</p>
+                <p>Belum ada data. Silakan klik "Input Kegiatan".</p>
             </div>
         </main>
     </div>
@@ -170,27 +195,37 @@
     <div id="dataModal" class="modal">
         <div class="modal-content">
             <span class="close-button">&times;</span>
-            <h2>Input Data Pegawai</h2>
-            <form id="pegawaiForm">
+            <h2>Input Data Kegiatan</h2>
+            <form id="kegiatanForm">
                 <div class="form-group">
-                    <label for="nama">Nama:</label>
-                    <input type="text" id="nama" name="nama" required>
+                    <label for="namaKegiatan">Nama Kegiatan:</label>
+                    <input type="text" id="namaKegiatan" required>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="tanggalMulai">Tanggal Mulai:</label>
+                        <input type="date" id="tanggalMulai" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="tanggalBerakhir">Tanggal Berakhir:</label>
+                        <input type="date" id="tanggalBerakhir" required>
+                    </div>
                 </div>
                 <div class="form-group">
-                    <label for="nip">NIP:</label>
-                    <input type="text" id="nip" name="nip" required>
+                    <label for="tempat">Tempat Kegiatan:</label>
+                    <input type="text" id="tempat" required>
                 </div>
                 <div class="form-group">
-                    <label for="jabatan">Jabatan:</label>
-                    <input type="text" id="jabatan" name="jabatan" required>
+                    <label for="bidang">Bidang Pelaksana:</label>
+                    <input type="text" id="bidang" required>
+                </div>
+                 <div class="form-group">
+                    <label for="penanggungJawab">Penanggung Jawab:</label>
+                    <input type="text" id="penanggungJawab" required>
                 </div>
                 <div class="form-group">
-                    <label for="unitKerja">Unit Kerja:</label>
-                    <input type="text" id="unitKerja" name="unitKerja" required>
-                </div>
-                <div class="form-group">
-                    <label for="kecamatan">Kecamatan:</label>
-                    <input type="text" id="kecamatan" name="kecamatan" required>
+                    <label for="jumlahPeserta">Jumlah Peserta:</label>
+                    <input type="number" id="jumlahPeserta" min="0" required>
                 </div>
                 <button type="submit" class="primary-button">Simpan Data</button>
             </form>
@@ -200,26 +235,17 @@
     <script>
         // --- LOGIKA JAVASCRIPT ---
 
-        // Mengambil elemen-elemen HTML
         const modal = document.getElementById('dataModal');
         const openBtn = document.getElementById('tambahDataBtn');
         const closeBtn = document.querySelector('.close-button');
-        const form = document.getElementById('pegawaiForm');
-        const tableBody = document.getElementById('pegawaiTableBody');
+        const form = document.getElementById('kegiatanForm');
+        const tableBody = document.getElementById('kegiatanTableBody');
         const emptyState = document.getElementById('emptyState');
 
-        // Variabel untuk menyimpan data sementara di memori browser
-        let dataPegawai = [];
+        let dataKegiatan = [];
 
-        // Fungsi untuk membuka modal
-        openBtn.onclick = () => {
-            modal.style.display = 'block';
-        }
-
-        // Fungsi untuk menutup modal
-        const closeModal = () => {
-            modal.style.display = 'none';
-        }
+        openBtn.onclick = () => { modal.style.display = 'block'; }
+        const closeModal = () => { modal.style.display = 'none'; }
         closeBtn.onclick = closeModal;
         window.onclick = (event) => {
             if (event.target == modal) {
@@ -227,67 +253,81 @@
             }
         }
         
-        // Fungsi untuk me-render atau menampilkan ulang data di tabel
+        // Fungsi untuk format tanggal menjadi DD/MM/YYYY
+        const formatDate = (dateString) => {
+            const date = new Date(dateString);
+            const day = String(date.getDate()).padStart(2, '0');
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const year = date.getFullYear();
+            return `${day}/${month}/${year}`;
+        }
+        
+        // Fungsi untuk menentukan status kegiatan
+        const getStatus = (tanggalMulai, tanggalBerakhir) => {
+            const today = new Date();
+            const startDate = new Date(tanggalMulai);
+            const endDate = new Date(tanggalBerakhir);
+
+            // Set waktu ke 00:00:00 untuk perbandingan tanggal yang akurat
+            today.setHours(0, 0, 0, 0);
+            startDate.setHours(0, 0, 0, 0);
+            endDate.setHours(0, 0, 0, 0);
+
+            if (today < startDate) {
+                return '<span class="status-badge status-belum">Belum</span>';
+            } else if (today >= startDate && today <= endDate) {
+                return '<span class="status-badge status-berlangsung">Sedang Berlangsung</span>';
+            } else {
+                return '<span class="status-badge status-selesai">Selesai</span>';
+            }
+        }
+
         const renderTable = () => {
-            // Kosongkan isi tabel terlebih dahulu
             tableBody.innerHTML = '';
             
-            // Cek apakah ada data
-            if (dataPegawai.length === 0) {
+            if (dataKegiatan.length === 0) {
                 emptyState.style.display = 'block';
             } else {
                 emptyState.style.display = 'none';
-                // Loop setiap data pegawai dan buat baris baru di tabel
-                dataPegawai.forEach(pegawai => {
+                dataKegiatan.forEach((kegiatan, index) => {
                     const row = tableBody.insertRow();
+                    const tanggalPelaksanaan = `${formatDate(kegiatan.tanggalMulai)} - ${formatDate(kegiatan.tanggalBerakhir)}`;
+                    
                     row.innerHTML = `
-                        <td>${pegawai.nama}</td>
-                        <td>${pegawai.nip}</td>
-                        <td>${pegawai.jabatan}</td>
-                        <td>${pegawai.unitKerja}</td>
-                        <td>${pegawai.kecamatan}</td>
+                        <td>${index + 1}</td>
+                        <td>${kegiatan.nama}</td>
+                        <td>${tanggalPelaksanaan}</td>
+                        <td>${kegiatan.tempat}</td>
+                        <td>${kegiatan.bidang}</td>
+                        <td>${kegiatan.pj}</td>
+                        <td>${kegiatan.peserta}</td>
+                        <td>${getStatus(kegiatan.tanggalMulai, kegiatan.tanggalBerakhir)}</td>
                     `;
                 });
             }
         }
 
-        // Fungsi saat form di-submit
         form.addEventListener('submit', (event) => {
-            event.preventDefault(); // Mencegah refresh halaman
+            event.preventDefault();
 
-            // Ambil nilai NIP dari form
-            const nipInput = document.getElementById('nip').value;
-
-            // Cek apakah NIP sudah ada di dalam array dataPegawai
-            const isNipExist = dataPegawai.some(pegawai => pegawai.nip === nipInput);
-
-            // Jika NIP sudah ada, tampilkan peringatan dan hentikan proses
-            if (isNipExist) {
-                alert('NIP sudah terdaftar. Data gagal disimpan.');
-                return; // Hentikan eksekusi fungsi
-            }
-
-            // Jika NIP unik, lanjutkan proses penyimpanan
-            const pegawaiBaru = {
-                nama: document.getElementById('nama').value,
-                nip: nipInput, // Gunakan NIP yang sudah diambil
-                jabatan: document.getElementById('jabatan').value,
-                unitKerja: document.getElementById('unitKerja').value,
-                kecamatan: document.getElementById('kecamatan').value
+            const kegiatanBaru = {
+                nama: document.getElementById('namaKegiatan').value,
+                tanggalMulai: document.getElementById('tanggalMulai').value,
+                tanggalBerakhir: document.getElementById('tanggalBerakhir').value,
+                tempat: document.getElementById('tempat').value,
+                bidang: document.getElementById('bidang').value,
+                pj: document.getElementById('penanggungJawab').value,
+                peserta: document.getElementById('jumlahPeserta').value
             };
             
-            // Menambahkan data baru ke array dataPegawai
-            dataPegawai.push(pegawaiBaru);
+            dataKegiatan.push(kegiatanBaru);
             
-            // Merender ulang tabel dengan data terbaru
             renderTable();
             
-            // Menutup modal dan mereset form
             closeModal();
             form.reset();
         });
         
-        // Panggil renderTable saat halaman pertama kali dimuat
         renderTable();
 
     </script>
