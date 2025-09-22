@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard Pemantauan Kegiatan</title>
+    <title>SIMDIK-TANBU Dashboard</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -32,15 +32,47 @@
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             background-color: var(--background-color);
             margin: 0;
-            padding: 2rem;
             color: var(--gray-700);
             -webkit-font-smoothing: antialiased;
             -moz-osx-font-smoothing: grayscale;
         }
-
+        
+        /* HERO SECTION BARU */
+        .hero {
+            text-align: center;
+            padding: 3rem 1.5rem;
+            background-color: var(--card-background);
+            border-bottom: 1px solid var(--gray-200);
+        }
+        .hero-logo {
+            /* Ukuran disesuaikan untuk logo gambar */
+            width: 80px;
+            height: 96px;
+            margin: 0 auto 1rem auto;
+        }
+        .hero h1 {
+            color: var(--gray-900);
+            font-size: 2.25rem; /* 36px */
+            font-weight: 700;
+            margin: 0;
+            letter-spacing: -0.025em;
+        }
+        .hero p {
+            margin: 0.5rem 0 0 0;
+            color: var(--gray-500);
+            font-size: 1.125rem; /* 18px */
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        .hero .subtitle {
+             font-size: 1rem; /* 16px */
+        }
+        
         .dashboard-container {
             max-width: 1280px;
             margin: 0 auto;
+            padding: 2rem;
         }
 
         header {
@@ -50,11 +82,11 @@
             margin-bottom: 2rem;
         }
 
-        header h1 {
+        header h2 { /* Diubah dari h1 menjadi h2 */
             color: var(--gray-900);
             margin: 0;
-            font-size: 1.875rem;
-            font-weight: 700;
+            font-size: 1.5rem; /* 24px */
+            font-weight: 600;
         }
 
         .primary-button {
@@ -230,9 +262,18 @@
 </head>
 <body>
 
+    <div class="hero">
+        <div class="hero-logo">
+             <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/7/74/Coats_of_arms_of_Tanah_Bumbu.svg/500px-Coats_of_arms_of_Tanah_Bumbu.svg.png" alt="Logo Kabupaten Tanah Bumbu" style="width: 100%; height: 100%; object-fit: contain;">
+        </div>
+        <h1>SIMDIK-TANBU</h1>
+        <p>(Sistem Informasi Manajemen Dinas Pendidikan)</p>
+        <p class="subtitle">Kabupaten Tanah Bumbu</p>
+    </div>
+
     <div class="dashboard-container">
         <header>
-            <h1>Dashboard Kegiatan</h1>
+            <h2>Manajemen Kegiatan</h2>
             <button id="tambahDataBtn" class="primary-button">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" width="20" height="20">
                     <path d="M10.75 4.75a.75.75 0 00-1.5 0v4.5h-4.5a.75.75 0 000 1.5h4.5v4.5a.75.75 0 001.5 0v-4.5h4.5a.75.75 0 000-1.5h-4.5v-4.5z" />
@@ -370,7 +411,6 @@
             return '<span class="status-badge status-selesai">Selesai</span>';
         }
         
-        // --- LOGIKA UTAMA DIPERBARUI DI SINI ---
         onSnapshot(kegiatanCollection, async (snapshot) => {
             const allDocs = snapshot.docs;
             tableBody.innerHTML = '';
@@ -380,7 +420,6 @@
                 emptyState.style.display = 'block';
                 document.querySelector('.data-table').style.display = 'none';
             } else {
-                // Membuat array promise untuk mengambil jumlah peserta untuk setiap kegiatan
                 const kegiatanWithCountsPromises = allDocs.map(async (doc) => {
                     const kegiatan = doc.data();
                     const docId = doc.id;
@@ -390,11 +429,10 @@
                     return {
                         id: docId,
                         data: kegiatan,
-                        participantCount: pesertaSnapshot.size // Menghitung jumlah dokumen peserta
+                        participantCount: pesertaSnapshot.size
                     };
                 });
 
-                // Menunggu semua promise selesai
                 const kegiatanWithCounts = await Promise.all(kegiatanWithCountsPromises);
 
                 emptyState.style.display = 'none';
@@ -403,7 +441,7 @@
                 kegiatanWithCounts.forEach((kegiatanItem, index) => {
                     const kegiatan = kegiatanItem.data;
                     const docId = kegiatanItem.id;
-                    const participantCount = kegiatanItem.participantCount; // Menggunakan jumlah dinamis
+                    const participantCount = kegiatanItem.participantCount;
                     const tanggalPelaksanaan = `${formatDate(kegiatan.tanggalMulai)} - ${formatDate(kegiatan.tanggalBerakhir)}`;
                     const row = tableBody.insertRow();
                     
@@ -414,12 +452,12 @@
                         <td>${kegiatan.tempat}</td>
                         <td>${kegiatan.bidang}</td>
                         <td>${kegiatan.pj}</td>
-                        <td>${participantCount}</td> <!-- Menampilkan jumlah pendaftar aktual -->
+                        <td>${participantCount}</td>
                         <td>${getStatus(kegiatan.tanggalMulai, kegiatan.tanggalBerakhir)}</td>
                         <td>
                             <div class="action-button-group">
                                 <a href="peserta.html?id=${docId}" class="icon-button view-btn" title="Lihat Peserta">
-                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-5 h-5"><path d="M10 8a3 3 0 100-6 3 3 0 000 6zM3.465 14.493a1.23 1.23 0 00.41 1.412A9.957 9.957 0 0010 18c2.31 0 4.438-.784 6.131-2.095a1.23 1.23 0 00.41-1.412A9.99 9.99 0 0010 12.001c-2.31 0-4.438.784-6.131 2.094z" /></svg>
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-5 h-5"><path d="M10 8a3 3 0 100-6 3 3 0 000 6zM3.465 14.493a1.23 1.23 0 00.41 1.412A9.957 9.957 0 0010 18c2.31 0 4.438-.784 6.131-2.095a1.23 1.23 0 00.41-1.412A9.99 9.99 0 0010 12.001c-2.31 0-4.438.784-6.131-2.094z" /></svg>
                                 </a>
                                 <button class="icon-button link-btn" data-id="${docId}" title="Salin Link Pendaftaran">
                                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-5 h-5"><path d="M12.232 4.232a2.5 2.5 0 013.536 3.536l-1.225 1.224a.75.75 0 001.061 1.06l1.224-1.224a4 4 0 00-5.656-5.656l-3 3a4 4 0 00.225 5.865.75.75 0 00.977-1.138 2.5 2.5 0 01-.142-3.665l3-3z" /><path d="M8.603 3.799a4.49 4.49 0 014.49 4.49l-4.49 4.49a4.49 4.49 0 01-6.35 0A4.49 4.49 0 012 8.289l4.49-4.49a4.49 4.49 0 012.113-.79z" /></svg>
@@ -446,7 +484,6 @@
                 tempat: document.getElementById('tempat').value,
                 bidang: document.getElementById('bidang').value,
                 pj: document.getElementById('penanggungJawab').value,
-                // Jumlah Peserta tidak lagi disimpan di sini
             };
             const docId = kegiatanIdInput.value;
             if (docId) {
@@ -460,13 +497,12 @@
         
         tableBody.addEventListener('click', async (event) => {
             const target = event.target.closest('.icon-button');
-            if (!target && event.target.closest('a')) return; // Allow link to work
+            if (!target && event.target.closest('a')) return;
             if (!target) return;
 
             const docId = target.dataset.id;
             
             if (target.classList.contains('link-btn')) {
-                // ... (kode salin link tetap sama)
                 const link = `${window.location.origin}${window.location.pathname.replace('index.html', '')}daftar.html?id=${docId}`;
                 try {
                     await navigator.clipboard.writeText(link);
@@ -496,7 +532,6 @@
                     document.getElementById('tempat').value = kegiatan.tempat;
                     document.getElementById('bidang').value = kegiatan.bidang;
                     document.getElementById('penanggungJawab').value = kegiatan.pj;
-                    // Jumlah Peserta tidak diisi lagi
                     modalTitle.textContent = 'Edit Data Kegiatan';
                     submitBtn.textContent = 'Update Data';
                     modal.style.display = 'flex';
