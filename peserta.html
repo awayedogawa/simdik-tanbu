@@ -315,7 +315,7 @@
             doc.text(`Tempat  : ${tempatText}`, 14, 46);
             
             const tableData = currentPesertaList.map((peserta, index) => {
-                const signatureText = `${index + 1}. ....................`;
+                const signatureText = `.................... .${index + 1}`;
                 return [
                     index + 1,
                     peserta.namaLengkap,
@@ -355,7 +355,7 @@
                     if (data.cell.section === 'body' && data.column.index === 4) {
                         const rowNumber = data.row.index + 1;
                         if (rowNumber % 2 === 0) {
-                            data.cell.styles.halign = 'center';
+                            data.cell.styles.halign = 'right';
                         } else {
                             data.cell.styles.halign = 'left';
                         }
