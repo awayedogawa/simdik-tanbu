@@ -294,7 +294,6 @@
             XLSX.writeFile(workbook, `Daftar Peserta - ${currentKegiatanData.nama}.xlsx`);
         };
 
-        // --- FUNGSI PDF DIPERBARUI ---
         const generatePdf = () => {
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF({ orientation: 'landscape' });
@@ -315,32 +314,47 @@
             doc.text(`Tanggal : ${tanggalText}`, 14, 40);
             doc.text(`Tempat  : ${tempatText}`, 14, 46);
 
-            const tableData = currentPesertaList.map((peserta, index) => {
-                const signatureContent = `${index + 1}. ..........................`;
+            const tableData = [];
+            currentPesertaList.forEach((peserta, index) => {
+                const signature = `${index + 1}. ..........................`;
                 
-                // Jika nomor ganjil, buat baris baru
+                // Jika ganjil (index 0, 2, 4...)
                 if (index % 2 === 0) {
-                    const nextPeserta = currentPesertaList[index + 1];
-                    const nextSignature = nextPeserta ? `${index + 2}. ..........................` : '';
-                    return [
+                    // Buat baris baru dengan data peserta
+                    const row = [
                         index + 1,
                         peserta.namaLengkap,
                         peserta.jabatan,
                         peserta.asalInstansi,
-                        signatureContent,
-                        nextSignature
+                        signature,
+                        '' // Siapkan kolom kosong untuk tanda tangan genap
                     ];
+                    // Cek apakah ada peserta berikutnya
+                    const nextPeserta = currentPesertaList[index + 1];
+                    if (nextPeserta) {
+                         // Jika ada, isi kolom tanda tangan genap
+                        row[5] = `${index + 2}. ..........................`;
+                    }
+                    tableData.push(row);
+                } else {
+                    // Jika genap, kita perlu menampilkan datanya jika peserta sebelumnya tidak ada
+                    // Ini untuk kasus aneh, tapi lebih baik ditangani
+                    if(index > 0 && currentPesertaList[index - 1] === undefined){
+                         tableData.push(['', '', '', '', '', `${index + 1}. ..........................`]);
+                    }
                 }
-                return null; // Baris genap akan diabaikan karena sudah digabung
-            }).filter(row => row !== null); // Hapus baris kosong (genap)
-
+            });
 
             doc.autoTable({
                 head: [
-                    // Gabungkan kolom Tanda Tangan
-                    [{ content: 'No', rowSpan: 2 }, { content: 'Nama Lengkap', rowSpan: 2 }, { content: 'Jabatan', rowSpan: 2 }, { content: 'Asal Instansi', rowSpan: 2 }, { content: 'Tanda Tangan', colSpan: 2, styles: { halign: 'center' } }],
-                    // Kolom di bawah tanda tangan (kosong)
-                    ['', '', '', ''] 
+                    // Trik agar "No" tidak jadi vertikal
+                    [{ content: 'No', styles: { halign: 'center'} }, 
+                     { content: 'Nama Lengkap' }, 
+                     { content: 'Jabatan' }, 
+                     { content: 'Asal Instansi' }, 
+                     // Gabungkan kolom Tanda Tangan
+                     { content: 'Tanda Tangan', colSpan: 2, styles: { halign: 'center' } }
+                    ],
                 ],
                 body: tableData,
                 startY: 52,
@@ -349,12 +363,12 @@
                     fillColor: [41, 128, 185],
                     textColor: 255, 
                     fontStyle: 'bold',
-                    halign: 'center',
-                    valign: 'middle'
+                    valign: 'middle',
+                    halign: 'center'
                 },
                 styles: {
                     cellPadding: 3.5,
-                    fontSize: 10,
+                    fontSize: 9,
                     valign: 'middle',
                     lineWidth: 0.1,
                     lineColor: [0, 0, 0]
@@ -365,15 +379,8 @@
                     2: { cellWidth: 40 }, // Jabatan
                     3: { cellWidth: 50 }, // Instansi
                     4: { cellWidth: 'auto' }, // TTD 1
-                    5: { cellWidth: 'auto', halign: 'right' }  // TTD 2
+                    5: { cellWidth: 'auto', halign: 'left' }  // TTD 2
                 },
-                didDrawCell: (data) => {
-                    // Menghilangkan baris pemisah di header Tanda Tangan
-                    if (data.cell.section === 'head' && data.column.index >= 4) {
-                       doc.setDrawColor(255, 255, 255); // Warna putih untuk menyamarkan
-                       doc.line(data.cell.x, data.cell.y + data.cell.height, data.cell.x + data.cell.width, data.cell.y + data.cell.height);
-                    }
-                }
             });
 
             doc.save(`Daftar Hadir - ${currentKegiatanData.nama}.pdf`);
