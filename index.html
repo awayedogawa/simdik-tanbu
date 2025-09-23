@@ -125,14 +125,19 @@
             display: block; margin-bottom: 8px; font-weight: 500;
             font-size: 14px; color: var(--gray-700);
         }
-        .form-group input {
+        .form-group input, .form-group select {
             width: 100%; padding: 10px 12px; box-sizing: border-box;
             border: 1px solid var(--gray-200); border-radius: 6px;
             transition: border-color 0.2s ease, box-shadow 0.2s ease;
+            background-color: #fff;
         }
-        .form-group input:focus {
+        .form-group input:focus, .form-group select:focus {
             outline: none; border-color: var(--primary-color);
             box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.2);
+        }
+        .form-group input[readonly] {
+            background-color: var(--gray-100);
+            cursor: not-allowed;
         }
         .form-row { display: flex; gap: 20px; }
         .form-row .form-group { flex: 1; }
@@ -231,11 +236,11 @@
                 </div>
                 <div class="form-group admin-only-form">
                     <label for="bidang">Bidang Pelaksana</label>
-                    <input type="text" id="bidang">
+                    <select id="bidang"></select>
                 </div>
                  <div class="form-group admin-only-form">
                     <label for="penanggungJawab">Penanggung Jawab</label>
-                    <input type="text" id="penanggungJawab">
+                    <input type="text" id="penanggungJawab" readonly>
                 </div>
                 <button type="submit" id="submitBtn" class="primary-button" style="width: 100%; justify-content: center; padding-top: 14px; padding-bottom: 14px;">Simpan Data</button>
             </form>
@@ -278,12 +283,48 @@
         const emptyState = document.getElementById('emptyState');
         const modalTitle = document.getElementById('modalTitle');
         const kegiatanIdInput = document.getElementById('kegiatanId');
+        
+        const bidangSelect = document.getElementById('bidang');
+        const pjInput = document.getElementById('penanggungJawab');
+
+        let allPelaksana = [];
+
+        const loadPelaksanaData = async () => {
+            if (userRole !== 'admin') return;
+            const pelaksanaCollection = collection(db, "pelaksana");
+            const snapshot = await getDocs(pelaksanaCollection);
+            allPelaksana = snapshot.docs.map(doc => doc.data());
+        };
+
+        const populateBidangDropdown = (selectedBidang = '') => {
+            bidangSelect.innerHTML = '<option value="">-- Pilih Bidang --</option>';
+            const uniqueBidang = [...new Set(allPelaksana.map(p => p.bidang))];
+            uniqueBidang.forEach(bidang => {
+                const option = document.createElement('option');
+                option.value = bidang;
+                option.textContent = bidang;
+                if (bidang === selectedBidang) {
+                    option.selected = true;
+                }
+                bidangSelect.appendChild(option);
+            });
+        };
+
+        bidangSelect.addEventListener('change', () => {
+            const selectedBidang = bidangSelect.value;
+            const pelaksana = allPelaksana.find(p => p.bidang === selectedBidang);
+            pjInput.value = pelaksana ? pelaksana.nama : '';
+        });
 
         const openAddModal = () => {
             form.reset();
             kegiatanIdInput.value = '';
             modalTitle.textContent = 'Input Data Kegiatan';
             document.getElementById('submitBtn').textContent = 'Simpan Data';
+            if (userRole === 'admin') {
+                populateBidangDropdown();
+                pjInput.value = '';
+            }
             modal.style.display = 'flex';
         }
 
@@ -292,29 +333,16 @@
         closeBtn.onclick = closeModal;
         window.onclick = (event) => { if (event.target == modal) closeModal(); }
 
-        // --- FUNGSI FORMAT TANGGAL BARU ---
         const formatDateRange = (startStr, endStr) => {
             if (!startStr || !endStr) return '';
             const months = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
             const startDate = new Date(startStr);
             const endDate = new Date(endStr);
-            
-            const startDay = startDate.getUTCDate();
-            const startMonth = startDate.getUTCMonth();
-            const startYear = startDate.getUTCFullYear();
-            const endDay = endDate.getUTCDate();
-            const endMonth = endDate.getUTCMonth();
-            const endYear = endDate.getUTCFullYear();
-
-            if (startYear === endYear && startMonth === endMonth && startDay === endDay) {
-                return `${startDay} ${months[startMonth]} ${startYear}`;
-            }
-            if (startYear === endYear && startMonth === endMonth) {
-                return `${startDay} s.d. ${endDay} ${months[startMonth]} ${startYear}`;
-            }
-            if (startYear === endYear) {
-                return `${startDay} ${months[startMonth]} s.d. ${endDay} ${months[endMonth]} ${startYear}`;
-            }
+            const startDay = startDate.getUTCDate(), startMonth = startDate.getUTCMonth(), startYear = startDate.getUTCFullYear();
+            const endDay = endDate.getUTCDate(), endMonth = endDate.getUTCMonth(), endYear = endDate.getUTCFullYear();
+            if (startYear === endYear && startMonth === endMonth && startDay === endDay) return `${startDay} ${months[startMonth]} ${startYear}`;
+            if (startYear === endYear && startMonth === endMonth) return `${startDay} s.d. ${endDay} ${months[startMonth]} ${startYear}`;
+            if (startYear === endYear) return `${startDay} ${months[startMonth]} s.d. ${endDay} ${months[endMonth]} ${startYear}`;
             return `${startDay} ${months[startMonth]} ${startYear} s.d. ${endDay} ${months[endMonth]} ${endYear}`;
         };
 
@@ -364,7 +392,7 @@
                 kegiatanWithCounts.forEach((item, index) => {
                     const kegiatan = item.data;
                     const docId = item.id;
-                    const tanggalPelaksanaan = formatDateRange(kegiatan.tanggalMulai, kegiatan.tanggalBerakhir); // Menggunakan fungsi baru
+                    const tanggalPelaksanaan = formatDateRange(kegiatan.tanggalMulai, kegiatan.tanggalBerakhir);
                     const row = tableBody.insertRow();
                     
                     row.innerHTML = `
@@ -399,8 +427,8 @@
             };
 
             if (userRole === 'admin') {
-                kegiatanData.bidang = document.getElementById('bidang').value;
-                kegiatanData.pj = document.getElementById('penanggungJawab').value;
+                kegiatanData.bidang = bidangSelect.value;
+                kegiatanData.pj = pjInput.value;
             } else {
                 kegiatanData.bidang = userBidang;
                 kegiatanData.pj = userName;
@@ -464,8 +492,8 @@
                     document.getElementById('tanggalBerakhir').value = kegiatan.tanggalBerakhir;
                     document.getElementById('tempat').value = kegiatan.tempat;
                     if (userRole === 'admin') {
-                        document.getElementById('bidang').value = kegiatan.bidang;
-                        document.getElementById('penanggungJawab').value = kegiatan.pj;
+                        populateBidangDropdown(kegiatan.bidang);
+                        pjInput.value = kegiatan.pj;
                     }
                     modalTitle.textContent = 'Edit Data Kegiatan';
                     document.getElementById('submitBtn').textContent = 'Update Data';
@@ -473,6 +501,9 @@
                  }
             }
         });
+
+        // Panggil fungsi untuk memuat data pelaksana saat halaman dimuat
+        loadPelaksanaData();
     </script>
 </body>
 </html>
