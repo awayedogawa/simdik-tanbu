@@ -212,7 +212,7 @@
 
      <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js";
-        import { getFirestore, doc, getDoc, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore.js";
+        import { getFirestore, doc, getDoc, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/9.15.0/firestore.js";
 
         document.body.style.display = 'block';
         document.getElementById('userNameDisplay').textContent = `Halo, ${sessionStorage.getItem('userName')}`;
@@ -335,8 +335,6 @@
                     fontStyle: 'bold',
                     halign: 'center',
                     valign: 'middle',
-                    lineWidth: 0.1,
-                    lineColor: [0, 0, 0]
                 },
                 styles: {
                     cellPadding: 3.5,
@@ -346,11 +344,21 @@
                     lineColor: [0, 0, 0]
                 },
                 columnStyles: {
-                    0: { cellWidth: 10, halign: 'center' },
+                    0: { cellWidth: 15, halign: 'center' },
                     1: { cellWidth: 60 },
                     2: { cellWidth: 40 },
                     3: { cellWidth: 60 },
                     4: { cellWidth: 'auto' }
+                },
+                didParseCell: function(data) {
+                    if (data.cell.section === 'body' && data.column.index === 4) {
+                        const rowNumber = data.row.index + 1;
+                        if (rowNumber % 2 === 0) {
+                            data.cell.styles.halign = 'right';
+                        } else {
+                            data.cell.styles.halign = 'left';
+                        }
+                    }
                 }
             });
 
