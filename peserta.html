@@ -319,7 +319,7 @@
             projectId: "dashboard-kegiatan-saya",
             storageBucket: "dashboard-kegiatan-saya.appspot.com",
             messagingSenderId: "1078549240220",
-            appId: "1:1078549240220:web:7d372e7b50b6f"
+            appId: "1:1078549240220:web:7d372e7b50b6f9545a9059"
         };
 
         const app = initializeApp(firebaseConfig);
@@ -400,9 +400,7 @@
             doc.text(`Tempat  : ${tempatText}`, 14, 46);
             
             const tableData = currentPesertaList.map((peserta, index) => {
-                const signatureText = (index % 2 === 0)
-                    ? `${index + 1}. ....................`
-                    : `.................... .${index + 1}`;
+                const signatureText = `.................... .${index + 1}`;
                 return [ index + 1, peserta.namaLengkap, peserta.jabatan, peserta.asalInstansi, signatureText ];
             });
 
