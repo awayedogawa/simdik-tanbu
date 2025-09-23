@@ -6,20 +6,24 @@
     <title>Daftar Peserta - SIMDIK-TANBU</title>
     
     <script>
+        // Redirect to login if user is not authenticated
         if (!sessionStorage.getItem('userRole')) {
             window.location.href = 'login.html';
         }
     </script>
 
+    <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     
+    <!-- External Libraries for Excel and PDF generation -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
 
     <style>
+        /* General Styling and Variables */
         :root {
             --primary-color: #4F46E5; --primary-hover: #4338CA;
             --secondary-color: #10B981; --secondary-hover: #059669;
@@ -35,6 +39,8 @@
         }
         .container { max-width: 1280px; margin: 0 auto; }
         header { margin-bottom: 1.5rem; }
+
+        /* Header Styling */
         .header-top {
             display: flex; justify-content: space-between; align-items: flex-start;
             position: relative; padding-bottom: 1.5rem;
@@ -68,6 +74,8 @@
             gap: 0.75rem;
             flex-wrap: wrap;
         }
+
+        /* Button Styling */
         .action-button {
             background-color: var(--card-background); color: var(--gray-700);
             border: 1px solid var(--gray-200); padding: 10px 16px; font-size: 14px;
@@ -89,6 +97,8 @@
             border-color: var(--primary-hover);
             color: white;
         }
+
+        /* Main Content and Table Styling */
         main {
             background-color: var(--card-background); border-radius: 8px;
             box-shadow: var(--shadow-md); overflow: hidden;
@@ -105,6 +115,7 @@
         }
         .empty-state { text-align: center; padding: 48px; color: var(--gray-500); }
         
+        /* Modal Styling */
         .modal {
             display: none; position: fixed; z-index: 1000; left: 0; top: 0;
             width: 100%; height: 100%; overflow: auto;
@@ -189,6 +200,7 @@
         </main>
     </div>
 
+    <!-- Modal for Editing Peserta -->
     <div id="pesertaModal" class="modal">
         <div class="modal-content">
             <span class="close-button">&times;</span>
@@ -248,6 +260,7 @@
         </div>
     </div>
     
+    <!-- Modal for PDF Generation Options -->
     <div id="pdfOptionsModal" class="modal">
         <div class="modal-content">
             <span class="close-button">&times;</span>
@@ -272,12 +285,15 @@
 
 
      <script type="module">
+        // Import Firebase modules
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js";
         import { getFirestore, doc, getDoc, collection, onSnapshot, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore.js";
 
+        // Get user info from session storage
         const userRole = sessionStorage.getItem('userRole');
         const userNip = sessionStorage.getItem('userNip');
 
+        // Display body after checking auth
         document.body.style.display = 'block';
         document.getElementById('userNameDisplay').textContent = `Halo, ${sessionStorage.getItem('userName')}`;
         document.getElementById('logoutButton').addEventListener('click', () => {
@@ -285,6 +301,7 @@
             window.location.href = 'login.html';
         });
 
+        // Firebase configuration
         const firebaseConfig = {
             apiKey: "AIzaSyBM4RhHUdQxSEPVBGhjf4R8UGfzMmD7egU",
             authDomain: "dashboard-kegiatan-saya.firebaseapp.com",
@@ -294,9 +311,11 @@
             appId: "1:1078549240220:web:7d372e7b50b6f9545a9059"
         };
 
+        // Initialize Firebase
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
+        // Get DOM elements
         const headerTitle = document.getElementById('headerTitle');
         const tableBody = document.getElementById('pesertaTableBody');
         const emptyState = document.getElementById('emptyState');
@@ -304,21 +323,26 @@
         const downloadExcelBtn = document.getElementById('downloadExcelBtn');
         const generatePdfBtn = document.getElementById('generatePdfBtn');
         
+        // Modal elements for editing peserta
         const pesertaModal = document.getElementById('pesertaModal');
         const pesertaForm = document.getElementById('pesertaForm');
         const pesertaIdInput = document.getElementById('pesertaId');
         
+        // Modal elements for PDF options
         const pdfOptionsModal = document.getElementById('pdfOptionsModal');
         const confirmGeneratePdfBtn = document.getElementById('confirmGeneratePdfBtn');
         const closeModalBtn = pdfOptionsModal.querySelector('.close-button');
 
+        // Global state variables
         let currentPesertaList = [];
         let currentKegiatanData = {};
         let canManage = false;
 
+        // Get kegiatan ID from URL
         const getKegiatanId = () => new URLSearchParams(window.location.search).get('id');
         const kegiatanId = getKegiatanId();
 
+        // Helper function to format date ranges
         const formatDateRange = (startStr, endStr) => {
             if (!startStr || !endStr) return '';
             const months = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
@@ -338,10 +362,11 @@
             return `${startDay} ${months[startMonth]} ${startYear} s.d. ${endDay} ${months[endMonth]} ${endYear}`;
         };
         
+        // Function to download data as an Excel file
         const downloadExcel = () => {
              if (currentPesertaList.length === 0) {
-                alert("Tidak ada data peserta untuk diunduh.");
-                return;
+                 alert("Tidak ada data peserta untuk diunduh.");
+                 return;
             }
             const dataToExport = currentPesertaList.map((peserta, index) => ({
                 'No': index + 1, 'Nama Lengkap': peserta.namaLengkap, 'NIP': peserta.nip || '-',
@@ -355,6 +380,7 @@
             XLSX.writeFile(workbook, `Daftar Peserta - ${currentKegiatanData.nama}.xlsx`);
         };
 
+        // Function to generate a PDF attendance list
         const generatePdf = () => {
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF({ orientation: 'landscape' });
@@ -407,6 +433,7 @@
             pdfOptionsModal.style.display = 'none';
         };
 
+        // Main function to load kegiatan and peserta data
         const loadPeserta = async () => {
             if (!kegiatanId) {
                 headerTitle.innerHTML = 'Kegiatan tidak valid <small>Error</small>';
@@ -422,6 +449,7 @@
                 currentKegiatanData = kegiatanDocSnap.data();
                 headerTitle.innerHTML = `${currentKegiatanData.nama || ''} <small>Daftar Peserta</small>`;
                 const createdBy = currentKegiatanData.createdBy || null;
+                // Determine if the current user can manage participants
                 canManage = userRole === 'admin' || createdBy === userNip;
                 listenToPeserta();
             } else {
@@ -431,6 +459,7 @@
             }
         };
 
+        // Listen for real-time updates on the peserta subcollection
         const listenToPeserta = () => {
             const pesertaCollectionRef = collection(db, "kegiatan", kegiatanId, "peserta");
             onSnapshot(pesertaCollectionRef, (snapshot) => {
@@ -469,6 +498,7 @@
             });
         };
         
+        // Event listener for table actions (edit, delete)
         tableBody.addEventListener('click', async (e) => {
             const target = e.target.closest('.icon-button');
             if (!target) return;
@@ -476,6 +506,7 @@
             const pesertaId = target.dataset.id;
             const pesertaRef = doc(db, "kegiatan", kegiatanId, "peserta", pesertaId);
 
+            // Handle delete action
             if (target.classList.contains('delete-btn')) {
                 const nama = target.dataset.nama;
                 if (confirm(`Apakah Anda yakin ingin menghapus peserta "${nama}"?`)) {
@@ -483,6 +514,7 @@
                 }
             }
 
+            // Handle edit action
             if (target.classList.contains('edit-btn')) {
                 const docSnap = await getDoc(pesertaRef);
                 if (docSnap.exists()) {
@@ -500,6 +532,7 @@
             }
         });
 
+        // Event listener for submitting the edit form
         pesertaForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             const pesertaId = pesertaIdInput.value;
@@ -517,15 +550,17 @@
             pesertaModal.style.display = 'none';
         });
         
+        // Event listeners for closing modals
         pesertaModal.querySelector('.close-button').onclick = () => pesertaModal.style.display = 'none';
         pdfOptionsModal.querySelector('.close-button').onclick = () => pdfOptionsModal.style.display = 'none';
         
+        // Event listeners for main action buttons
         downloadExcelBtn.addEventListener('click', downloadExcel);
         generatePdfBtn.addEventListener('click', () => pdfOptionsModal.style.display = 'block');
         confirmGeneratePdfBtn.addEventListener('click', generatePdf);
 
+        // Initial load
         loadPeserta();
     </script>
 </body>
 </html>
-
