@@ -15,7 +15,6 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     
-    <!-- Library untuk Ekspor Excel & PDF -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
@@ -228,7 +227,6 @@
 
         const getKegiatanId = () => new URLSearchParams(window.location.search).get('id');
 
-        // --- FUNGSI FORMAT TANGGAL BARU ---
         const formatDateRange = (startStr, endStr) => {
             if (!startStr || !endStr) return '';
             const months = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
@@ -277,37 +275,74 @@
 
         const generatePdf = () => {
             const { jsPDF } = window.jspdf;
-            const doc = new jsPDF();
+            const doc = new jsPDF({ orientation: 'landscape' });
 
             const kosongkanTanggal = document.getElementById('kosongkanTanggal').checked;
             const kosongkanTempat = document.getElementById('kosongkanTempat').checked;
 
             doc.setFontSize(16);
-            doc.text("DAFTAR HADIR", doc.internal.pageSize.getWidth() / 2, 20, { align: 'center' });
+            doc.text("DAFTAR HADIR PESERTA", doc.internal.pageSize.getWidth() / 2, 20, { align: 'center' });
             
             doc.setFontSize(12);
-            doc.text(currentKegiatanData.nama, doc.internal.pageSize.getWidth() / 2, 28, { align: 'center' });
+            doc.text(currentKegiatanData.nama.toUpperCase(), doc.internal.pageSize.getWidth() / 2, 28, { align: 'center' });
             
             doc.setFontSize(10);
             const tanggalText = kosongkanTanggal ? ".................................................." : formatDateRange(currentKegiatanData.tanggalMulai, currentKegiatanData.tanggalBerakhir);
             const tempatText = kosongkanTempat ? ".................................................." : currentKegiatanData.tempat;
 
-            doc.text(`Tanggal Pelaksanaan : ${tanggalText}`, 14, 40);
-            doc.text(`Tempat Pelaksanaan  : ${tempatText}`, 14, 46);
+            doc.text(`Tanggal : ${tanggalText}`, 14, 40);
+            doc.text(`Tempat  : ${tempatText}`, 14, 46);
 
-            const tableData = currentPesertaList.map((peserta, index) => [
-                index + 1,
-                `${peserta.namaLengkap}\nNIP. ${peserta.nip || '-'}`,
-                peserta.asalInstansi,
-                ''
-            ]);
+            const tableData = currentPesertaList.map((peserta, index) => {
+                const signature = `${index + 1}. ..........................`;
+                // Jika nomor ganjil, masukkan ke kolom pertama. Jika genap, ke kolom kedua.
+                return (index % 2 === 0) 
+                    ? [ index + 1, peserta.namaLengkap, peserta.jabatan, peserta.asalInstansi, signature ]
+                    : [ signature ]; // Hanya isi kolom tanda tangan kedua
+            });
+            
+            // Logika untuk menggabungkan baris tanda tangan
+            const finalTableData = [];
+            for(let i = 0; i < tableData.length; i++) {
+                if (i % 2 === 0) { // Baris ganjil
+                    if (tableData[i+1]) { // Jika ada baris genap berikutnya
+                        tableData[i].push(tableData[i+1][0]); // Gabungkan
+                    } else {
+                        tableData[i].push(''); // Jika tidak ada, kosongkan
+                    }
+                    finalTableData.push(tableData[i]);
+                }
+            }
 
             doc.autoTable({
-                head: [['No', 'Nama Lengkap / NIP', 'Asal Instansi', 'Tanda Tangan']],
-                body: tableData,
+                head: [['No', 'Nama Lengkap', 'Jabatan', 'Asal Instansi', 'Tanda Tangan', 'Tanda Tangan']],
+                body: finalTableData,
                 startY: 52,
                 theme: 'grid',
-                headStyles: { fillColor: [22, 160, 133] }
+                headStyles: { 
+                    fillColor: [41, 128, 185], // Warna biru tua
+                    textColor: 255, 
+                    fontStyle: 'bold'
+                },
+                styles: {
+                    cellPadding: 3.5,
+                    fontSize: 10,
+                    valign: 'middle'
+                },
+                columnStyles: {
+                    0: { cellWidth: 10 }, // No
+                    1: { cellWidth: 50 }, // Nama
+                    2: { cellWidth: 40 }, // Jabatan
+                    3: { cellWidth: 50 }, // Instansi
+                    4: { cellWidth: 'auto' }, // TTD 1
+                    5: { cellWidth: 'auto' }  // TTD 2
+                },
+                didParseCell: function (data) {
+                    // Membuat nomor tanda tangan di kolom genap menjadi rata kanan
+                    if (data.column.index === 5 && data.cell.section === 'body') {
+                        data.cell.styles.halign = 'right';
+                    }
+                }
             });
 
             doc.save(`Daftar Hadir - ${currentKegiatanData.nama}.pdf`);
