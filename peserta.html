@@ -148,6 +148,38 @@
             border-radius: 6px; cursor: pointer; transition: background-color 0.2s ease;
             display: inline-flex; align-items: center; gap: 8px;
         }
+        
+        /* Styling for action buttons in table */
+        .action-button-group {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem; /* 8px */
+        }
+        .icon-button {
+            background-color: transparent;
+            border: none;
+            padding: 4px;
+            cursor: pointer;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: background-color 0.2s ease, color 0.2s ease;
+            color: var(--gray-500);
+        }
+        .icon-button svg {
+            width: 20px;
+            height: 20px;
+        }
+        .icon-button:hover {
+            background-color: var(--gray-100);
+        }
+        .icon-button.edit-btn:hover {
+            color: var(--primary-color);
+        }
+        .icon-button.delete-btn:hover {
+            color: #EF4444; /* red-500 */
+        }
     </style>
 </head>
 <body style="display: none;">
@@ -564,3 +596,4 @@
     </script>
 </body>
 </html>
+
