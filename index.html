@@ -292,14 +292,31 @@
         closeBtn.onclick = closeModal;
         window.onclick = (event) => { if (event.target == modal) closeModal(); }
 
-        const formatDate = (dateString) => {
-            if (!dateString) return '';
-            const date = new Date(dateString);
-            const day = String(date.getUTCDate()).padStart(2, '0');
-            const month = String(date.getUTCMonth() + 1).padStart(2, '0');
-            const year = date.getUTCFullYear();
-            return `${day}/${month}/${year}`;
-        }
+        // --- FUNGSI FORMAT TANGGAL BARU ---
+        const formatDateRange = (startStr, endStr) => {
+            if (!startStr || !endStr) return '';
+            const months = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
+            const startDate = new Date(startStr);
+            const endDate = new Date(endStr);
+            
+            const startDay = startDate.getUTCDate();
+            const startMonth = startDate.getUTCMonth();
+            const startYear = startDate.getUTCFullYear();
+            const endDay = endDate.getUTCDate();
+            const endMonth = endDate.getUTCMonth();
+            const endYear = endDate.getUTCFullYear();
+
+            if (startYear === endYear && startMonth === endMonth && startDay === endDay) {
+                return `${startDay} ${months[startMonth]} ${startYear}`;
+            }
+            if (startYear === endYear && startMonth === endMonth) {
+                return `${startDay} s.d. ${endDay} ${months[startMonth]} ${startYear}`;
+            }
+            if (startYear === endYear) {
+                return `${startDay} ${months[startMonth]} s.d. ${endDay} ${months[endMonth]} ${startYear}`;
+            }
+            return `${startDay} ${months[startMonth]} ${startYear} s.d. ${endDay} ${months[endMonth]} ${endYear}`;
+        };
 
         const getStatus = (tanggalMulai, tanggalBerakhir) => {
             const today = new Date();
@@ -347,7 +364,7 @@
                 kegiatanWithCounts.forEach((item, index) => {
                     const kegiatan = item.data;
                     const docId = item.id;
-                    const tanggalPelaksanaan = `${formatDate(kegiatan.tanggalMulai)} - ${formatDate(kegiatan.tanggalBerakhir)}`;
+                    const tanggalPelaksanaan = formatDateRange(kegiatan.tanggalMulai, kegiatan.tanggalBerakhir); // Menggunakan fungsi baru
                     const row = tableBody.insertRow();
                     
                     row.innerHTML = `
