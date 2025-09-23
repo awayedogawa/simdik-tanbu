@@ -212,7 +212,6 @@
 
      <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js";
-        // --- PERBAIKAN DI SINI ---
         import { getFirestore, doc, getDoc, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore.js";
 
         document.body.style.display = 'block';
@@ -316,12 +315,15 @@
             doc.text(`Tempat  : ${tempatText}`, 14, 46);
             
             const tableData = currentPesertaList.map((peserta, index) => {
+                const signature = (index % 2 === 0)
+                    ? `${index + 1}. ....................`
+                    : `.................... .${index + 1}`;
                 return [
                     index + 1,
                     peserta.namaLengkap,
                     peserta.jabatan,
                     peserta.asalInstansi,
-                    `${index + 1}. ....................`
+                    signature
                 ];
             });
 
