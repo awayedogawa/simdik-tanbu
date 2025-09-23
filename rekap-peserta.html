@@ -6,7 +6,6 @@
     <title>Rekapitulasi Peserta - SIMDIK-TANBU</title>
     
     <script>
-        // Hanya Admin yang bisa mengakses halaman ini
         if (sessionStorage.getItem('userRole') !== 'admin') {
             window.location.href = 'login.html';
         }
@@ -133,9 +132,9 @@
                             <th>Nama Kegiatan</th>
                             <th>Nama Lengkap</th>
                             <th>NIP</th>
+                            <th>Jabatan</th>
                             <th>Asal Instansi/Sekolah</th>
                             <th>Kecamatan</th>
-                            <th>Jabatan</th>
                         </tr>
                     </thead>
                     <tbody id="pesertaTableBody"></tbody>
@@ -193,7 +192,7 @@
                 });
 
                 const results = await Promise.all(promises);
-                allPeserta = results.flat(); // Menggabungkan semua array peserta menjadi satu
+                allPeserta = results.flat();
 
                 renderTable();
 
@@ -219,9 +218,9 @@
                         <td>${peserta.namaKegiatan || ''}</td>
                         <td>${peserta.namaLengkap || ''}</td>
                         <td>${peserta.nip || '-'}</td>
+                        <td>${peserta.jabatan || ''}</td>
                         <td>${peserta.asalInstansi || ''}</td>
                         <td>${peserta.kecamatan || ''}</td>
-                        <td>${peserta.jabatan || ''}</td>
                     `;
                 });
             }
@@ -237,10 +236,10 @@
                 'Nama Kegiatan': item.namaKegiatan,
                 'Nama Lengkap': item.namaLengkap,
                 'NIP': item.nip || '-',
+                'Jabatan': item.jabatan,
                 'Asal Instansi/Sekolah': item.asalInstansi,
                 'NPSN': item.npsn || '-',
                 'Kecamatan': item.kecamatan,
-                'Jabatan': item.jabatan,
                 'No. Telepon/WA': item.nomorTelepon
             }));
 
@@ -256,3 +255,4 @@
     </script>
 </body>
 </html>
+
