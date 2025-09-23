@@ -86,7 +86,20 @@
         }
         .data-table tbody tr:hover { background-color: var(--gray-100); }
         .data-table td { font-size: 14px; }
-        .action-button-group { display: flex; justify-content: flex-end; gap: 8px; flex-wrap: wrap; }
+        
+        /* --- CSS BARU UNTUK LAYOUT TOMBOL --- */
+        .action-button-grid {
+            display: flex;
+            justify-content: flex-end;
+            gap: 16px;
+        }
+        .action-column {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+        }
+
         .icon-button {
             background: none; border: none; cursor: pointer; padding: 4px;
             border-radius: 50%; display: flex; align-items: center;
@@ -103,6 +116,7 @@
         .edit-btn:hover { background-color: #FEF3C7; }
         .delete-btn { color: var(--danger-color); }
         .delete-btn:hover { background-color: #FEE2E2; }
+        
         .modal {
             display: none; position: fixed; z-index: 1000; left: 0; top: 0;
             width: 100%; height: 100%; overflow: auto;
@@ -406,13 +420,19 @@
                         <td>${item.count}</td>
                         <td>${getStatus(kegiatan.tanggalMulai, kegiatan.tanggalBerakhir)}</td>
                         <td>
-                            <div class="action-button-group">
-                                <a href="peserta.html?id=${docId}" class="icon-button view-btn" title="Lihat Peserta"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M10 8a3 3 0 100-6 3 3 0 000 6zM3.465 14.493a1.23 1.23 0 00.41 1.412A9.957 9.957 0 0010 18c2.31 0 4.438-.784 6.131-2.095a1.23 1.23 0 00.41-1.412A9.99 9.99 0 0010 12.001c-2.31 0-4.438.784-6.131 2.094z" /></svg></a>
-                                <a href="data-narasumber.html?id=${docId}" class="icon-button narsum-btn" title="Lihat Data Narasumber"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" /></svg></a>
-                                <button class="icon-button link-btn" data-id="${docId}" title="Salin Link Pendaftaran"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M12.232 4.232a2.5 2.5 0 013.536 3.536l-1.225 1.224a.75.75 0 001.061 1.06l1.224-1.224a4 4 0 00-5.656-5.656l-3 3a4 4 0 00.225 5.865.75.75 0 00.977-1.138 2.5 2.5 0 01-.142-3.665l3-3z" /><path d="M8.603 3.799a4.49 4.49 0 014.49 4.49l-4.49 4.49a4.49 4.49 0 01-6.35 0A4.49 4.49 0 012 8.289l4.49-4.49a4.49 4.49 0 012.113-.79z" /></svg></button>
-                                <button class="icon-button narsum-link-btn" data-id="${docId}" title="Salin Link Narasumber"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M15.707 4.293a1 1 0 010 1.414l-10 10a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L5 13.586l9.293-9.293a1 1 0 011.414 0z" clip-rule="evenodd" /></svg></button>
-                                <button class="icon-button edit-btn" data-id="${docId}" title="Edit"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z" /><path fill-rule="evenodd" d="M2 6a2 2 0 012-2h4a1 1 0 010 2H4v10h10v-4a1 1 0 112 0v4a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" clip-rule="evenodd" /></svg></button>
-                                <button class="icon-button delete-btn" data-id="${docId}" data-nama="${kegiatan.nama}" title="Hapus"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" /></svg></button>
+                            <div class="action-button-grid">
+                                <div class="action-column">
+                                    <a href="peserta.html?id=${docId}" class="icon-button view-btn" title="Lihat Peserta"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M10 8a3 3 0 100-6 3 3 0 000 6zM3.465 14.493a1.23 1.23 0 00.41 1.412A9.957 9.957 0 0010 18c2.31 0 4.438-.784 6.131-2.095a1.23 1.23 0 00.41-1.412A9.99 9.99 0 0010 12.001c-2.31 0-4.438.784-6.131 2.094z" /></svg></a>
+                                    <button class="icon-button link-btn" data-id="${docId}" title="Salin Link Pendaftaran"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M12.232 4.232a2.5 2.5 0 013.536 3.536l-1.225 1.224a.75.75 0 001.061 1.06l1.224-1.224a4 4 0 00-5.656-5.656l-3 3a4 4 0 00.225 5.865.75.75 0 00.977-1.138 2.5 2.5 0 01-.142-3.665l3-3z" /><path d="M8.603 3.799a4.49 4.49 0 014.49 4.49l-4.49 4.49a4.49 4.49 0 01-6.35 0A4.49 4.49 0 012 8.289l4.49-4.49a4.49 4.49 0 012.113-.79z" /></svg></button>
+                                </div>
+                                <div class="action-column">
+                                    <a href="data-narasumber.html?id=${docId}" class="icon-button narsum-btn" title="Lihat Data Narasumber"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" /></svg></a>
+                                    <button class="icon-button narsum-link-btn" data-id="${docId}" title="Salin Link Narasumber"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M15.707 4.293a1 1 0 010 1.414l-10 10a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L5 13.586l9.293-9.293a1 1 0 011.414 0z" clip-rule="evenodd" /></svg></button>
+                                </div>
+                                <div class="action-column">
+                                    <button class="icon-button edit-btn" data-id="${docId}" title="Edit"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z" /><path fill-rule="evenodd" d="M2 6a2 2 0 012-2h4a1 1 0 010 2H4v10h10v-4a1 1 0 112 0v4a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" clip-rule="evenodd" /></svg></button>
+                                    <button class="icon-button delete-btn" data-id="${docId}" data-nama="${kegiatan.nama}" title="Hapus"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" /></svg></button>
+                                </div>
                             </div>
                         </td>
                     `;
@@ -462,7 +482,7 @@
                 } catch (err) { console.error('Gagal menyalin link: ', err); }
             }
             
-            if (target.classList.contains('narsum-link-btn')) { // Tombol baru
+            if (target.classList.contains('narsum-link-btn')) {
                 const link = `${window.location.origin}${window.location.pathname.replace('index.html', '')}narasumber.html?id=${docId}`;
                 try {
                     await navigator.clipboard.writeText(link);
@@ -471,11 +491,42 @@
             }
 
             if (target.classList.contains('delete-btn')) {
-                // ... (logika hapus) ...
+                if (userRole !== 'admin') {
+                    const docRef = doc(db, 'kegiatan', docId);
+                    const docSnap = await getDoc(docRef);
+                    if (docSnap.data().createdBy !== userNip) {
+                        alert('Anda tidak memiliki izin untuk menghapus kegiatan ini.');
+                        return;
+                    }
+                }
+                const namaKegiatan = target.dataset.nama;
+                if (confirm(`Apakah Anda yakin ingin menghapus kegiatan "${namaKegiatan}"?`)) {
+                    await deleteDoc(doc(db, "kegiatan", docId));
+                }
             }
 
             if (target.classList.contains('edit-btn')) {
-                // ... (logika edit) ...
+                 const docRef = doc(db, 'kegiatan', docId);
+                 const docSnap = await getDoc(docRef);
+                 if (docSnap.exists()) {
+                    if (userRole !== 'admin' && docSnap.data().createdBy !== userNip) {
+                        alert('Anda tidak memiliki izin untuk mengedit kegiatan ini.');
+                        return;
+                    }
+                    const kegiatan = docSnap.data();
+                    kegiatanIdInput.value = docId;
+                    document.getElementById('namaKegiatan').value = kegiatan.nama;
+                    document.getElementById('tanggalMulai').value = kegiatan.tanggalMulai;
+                    document.getElementById('tanggalBerakhir').value = kegiatan.tanggalBerakhir;
+                    document.getElementById('tempat').value = kegiatan.tempat;
+                    if (userRole === 'admin') {
+                        populateBidangDropdown(kegiatan.bidang);
+                        pjInput.value = kegiatan.pj;
+                    }
+                    modalTitle.textContent = 'Edit Data Kegiatan';
+                    document.getElementById('submitBtn').textContent = 'Update Data';
+                    modal.style.display = 'flex';
+                 }
             }
         });
 
