@@ -316,45 +316,36 @@
 
             const tableData = [];
             currentPesertaList.forEach((peserta, index) => {
-                const signature = `${index + 1}. ..........................`;
-                
-                // Jika ganjil (index 0, 2, 4...)
-                if (index % 2 === 0) {
-                    // Buat baris baru dengan data peserta
+                const ganjil = index + 1;
+                const genap = index + 2;
+
+                if (ganjil % 2 !== 0) { // Hanya proses untuk nomor ganjil
                     const row = [
-                        index + 1,
+                        ganjil,
                         peserta.namaLengkap,
                         peserta.jabatan,
                         peserta.asalInstansi,
-                        signature,
-                        '' // Siapkan kolom kosong untuk tanda tangan genap
+                        `${ganjil}. ....................`,
+                        ''
                     ];
-                    // Cek apakah ada peserta berikutnya
-                    const nextPeserta = currentPesertaList[index + 1];
-                    if (nextPeserta) {
-                         // Jika ada, isi kolom tanda tangan genap
-                        row[5] = `${index + 2}. ..........................`;
+                    
+                    const pesertaGenap = currentPesertaList[genap - 1];
+                    if (pesertaGenap) {
+                        row[5] = `${genap}. ....................`;
                     }
                     tableData.push(row);
-                } else {
-                    // Jika genap, kita perlu menampilkan datanya jika peserta sebelumnya tidak ada
-                    // Ini untuk kasus aneh, tapi lebih baik ditangani
-                    if(index > 0 && currentPesertaList[index - 1] === undefined){
-                         tableData.push(['', '', '', '', '', `${index + 1}. ..........................`]);
-                    }
                 }
             });
 
             doc.autoTable({
                 head: [
-                    // Trik agar "No" tidak jadi vertikal
-                    [{ content: 'No', styles: { halign: 'center'} }, 
-                     { content: 'Nama Lengkap' }, 
-                     { content: 'Jabatan' }, 
-                     { content: 'Asal Instansi' }, 
-                     // Gabungkan kolom Tanda Tangan
+                    [{ content: 'No', rowSpan: 2, styles: { valign: 'middle'} }, 
+                     { content: 'Nama Lengkap', rowSpan: 2, styles: { valign: 'middle'} }, 
+                     { content: 'Jabatan', rowSpan: 2, styles: { valign: 'middle'} }, 
+                     { content: 'Asal Instansi', rowSpan: 2, styles: { valign: 'middle'} },
                      { content: 'Tanda Tangan', colSpan: 2, styles: { halign: 'center' } }
                     ],
+                    ['Ganjil', 'Genap']
                 ],
                 body: tableData,
                 startY: 52,
@@ -363,8 +354,10 @@
                     fillColor: [41, 128, 185],
                     textColor: 255, 
                     fontStyle: 'bold',
+                    halign: 'center',
                     valign: 'middle',
-                    halign: 'center'
+                    lineWidth: 0.1,
+                    lineColor: [0, 0, 0]
                 },
                 styles: {
                     cellPadding: 3.5,
@@ -374,13 +367,13 @@
                     lineColor: [0, 0, 0]
                 },
                 columnStyles: {
-                    0: { cellWidth: 10, halign: 'center' }, // No
-                    1: { cellWidth: 50 }, // Nama
-                    2: { cellWidth: 40 }, // Jabatan
-                    3: { cellWidth: 50 }, // Instansi
-                    4: { cellWidth: 'auto' }, // TTD 1
-                    5: { cellWidth: 'auto', halign: 'left' }  // TTD 2
-                },
+                    0: { cellWidth: 10, halign: 'center' },
+                    1: { cellWidth: 50 },
+                    2: { cellWidth: 40 },
+                    3: { cellWidth: 50 },
+                    4: { cellWidth: 'auto' },
+                    5: { cellWidth: 'auto' }
+                }
             });
 
             doc.save(`Daftar Hadir - ${currentKegiatanData.nama}.pdf`);
