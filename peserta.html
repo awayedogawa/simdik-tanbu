@@ -315,13 +315,13 @@
             doc.text(`Tempat  : ${tempatText}`, 14, 46);
             
             const tableData = currentPesertaList.map((peserta, index) => {
-                const signature = `${index + 1}. ....................`;
+                const signatureText = `${index + 1}. ....................`;
                 return [
                     index + 1,
                     peserta.namaLengkap,
                     peserta.jabatan,
                     peserta.asalInstansi,
-                    signature
+                    signatureText
                 ];
             });
 
@@ -352,14 +352,13 @@
                     4: { cellWidth: 'auto' }
                 },
                 didParseCell: function(data) {
-                    // Hanya periksa jika kolomnya adalah Tanda Tangan
                     if (data.cell.section === 'body' && data.column.index === 4) {
                         const rowNumber = data.row.index + 1;
-                        // Jika nomor baris genap, ratakan ke tengah
                         if (rowNumber % 2 === 0) {
                             data.cell.styles.halign = 'center';
-                        } 
-                        // Jika ganjil, biarkan default (rata kiri)
+                        } else {
+                            data.cell.styles.halign = 'left';
+                        }
                     }
                 }
             });
