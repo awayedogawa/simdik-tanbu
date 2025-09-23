@@ -294,6 +294,7 @@
             XLSX.writeFile(workbook, `Daftar Peserta - ${currentKegiatanData.nama}.xlsx`);
         };
 
+        // --- FUNGSI PDF DIPERBARUI ---
         const generatePdf = () => {
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF({ orientation: 'landscape' });
@@ -315,46 +316,62 @@
             doc.text(`Tempat  : ${tempatText}`, 14, 46);
 
             const tableData = currentPesertaList.map((peserta, index) => {
-                const signature = `${index + 1}. ..........................`;
-                return (index % 2 === 0) 
-                    ? [ index + 1, peserta.namaLengkap, peserta.jabatan, peserta.asalInstansi, signature ]
-                    : [ signature ];
-            });
-            
-            const finalTableData = [];
-            for(let i = 0; i < tableData.length; i++) {
-                if (i % 2 === 0) {
-                    if (tableData[i+1]) {
-                        tableData[i].push(tableData[i+1][0]);
-                    } else {
-                        tableData[i].push('');
-                    }
-                    finalTableData.push(tableData[i]);
+                const signatureContent = `${index + 1}. ..........................`;
+                
+                // Jika nomor ganjil, buat baris baru
+                if (index % 2 === 0) {
+                    const nextPeserta = currentPesertaList[index + 1];
+                    const nextSignature = nextPeserta ? `${index + 2}. ..........................` : '';
+                    return [
+                        index + 1,
+                        peserta.namaLengkap,
+                        peserta.jabatan,
+                        peserta.asalInstansi,
+                        signatureContent,
+                        nextSignature
+                    ];
                 }
-            }
+                return null; // Baris genap akan diabaikan karena sudah digabung
+            }).filter(row => row !== null); // Hapus baris kosong (genap)
+
 
             doc.autoTable({
-                head: [['No', 'Nama Lengkap', 'Jabatan', 'Asal Instansi', 'Tanda Tangan', 'Tanda Tangan']],
-                body: finalTableData,
+                head: [
+                    // Gabungkan kolom Tanda Tangan
+                    [{ content: 'No', rowSpan: 2 }, { content: 'Nama Lengkap', rowSpan: 2 }, { content: 'Jabatan', rowSpan: 2 }, { content: 'Asal Instansi', rowSpan: 2 }, { content: 'Tanda Tangan', colSpan: 2, styles: { halign: 'center' } }],
+                    // Kolom di bawah tanda tangan (kosong)
+                    ['', '', '', ''] 
+                ],
+                body: tableData,
                 startY: 52,
                 theme: 'grid',
                 headStyles: { 
                     fillColor: [41, 128, 185],
                     textColor: 255, 
-                    fontStyle: 'bold'
+                    fontStyle: 'bold',
+                    halign: 'center',
+                    valign: 'middle'
                 },
                 styles: {
                     cellPadding: 3.5,
                     fontSize: 10,
-                    valign: 'middle'
+                    valign: 'middle',
+                    lineWidth: 0.1,
+                    lineColor: [0, 0, 0]
                 },
                 columnStyles: {
-                    0: { cellWidth: 10 }, 1: { cellWidth: 50 }, 2: { cellWidth: 40 },
-                    3: { cellWidth: 50 }, 4: { cellWidth: 'auto' }, 5: { cellWidth: 'auto' }
+                    0: { cellWidth: 10, halign: 'center' }, // No
+                    1: { cellWidth: 50 }, // Nama
+                    2: { cellWidth: 40 }, // Jabatan
+                    3: { cellWidth: 50 }, // Instansi
+                    4: { cellWidth: 'auto' }, // TTD 1
+                    5: { cellWidth: 'auto', halign: 'right' }  // TTD 2
                 },
-                didParseCell: function (data) {
-                    if (data.column.index === 5 && data.cell.section === 'body') {
-                        data.cell.styles.halign = 'right';
+                didDrawCell: (data) => {
+                    // Menghilangkan baris pemisah di header Tanda Tangan
+                    if (data.cell.section === 'head' && data.column.index >= 4) {
+                       doc.setDrawColor(255, 255, 255); // Warna putih untuk menyamarkan
+                       doc.line(data.cell.x, data.cell.y + data.cell.height, data.cell.x + data.cell.width, data.cell.y + data.cell.height);
                     }
                 }
             });
