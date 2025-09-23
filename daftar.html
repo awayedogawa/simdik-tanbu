@@ -114,7 +114,7 @@
         
         <div id="closedState" class="hidden">
             <h2>Pendaftaran Ditutup</h2>
-            <p>Mohon maaf, acara ini telah selesai dilaksanakan. Pendaftaran sudah tidak bisa lagi dilakukan.</p>
+            <p id="closedMessage">Mohon maaf, pendaftaran untuk acara ini telah ditutup.</p>
         </div>
 
         <div id="registrationContent" class="hidden">
@@ -149,7 +149,6 @@
                         <label for="jabatan">Jabatan</label>
                         <input type="text" id="jabatan" required>
                     </div>
-                    <!-- Isian Kecamatan Baru -->
                     <div class="form-group">
                         <label for="kecamatan">Kecamatan</label>
                         <select id="kecamatan" required>
@@ -206,6 +205,7 @@
         const registrationContent = document.getElementById('registrationContent');
         const successState = document.getElementById('successState');
         const formPendaftaran = document.getElementById('formPendaftaran');
+        const closedMessage = document.getElementById('closedMessage');
 
         const getKegiatanId = () => new URLSearchParams(window.location.search).get('id');
         const formatDate = (dateString) => {
@@ -223,17 +223,32 @@
             }
             const docRef = doc(db, "kegiatan", kegiatanId);
             const docSnap = await getDoc(docRef);
+
             if (docSnap.exists()) {
                 const data = docSnap.data();
-                const today = new Date();
+                const now = new Date();
+                
+                // Cek apakah acara sudah selesai
                 const endDate = new Date(data.tanggalBerakhir);
-                today.setHours(0, 0, 0, 0);
                 endDate.setHours(23, 59, 59, 999);
-                if (today > endDate) {
+                if (now > endDate) {
                     loadingState.classList.add('hidden');
+                    closedMessage.textContent = 'Mohon maaf, acara ini telah selesai dilaksanakan.';
                     closedState.classList.remove('hidden');
                     return;
                 }
+
+                // Cek apakah pendaftaran sudah ditutup (12 jam sebelum)
+                const startDate = new Date(data.tanggalMulai); // Misal: 2025-09-24T00:00:00
+                const registrationDeadline = new Date(startDate.getTime() - (12 * 60 * 60 * 1000)); 
+                if (now > registrationDeadline) {
+                    loadingState.classList.add('hidden');
+                    closedMessage.textContent = 'Mohon maaf, pendaftaran untuk acara ini telah ditutup 12 jam sebelum acara dimulai.';
+                    closedState.classList.remove('hidden');
+                    return;
+                }
+
+                // Jika pendaftaran masih buka
                 document.getElementById('namaKegiatanDisplay').textContent = data.nama;
                 document.getElementById('tanggalDisplay').textContent = `${formatDate(data.tanggalMulai)} - ${formatDate(data.tanggalBerakhir)}`;
                 document.getElementById('tempatDisplay').textContent = data.tempat;
@@ -255,7 +270,7 @@
                 asalInstansi: document.getElementById('asalInstansi').value,
                 npsn: document.getElementById('npsn').value,
                 jabatan: document.getElementById('jabatan').value,
-                kecamatan: document.getElementById('kecamatan').value, // Data baru
+                kecamatan: document.getElementById('kecamatan').value,
                 nomorTelepon: document.getElementById('nomorTelepon').value,
                 tanggalDaftar: new Date()
             };
