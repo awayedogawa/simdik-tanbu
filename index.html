@@ -119,11 +119,61 @@
         .narsum-btn { color: var(--success-color); } .narsum-btn:hover { background-color: var(--success-hover); }
         .edit-btn { color: var(--warning-color); } .edit-btn:hover { background-color: #FEF3C7; }
         .delete-btn { color: var(--danger-color); } .delete-btn:hover { background-color: #FEE2E2; }
-        .modal { /* ... */ } .modal-content { /* ... */ }
-        /* ... Other styles ... */
-        .admin-only, body.pelaksana-mode .admin-only-feature { display: none !important; }
-        body.admin-mode .admin-only { display: table-cell; }
-        body.admin-mode .admin-only-feature { display: flex; }
+        .modal {
+            display: none; position: fixed; z-index: 1000; left: 0; top: 0;
+            width: 100%; height: 100%; overflow: auto;
+            background-color: rgba(17, 24, 39, 0.6); backdrop-filter: blur(4px);
+        }
+        .modal-content {
+            background-color: var(--card-background); margin: 5% auto; padding: 32px;
+            border-radius: 8px; width: 90%; max-width: 600px; position: relative;
+            box-shadow: var(--shadow-md); animation: fadeIn 0.3s ease-out;
+        }
+        @keyframes fadeIn {
+            from {opacity: 0; transform: translateY(-20px) scale(0.98);}
+            to {opacity: 1; transform: translateY(0) scale(1);}
+        }
+        .close-button {
+            color: var(--gray-500); position: absolute; top: 16px; right: 16px;
+            font-size: 28px; font-weight: bold; cursor: pointer;
+            transition: color 0.2s ease;
+        }
+        .close-button:hover { color: var(--gray-900); }
+        .form-group { margin-bottom: 20px; }
+        .form-group label {
+            display: block; margin-bottom: 8px; font-weight: 500;
+            font-size: 14px; color: var(--gray-700);
+        }
+        .form-group input, .form-group select {
+            width: 100%; padding: 10px 12px; box-sizing: border-box;
+            border: 1px solid var(--gray-200); border-radius: 6px;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+            background-color: #fff;
+        }
+        .form-group input:focus, .form-group select:focus {
+            outline: none; border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.2);
+        }
+        .form-group input[readonly] {
+            background-color: var(--gray-100);
+            cursor: not-allowed;
+        }
+        .form-row { display: flex; gap: 20px; }
+        .form-row .form-group { flex: 1; }
+        .empty-state { text-align: center; padding: 48px; color: var(--gray-500); }
+        .status-badge {
+            padding: 4px 12px; border-radius: 9999px; font-size: 12px; font-weight: 500;
+            display: inline-flex; align-items: center; gap: 6px;
+        }
+        .status-badge::before { content: ''; width: 8px; height: 8px; border-radius: 50%; }
+        .status-belum { background-color: #FEF3C7; color: #92400E; }
+        .status-belum::before { background-color: #F59E0B; }
+        .status-berlangsung { background-color: #DBEAFE; color: #1E40AF; }
+        .status-berlangsung::before { background-color: #3B82F6; }
+        .status-selesai { background-color: #D1FAE5; color: #065F46; }
+        .status-selesai::before { background-color: #10B981; }
+        .admin-only { display: table-cell; } 
+        body.pelaksana-mode .admin-only, body.pelaksana-mode .admin-only-feature { display: none !important; }
         .form-group.admin-only-form { display: block; }
         body.pelaksana-mode .form-group.admin-only-form { display: none !important; }
     </style>
@@ -159,11 +209,66 @@
         </header>
         
         <main>
-            <!-- Table and other main content -->
+            <div style="overflow-x:auto;">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>No</th>
+                            <th>Kegiatan</th>
+                            <th>Tanggal Pelaksanaan</th>
+                            <th>Tempat</th>
+                            <th class="admin-only">Bidang Pelaksana</th>
+                            <th class="admin-only">Penanggung Jawab</th>
+                            <th>Peserta</th>
+                            <th>Status</th>
+                            <th>Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody id="kegiatanTableBody"></tbody>
+                </table>
+            </div>
+             <div id="emptyState" class="empty-state">
+                <p>Memuat data...</p>
+            </div>
         </main>
     </div>
 
-    <!-- Modals -->
+    <div id="dataModal" class="modal">
+        <div class="modal-content">
+            <span class="close-button">&times;</span>
+            <h2 id="modalTitle" style="color: var(--gray-900); font-weight: 600; margin-top: 0;">Input Data Kegiatan</h2>
+            <form id="kegiatanForm">
+                <input type="hidden" id="kegiatanId">
+                <div class="form-group">
+                    <label for="namaKegiatan">Nama Kegiatan</label>
+                    <input type="text" id="namaKegiatan" required>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="tanggalMulai">Tanggal Mulai</label>
+                        <input type="date" id="tanggalMulai" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="tanggalBerakhir">Tanggal Berakhir</label>
+                        <input type="date" id="tanggalBerakhir" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="tempat">Tempat Kegiatan</label>
+                    <input type="text" id="tempat" required>
+                </div>
+                <div class="form-group admin-only-form">
+                    <label for="bidang">Bidang Pelaksana</label>
+                    <select id="bidang"></select>
+                </div>
+                 <div class="form-group admin-only-form">
+                    <label for="penanggungJawab">Penanggung Jawab</label>
+                    <input type="text" id="penanggungJawab" readonly>
+                </div>
+                <button type="submit" id="submitBtn" class="primary-button" style="width: 100%; justify-content: center; padding-top: 14px; padding-bottom: 14px;">Simpan Data</button>
+            </form>
+        </div>
+    </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js";
@@ -183,76 +288,260 @@
             document.body.classList.add('pelaksana-mode');
         }
 
-        // ... (Kode inisialisasi Firebase, elemen-elemen, dan fungsi-fungsi lainnya tetap sama)
+        document.getElementById('logoutButton').addEventListener('click', () => {
+            sessionStorage.clear();
+            window.location.href = 'login.html';
+        });
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyBM4RhHUdQxSEPVBGhjf4R8UGfzMmD7egU",
+            authDomain: "dashboard-kegiatan-saya.firebaseapp.com",
+            projectId: "dashboard-kegiatan-saya",
+            storageBucket: "dashboard-kegiatan-saya.appspot.com",
+            messagingSenderId: "1078549240220",
+            appId: "1:1078549240220:web:7d372e7b50b6f9545a9059"
+        };
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        
+        const modal = document.getElementById('dataModal');
+        const openBtn = document.getElementById('tambahDataBtn');
+        const closeBtn = document.querySelector('.close-button');
+        const form = document.getElementById('kegiatanForm');
+        const tableBody = document.getElementById('kegiatanTableBody');
+        const emptyState = document.getElementById('emptyState');
+        const modalTitle = document.getElementById('modalTitle');
+        const kegiatanIdInput = document.getElementById('kegiatanId');
+        
+        const bidangSelect = document.getElementById('bidang');
+        const pjInput = document.getElementById('penanggungJawab');
 
         const rekapPesertaBtn = document.getElementById('rekapPesertaBtn');
         const rekapNarsumBtn = document.getElementById('rekapNarsumBtn');
 
-        const rekapData = async (subcollectionName, fileName) => {
-            const button = subcollectionName === 'peserta' ? rekapPesertaBtn : rekapNarsumBtn;
-            const originalText = button.textContent;
-            button.textContent = 'Mengunduh...';
-            button.disabled = true;
+        let allPelaksana = [];
 
-            try {
-                const semuaData = [];
-                const kegiatanSnapshot = await getDocs(collection(db, "kegiatan"));
-
-                for (const kegiatanDoc of kegiatanSnapshot.docs) {
-                    const kegiatanData = kegiatanDoc.data();
-                    const subCollectionRef = collection(db, "kegiatan", kegiatanDoc.id, subcollectionName);
-                    const subSnapshot = await getDocs(subCollectionRef);
-                    
-                    subSnapshot.forEach(doc => {
-                        semuaData.push({
-                            "Nama Kegiatan": kegiatanData.nama,
-                            ...doc.data()
-                        });
-                    });
-                }
-
-                if (semuaData.length === 0) {
-                    alert(`Tidak ada data ${subcollectionName} untuk direkap.`);
-                    return;
-                }
-                
-                // Format data sebelum ekspor
-                const dataToExport = semuaData.map((item, index) => {
-                    if(subcollectionName === 'peserta') {
-                        return {
-                            'No': index + 1, 'Nama Kegiatan': item["Nama Kegiatan"], 'Nama Lengkap': item.namaLengkap,
-                            'NIP': item.nip || '-', 'Asal Instansi/Sekolah': item.asalInstansi, 'NPSN': item.npsn || '-',
-                            'Kecamatan': item.kecamatan, 'Jabatan': item.jabatan, 'No. Telepon/WA': item.nomorTelepon
-                        };
-                    } else { // Narasumber
-                        return {
-                             'No': index + 1, 'Nama Kegiatan': item["Nama Kegiatan"], 'Nama Lengkap': item.nama,
-                             'NIP': item.nip || '-', 'Jabatan': item.jabatan, 'Instansi': item.instansi,
-                             'No. HP/WA': item.noHp, 'Bank': item.namaBank, 'No. Rekening': item.noRekening, 'NPWP': item.npwp || '-'
-                        };
-                    }
-                });
-
-                const worksheet = XLSX.utils.json_to_sheet(dataToExport);
-                const workbook = XLSX.utils.book_new();
-                XLSX.utils.book_append_sheet(workbook, worksheet, `Rekap ${fileName}`);
-                XLSX.writeFile(workbook, `Rekapitulasi Semua ${fileName}.xlsx`);
-
-            } catch (error) {
-                console.error(`Gagal merekap data ${subcollectionName}:`, error);
-                alert(`Terjadi kesalahan saat merekap data ${subcollectionName}.`);
-            } finally {
-                button.textContent = originalText;
-                button.disabled = false;
-            }
+        const loadPelaksanaData = async () => {
+            if (userRole !== 'admin') return;
+            const pelaksanaCollection = collection(db, "pelaksana");
+            const snapshot = await getDocs(pelaksanaCollection);
+            allPelaksana = snapshot.docs.map(doc => doc.data());
         };
 
-        if (userRole === 'admin') {
-            rekapPesertaBtn.addEventListener('click', () => rekapData('peserta', 'Peserta'));
-            rekapNarsumBtn.addEventListener('click', () => rekapData('narasumber', 'Narasumber'));
+        const populateBidangDropdown = (selectedBidang = '') => {
+            bidangSelect.innerHTML = '<option value="">-- Pilih Bidang --</option>';
+            const uniqueBidang = [...new Set(allPelaksana.map(p => p.bidang))];
+            uniqueBidang.forEach(bidang => {
+                const option = document.createElement('option');
+                option.value = bidang;
+                option.textContent = bidang;
+                if (bidang === selectedBidang) option.selected = true;
+                bidangSelect.appendChild(option);
+            });
+        };
+
+        bidangSelect.addEventListener('change', () => {
+            const selectedBidang = bidangSelect.value;
+            const pelaksana = allPelaksana.find(p => p.bidang === selectedBidang);
+            pjInput.value = pelaksana ? pelaksana.nama : '';
+        });
+
+        const openAddModal = () => {
+            form.reset();
+            kegiatanIdInput.value = '';
+            modalTitle.textContent = 'Input Data Kegiatan';
+            document.getElementById('submitBtn').textContent = 'Simpan Data';
+            if (userRole === 'admin') {
+                populateBidangDropdown();
+                pjInput.value = '';
+            }
+            modal.style.display = 'flex';
+        }
+
+        const closeModal = () => { modal.style.display = 'none'; }
+        openBtn.onclick = openAddModal;
+        closeBtn.onclick = closeModal;
+        window.onclick = (event) => { if (event.target == modal) closeModal(); }
+
+        const formatDateRange = (startStr, endStr) => {
+            if (!startStr || !endStr) return '';
+            const months = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
+            const startDate = new Date(startStr);
+            const endDate = new Date(endStr);
+            const startDay = startDate.getUTCDate(), startMonth = startDate.getUTCMonth(), startYear = startDate.getUTCFullYear();
+            const endDay = endDate.getUTCDate(), endMonth = endDate.getUTCMonth(), endYear = endDate.getUTCFullYear();
+            if (startYear === endYear && startMonth === endMonth && startDay === endDay) return `${startDay} ${months[startMonth]} ${startYear}`;
+            if (startYear === endYear && startMonth === endMonth) return `${startDay} s.d. ${endDay} ${months[startMonth]} ${startYear}`;
+            if (startYear === endYear) return `${startDay} ${months[startMonth]} s.d. ${endDay} ${months[endMonth]} ${startYear}`;
+            return `${startDay} ${months[startMonth]} ${startYear} s.d. ${endDay} ${months[endMonth]} ${endYear}`;
+        };
+
+        const getStatus = (tanggalMulai, tanggalBerakhir) => {
+            const today = new Date();
+            const startDate = new Date(tanggalMulai);
+            const endDate = new Date(tanggalBerakhir);
+            today.setHours(0, 0, 0, 0);
+            startDate.setHours(0, 0, 0, 0);
+            endDate.setHours(0, 0, 0, 0);
+            if (today < startDate) return '<span class="status-badge status-belum">Belum</span>';
+            if (today >= startDate && today <= endDate) return '<span class="status-badge status-berlangsung">Sedang Berlangsung</span>';
+            return '<span class="status-badge status-selesai">Selesai</span>';
         }
         
-        // ... (Sisa kode onSnapshot, form submit, dan event listener lainnya tetap sama)
+        const kegiatanCollectionRef = collection(db, "kegiatan");
+        let q;
+        if (userRole === 'admin') {
+            q = kegiatanCollectionRef; 
+        } else {
+            q = query(kegiatanCollectionRef, where("createdBy", "==", userNip));
+        }
+
+        onSnapshot(q, async (snapshot) => {
+            const allDocs = snapshot.docs;
+            tableBody.innerHTML = '';
+
+            if (allDocs.length === 0) {
+                emptyState.innerHTML = userRole === 'admin' ? '<p>Belum ada data. Silakan klik "Input Kegiatan".</p>' : '<p>Anda belum membuat kegiatan.</p>';
+                emptyState.style.display = 'block';
+                document.querySelector('.data-table').style.display = 'none';
+            } else {
+                const promises = allDocs.map(async (doc) => {
+                    const pesertaRef = collection(db, "kegiatan", doc.id, "peserta");
+                    const pesertaSnap = await getDocs(pesertaRef);
+                    return { id: doc.id, data: doc.data(), count: pesertaSnap.size };
+                });
+                const kegiatanWithCounts = await Promise.all(promises);
+
+                emptyState.style.display = 'none';
+                document.querySelector('.data-table').style.display = 'table';
+                
+                kegiatanWithCounts.forEach((item, index) => {
+                    const kegiatan = item.data;
+                    const docId = item.id;
+                    const tanggalPelaksanaan = formatDateRange(kegiatan.tanggalMulai, kegiatan.tanggalBerakhir);
+                    const row = tableBody.insertRow();
+                    
+                    row.innerHTML = `
+                        <td>${index + 1}</td>
+                        <td>${kegiatan.nama}</td>
+                        <td>${tanggalPelaksanaan}</td>
+                        <td>${kegiatan.tempat}</td>
+                        <td class="admin-only">${kegiatan.bidang}</td>
+                        <td class="admin-only">${kegiatan.pj}</td>
+                        <td>${item.count}</td>
+                        <td>${getStatus(kegiatan.tanggalMulai, kegiatan.tanggalBerakhir)}</td>
+                        <td>
+                            <div class="action-button-grid">
+                                <div class="action-column">
+                                    <a href="peserta.html?id=${docId}" class="icon-button view-btn" title="Lihat Peserta"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M10 8a3 3 0 100-6 3 3 0 000 6zM3.465 14.493a1.23 1.23 0 00.41 1.412A9.957 9.957 0 0010 18c2.31 0 4.438-.784 6.131-2.095a1.23 1.23 0 00.41-1.412A9.99 9.99 0 0010 12.001c-2.31 0-4.438.784-6.131 2.094z" /></svg></a>
+                                    <button class="icon-button link-btn" data-id="${docId}" title="Salin Link Pendaftaran"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M12.232 4.232a2.5 2.5 0 013.536 3.536l-1.225 1.224a.75.75 0 001.061 1.06l1.224-1.224a4 4 0 00-5.656-5.656l-3 3a4 4 0 00.225 5.865.75.75 0 00.977-1.138 2.5 2.5 0 01-.142-3.665l3-3z" /><path d="M8.603 3.799a4.49 4.49 0 014.49 4.49l-4.49 4.49a4.49 4.49 0 01-6.35 0A4.49 4.49 0 012 8.289l4.49-4.49a4.49 4.49 0 012.113-.79z" /></svg></button>
+                                </div>
+                                <div class="action-column">
+                                    <a href="data-narasumber.html?id=${docId}" class="icon-button narsum-btn" title="Lihat Data Narasumber"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" /></svg></a>
+                                    <button class="icon-button narsum-link-btn" data-id="${docId}" title="Salin Link Narasumber"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M15.707 4.293a1 1 0 010 1.414l-10 10a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L5 13.586l9.293-9.293a1 1 0 011.414 0z" clip-rule="evenodd" /></svg></button>
+                                </div>
+                                <div class="action-column">
+                                    <button class="icon-button edit-btn" data-id="${docId}" title="Edit"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z" /><path fill-rule="evenodd" d="M2 6a2 2 0 012-2h4a1 1 0 010 2H4v10h10v-4a1 1 0 112 0v4a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" clip-rule="evenodd" /></svg></button>
+                                    <button class="icon-button delete-btn" data-id="${docId}" data-nama="${kegiatan.nama}" title="Hapus"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" /></svg></button>
+                                </div>
+                            </div>
+                        </td>
+                    `;
+                });
+            }
+        });
+
+        form.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            let kegiatanData = {
+                nama: document.getElementById('namaKegiatan').value,
+                tanggalMulai: document.getElementById('tanggalMulai').value,
+                tanggalBerakhir: document.getElementById('tanggalBerakhir').value,
+                tempat: document.getElementById('tempat').value,
+            };
+
+            if (userRole === 'admin') {
+                kegiatanData.bidang = bidangSelect.value;
+                kegiatanData.pj = pjInput.value;
+            } else {
+                kegiatanData.bidang = userBidang;
+                kegiatanData.pj = userName;
+                kegiatanData.createdBy = userNip;
+            }
+
+            const docId = kegiatanIdInput.value;
+            if (docId) {
+                await updateDoc(doc(db, "kegiatan", docId), kegiatanData);
+            } else {
+                await addDoc(collection(db, "kegiatan"), kegiatanData);
+            }
+            closeModal();
+        });
+        
+        tableBody.addEventListener('click', async (event) => {
+            const target = event.target.closest('.icon-button, a.icon-button');
+            if (!target) return;
+            
+            if (target.tagName === 'BUTTON') event.preventDefault();
+            const docId = target.dataset.id;
+            
+            if (target.classList.contains('link-btn')) {
+                const link = `${window.location.origin}${window.location.pathname.replace('index.html', '')}daftar.html?id=${docId}`;
+                try {
+                    await navigator.clipboard.writeText(link);
+                    alert('Link pendaftaran peserta telah disalin!');
+                } catch (err) { console.error('Gagal menyalin link: ', err); }
+            }
+            
+            if (target.classList.contains('narsum-link-btn')) {
+                const link = `${window.location.origin}${window.location.pathname.replace('index.html', '')}narasumber.html?id=${docId}`;
+                try {
+                    await navigator.clipboard.writeText(link);
+                    alert('Link pengisian data narasumber telah disalin!');
+                } catch (err) { console.error('Gagal menyalin link: ', err); }
+            }
+
+            if (target.classList.contains('delete-btn')) {
+                if (userRole !== 'admin') {
+                    const docRef = doc(db, 'kegiatan', docId);
+                    const docSnap = await getDoc(docRef);
+                    if (docSnap.data().createdBy !== userNip) {
+                        alert('Anda tidak memiliki izin untuk menghapus kegiatan ini.');
+                        return;
+                    }
+                }
+                const namaKegiatan = target.dataset.nama;
+                if (confirm(`Apakah Anda yakin ingin menghapus kegiatan "${namaKegiatan}"?`)) {
+                    await deleteDoc(doc(db, "kegiatan", docId));
+                }
+            }
+
+            if (target.classList.contains('edit-btn')) {
+                 const docRef = doc(db, 'kegiatan', docId);
+                 const docSnap = await getDoc(docRef);
+                 if (docSnap.exists()) {
+                    if (userRole !== 'admin' && docSnap.data().createdBy !== userNip) {
+                        alert('Anda tidak memiliki izin untuk mengedit kegiatan ini.');
+                        return;
+                    }
+                    const kegiatan = docSnap.data();
+                    kegiatanIdInput.value = docId;
+                    document.getElementById('namaKegiatan').value = kegiatan.nama;
+                    document.getElementById('tanggalMulai').value = kegiatan.tanggalMulai;
+                    document.getElementById('tanggalBerakhir').value = kegiatan.tanggalBerakhir;
+                    document.getElementById('tempat').value = kegiatan.tempat;
+                    if (userRole === 'admin') {
+                        populateBidangDropdown(kegiatan.bidang);
+                        pjInput.value = kegiatan.pj;
+                    }
+                    modalTitle.textContent = 'Edit Data Kegiatan';
+                    document.getElementById('submitBtn').textContent = 'Update Data';
+                    modal.style.display = 'flex';
+                 }
+            }
+        });
+
+        loadPelaksanaData();
     </script>
 </body>
 </html>
