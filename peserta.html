@@ -448,14 +448,18 @@
 
             if (kegiatanDocSnap.exists()) {
                 currentKegiatanData = kegiatanDocSnap.data();
-                headerTitle.innerHTML = `${currentKegiatanData.nama} <small>Daftar Peserta</small>`;
-                canManage = userRole === 'admin' || currentKegiatanData.createdBy === userNip;
+                headerTitle.innerHTML = `${currentKegiatanData.nama || ''} <small>Daftar Peserta</small>`;
+                const createdBy = currentKegiatanData.createdBy || null;
+                canManage = userRole === 'admin' || createdBy === userNip;
+                listenToPeserta();
             } else {
                  headerTitle.innerHTML = 'Kegiatan tidak ditemukan <small>Error</small>';
                  emptyState.innerHTML = '<p>Data kegiatan ini tidak dapat ditemukan.</p>';
                  dataTable.style.display = 'none';
             }
+        };
 
+        const listenToPeserta = () => {
             const pesertaCollectionRef = collection(db, "kegiatan", kegiatanId, "peserta");
             onSnapshot(pesertaCollectionRef, (snapshot) => {
                 currentPesertaList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
@@ -491,7 +495,7 @@
                     });
                 }
             });
-        }
+        };
         
         tableBody.addEventListener('click', async (e) => {
             const target = e.target.closest('.icon-button');
@@ -542,10 +546,10 @@
         });
         
         pesertaModal.querySelector('.close-button').onclick = () => pesertaModal.style.display = 'none';
+        pdfOptionsModal.querySelector('.close-button').onclick = () => pdfOptionsModal.style.display = 'none';
         
         downloadExcelBtn.addEventListener('click', downloadExcel);
         generatePdfBtn.addEventListener('click', () => pdfOptionsModal.style.display = 'block');
-        pdfOptionsModal.querySelector('.close-button').onclick = () => pdfOptionsModal.style.display = 'none';
         confirmGeneratePdfBtn.addEventListener('click', generatePdf);
 
         loadPeserta();
