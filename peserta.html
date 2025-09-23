@@ -313,40 +313,19 @@
 
             doc.text(`Tanggal : ${tanggalText}`, 14, 40);
             doc.text(`Tempat  : ${tempatText}`, 14, 46);
-
-            const tableData = [];
-            currentPesertaList.forEach((peserta, index) => {
-                const ganjil = index + 1;
-                const genap = index + 2;
-
-                if (ganjil % 2 !== 0) { // Hanya proses untuk nomor ganjil
-                    const row = [
-                        ganjil,
-                        peserta.namaLengkap,
-                        peserta.jabatan,
-                        peserta.asalInstansi,
-                        `${ganjil}. ....................`,
-                        ''
-                    ];
-                    
-                    const pesertaGenap = currentPesertaList[genap - 1];
-                    if (pesertaGenap) {
-                        row[5] = `${genap}. ....................`;
-                    }
-                    tableData.push(row);
-                }
+            
+            const tableData = currentPesertaList.map((peserta, index) => {
+                return [
+                    index + 1,
+                    peserta.namaLengkap,
+                    peserta.jabatan,
+                    peserta.asalInstansi,
+                    `${index + 1}. ....................`
+                ];
             });
 
             doc.autoTable({
-                head: [
-                    [{ content: 'No', rowSpan: 2, styles: { valign: 'middle'} }, 
-                     { content: 'Nama Lengkap', rowSpan: 2, styles: { valign: 'middle'} }, 
-                     { content: 'Jabatan', rowSpan: 2, styles: { valign: 'middle'} }, 
-                     { content: 'Asal Instansi', rowSpan: 2, styles: { valign: 'middle'} },
-                     { content: 'Tanda Tangan', colSpan: 2, styles: { halign: 'center' } }
-                    ],
-                    ['Ganjil', 'Genap']
-                ],
+                head: [['No', 'Nama Lengkap', 'Jabatan', 'Asal Instansi', 'Tanda Tangan']],
                 body: tableData,
                 startY: 52,
                 theme: 'grid',
@@ -368,11 +347,10 @@
                 },
                 columnStyles: {
                     0: { cellWidth: 10, halign: 'center' },
-                    1: { cellWidth: 50 },
+                    1: { cellWidth: 60 },
                     2: { cellWidth: 40 },
-                    3: { cellWidth: 50 },
-                    4: { cellWidth: 'auto' },
-                    5: { cellWidth: 'auto' }
+                    3: { cellWidth: 60 },
+                    4: { cellWidth: 'auto' }
                 }
             });
 
