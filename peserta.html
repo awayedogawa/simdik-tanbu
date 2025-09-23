@@ -1,3 +1,4 @@
+```html:disable-run
 <!DOCTYPE html>
 <html lang="id">
 <head>
@@ -181,6 +182,34 @@
         .icon-button.delete-btn:hover {
             color: #EF4444; /* red-500 */
         }
+
+        /* Form Styling for Modal */
+        .form-group {
+            margin-bottom: 1rem;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: var(--gray-700);
+            font-size: 14px;
+        }
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 0.5rem;
+            border: 1px solid var(--gray-200);
+            border-radius: 4px;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+        .form-row {
+            display: flex;
+            gap: 1rem;
+        }
+        .form-row > .form-group {
+            flex: 1;
+        }
     </style>
 </head>
 <body style="display: none;">
@@ -201,7 +230,7 @@
                         Download Excel
                     </button>
                     <button id="generatePdfBtn" class="action-button generate-pdf-btn">
-                         <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
                         Buat Daftar Hadir
                     </button>
                 </div>
@@ -416,247 +445,26 @@
         // Function to generate a PDF attendance list
         const generatePdf = () => {
             try {
+                // Pastikan jsPDF tersedia
+                if (typeof window.jspdf === 'undefined' || typeof window.jspdf.jsPDF === 'undefined') {
+                    throw new Error('jsPDF library is not loaded properly.');
+                }
                 const { jsPDF } = window.jspdf;
+
+                // Validasi data
+                if (!currentKegiatanData || !currentKegiatanData.nama || currentPesertaList.length === 0) {
+                    throw new Error('Data kegiatan atau peserta tidak tersedia.');
+                }
+
                 const doc = new jsPDF({ orientation: 'landscape' });
                 const kosongkanTanggal = document.getElementById('kosongkanTanggal').checked;
                 const kosongkanTempat = document.getElementById('kosongkanTempat').checked;
-                
+
                 const pageWidth = doc.internal.pageSize.getWidth();
                 const centerX = pageWidth / 2;
                 const margin = 14;
 
                 // --- KOP SURAT (HEADER) ---
                  // Logo is embedded as an optimized Base64 string to avoid network requests and ensure reliability.
-                const logoBase64 = 'data:image/png;base64,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';
-
-            // Repositioned logo to the far left.
-            if (logoBase64) {
-                doc.addImage(logoBase64, 'PNG', margin, 12, 25, 25);
-            }
-            
-            // Text position is adjusted to be centered in the remaining space next to the logo.
-            const textStartX = margin + 30; // Start text after the logo area
-            const textWidth = pageWidth - textStartX - margin;
-            const textCenterX = textStartX + (textWidth / 2);
-
-            doc.setFont("times", "normal");
-            doc.setFontSize(12);
-            doc.text("PEMERINTAH KABUPATEN TANAH BUMBU", textCenterX, 15, { align: 'center' });
-            
-            doc.setFont("times", "bold");
-            doc.setFontSize(16);
-            doc.text("DINAS PENDIDIKAN", textCenterX, 22, { align: 'center' });
-            
-            doc.setFont("times", "normal");
-            doc.setFontSize(8);
-            doc.text("Alamat : Jln. Dharma Praja No.07 Kel. Gunung Tinggi Kec. Batulicin", textCenterX, 27, { align: 'center' });
-            doc.text("Kab. Tanah Bumbu Prov. Kalimantan Selatan – Kode Pos 72214", textCenterX, 31, { align: 'center' });
-            doc.text("Laman : disdik.tanahbumbukab.go.id Pos-el : disdiktanahbumbukab@gmail.com", textCenterX, 35, { align: 'center' });
-
-            // Garis pembatas
-            doc.setLineWidth(1);
-            doc.line(margin, 38, pageWidth - margin, 38);
-            doc.setLineWidth(0.2);
-            doc.line(margin, 39, pageWidth - margin, 39);
-            // --- END KOP SURAT ---
-
-            let currentY = 48; // Adjusted starting Y position for content
-
-            doc.setFont("helvetica", "bold");
-            doc.setFontSize(14); // Slightly smaller to fit better
-            doc.text("DAFTAR HADIR PESERTA", centerX, currentY, { align: 'center' });
-            currentY += 7;
-            
-            doc.setFont("helvetica", "normal");
-            doc.setFontSize(12);
-            doc.text(currentKegiatanData.nama.toUpperCase(), centerX, currentY, { align: 'center' });
-            currentY += 10;
-
-            doc.setFontSize(10);
-            const tanggalText = kosongkanTanggal ? ".................................................." : formatDateRange(currentKegiatanData.tanggalMulai, currentKegiatanData.tanggalBerakhir);
-            const tempatText = kosongkanTempat ? ".................................................." : currentKegiatanData.tempat;
-            doc.text(`Tanggal : ${tanggalText}`, margin, currentY);
-            currentY += 6;
-            doc.text(`Tempat  : ${tempatText}`, margin, currentY);
-            currentY += 6;
-
-            const tableData = currentPesertaList.map((peserta, index) => {
-                const signatureText = (index % 2 === 0)
-                    ? `${index + 1}. ....................`
-                    : `.................... .${index + 1}`;
-                return [ index + 1, peserta.namaLengkap, peserta.jabatan, peserta.asalInstansi, peserta.kecamatan, signatureText ];
-            });
-
-            doc.autoTable({
-                head: [['No', 'Nama Lengkap', 'Jabatan', 'Asal Instansi', 'Kecamatan', 'Tanda Tangan']],
-                body: tableData,
-                startY: currentY, // Use the adjusted Y position
-                theme: 'grid',
-                headStyles: { 
-                    fillColor: [41, 128, 185], textColor: 255, fontStyle: 'bold',
-                    halign: 'center', valign: 'middle'
-                },
-                styles: {
-                    cellPadding: 3.5, fontSize: 9, valign: 'middle',
-                    lineWidth: 0.1, lineColor: [0, 0, 0]
-                },
-                columnStyles: {
-                    0: { cellWidth: 15, halign: 'center' }, 1: { cellWidth: 55 },
-                    2: { cellWidth: 40 }, 3: { cellWidth: 55 }, 4: { cellWidth: 35 }, 5: { cellWidth: 'auto' }
-                },
-                didParseCell: function(data) {
-                    if (data.cell.section === 'body' && data.column.index === 5) {
-                        const rowNumber = data.row.index + 1;
-                        data.cell.styles.halign = (rowNumber % 2 === 0) ? 'right' : 'left';
-                    }
-                }
-            });
-
-            doc.save(`Daftar Hadir - ${currentKegiatanData.nama}.pdf`);
-            pdfOptionsModal.style.display = 'none';
-            
-            } catch (error) {
-                console.error("Gagal membuat PDF:", error);
-                alert("Terjadi kesalahan saat membuat PDF. Silakan coba lagi.");
-                pdfOptionsModal.style.display = 'none';
-            }
-        };
-
-        // Main function to load kegiatan and peserta data
-        const loadPeserta = async () => {
-            if (!kegiatanId) {
-                headerTitle.innerHTML = 'Kegiatan tidak valid <small>Error</small>';
-                emptyState.innerHTML = '<p>ID kegiatan tidak ditemukan di URL.</p>';
-                dataTable.style.display = 'none';
-                return;
-            }
-
-            const kegiatanDocRef = doc(db, "kegiatan", kegiatanId);
-            const kegiatanDocSnap = await getDoc(kegiatanDocRef);
-
-            if (kegiatanDocSnap.exists()) {
-                currentKegiatanData = kegiatanDocSnap.data();
-                headerTitle.innerHTML = `${currentKegiatanData.nama || ''} <small>Daftar Peserta</small>`;
-                const createdBy = currentKegiatanData.createdBy || null;
-                // Determine if the current user can manage participants
-                canManage = userRole === 'admin' || createdBy === userNip;
-                listenToPeserta();
-            } else {
-                 headerTitle.innerHTML = 'Kegiatan tidak ditemukan <small>Error</small>';
-                 emptyState.innerHTML = '<p>Data kegiatan ini tidak dapat ditemukan.</p>';
-                 dataTable.style.display = 'none';
-            }
-        };
-
-        // Listen for real-time updates on the peserta subcollection
-        const listenToPeserta = () => {
-            const pesertaCollectionRef = collection(db, "kegiatan", kegiatanId, "peserta");
-            onSnapshot(pesertaCollectionRef, (snapshot) => {
-                currentPesertaList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                tableBody.innerHTML = '';
-
-                if (currentPesertaList.length === 0) {
-                    emptyState.innerHTML = '<p>Belum ada peserta yang mendaftar.</p>';
-                    emptyState.style.display = 'block';
-                    dataTable.style.display = 'none';
-                } else {
-                    emptyState.style.display = 'none';
-                    dataTable.style.display = 'table';
-                    currentPesertaList.forEach((peserta, index) => {
-                        const row = tableBody.insertRow();
-                        row.innerHTML = `
-                            <td>${index + 1}</td>
-                            <td>${peserta.namaLengkap || ''}</td>
-                            <td>${peserta.nip || '-'}</td>
-                            <td>${peserta.asalInstansi || ''}</td>
-                            <td>${peserta.npsn || '-'}</td>
-                            <td>${peserta.kecamatan || ''}</td>
-                            <td>${peserta.jabatan || ''}</td>
-                            <td>${peserta.nomorTelepon || ''}</td>
-                            <td>
-                                ${canManage ? `
-                                <div class="action-button-group">
-                                    <button class="icon-button edit-btn" data-id="${peserta.id}" title="Edit"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z" /><path fill-rule="evenodd" d="M2 6a2 2 0 012-2h4a1 1 0 010 2H4v10h10v-4a1 1 0 112 0v4a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" clip-rule="evenodd" /></svg></button>
-                                    <button class="icon-button delete-btn" data-id="${peserta.id}" data-nama="${peserta.namaLengkap}" title="Hapus"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" /></svg></button>
-                                </div>
-                                ` : ''}
-                            </td>
-                        `;
-                    });
-                }
-            });
-        };
-        
-        // Event listener for table actions (edit, delete)
-        tableBody.addEventListener('click', async (e) => {
-            const target = e.target.closest('.icon-button');
-            if (!target) return;
-
-            const pesertaId = target.dataset.id;
-            const pesertaRef = doc(db, "kegiatan", kegiatanId, "peserta", pesertaId);
-
-            // Handle delete action
-            if (target.classList.contains('delete-btn')) {
-                const nama = target.dataset.nama;
-                if (confirm(`Apakah Anda yakin ingin menghapus peserta "${nama}"?`)) {
-                    await deleteDoc(pesertaRef);
-                }
-            }
-
-            // Handle edit action
-            if (target.classList.contains('edit-btn')) {
-                const docSnap = await getDoc(pesertaRef);
-                if (docSnap.exists()) {
-                    const data = docSnap.data();
-                    pesertaIdInput.value = pesertaId;
-                    pesertaModal.querySelector('#namaLengkap').value = data.namaLengkap;
-                    pesertaModal.querySelector('#nip').value = data.nip;
-                    pesertaModal.querySelector('#asalInstansi').value = data.asalInstansi;
-                    pesertaModal.querySelector('#npsn').value = data.npsn;
-                    pesertaModal.querySelector('#jabatan').value = data.jabatan;
-                    pesertaModal.querySelector('#kecamatan').value = data.kecamatan;
-                    pesertaModal.querySelector('#nomorTelepon').value = data.nomorTelepon;
-                    pesertaModal.style.display = 'block';
-                }
-            }
-        });
-
-        // Event listener for submitting the edit form
-        pesertaForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const pesertaId = pesertaIdInput.value;
-            const updatedData = {
-                namaLengkap: pesertaModal.querySelector('#namaLengkap').value,
-                nip: pesertaModal.querySelector('#nip').value,
-                asalInstansi: pesertaModal.querySelector('#asalInstansi').value,
-                npsn: pesertaModal.querySelector('#npsn').value,
-                jabatan: pesertaModal.querySelector('#jabatan').value,
-                kecamatan: pesertaModal.querySelector('#kecamatan').value,
-                nomorTelepon: pesertaModal.querySelector('#nomorTelepon').value,
-            };
-            const pesertaRef = doc(db, "kegiatan", kegiatanId, "peserta", pesertaId);
-            await updateDoc(pesertaRef, updatedData);
-            pesertaModal.style.display = 'none';
-        });
-        
-        // Event listeners for closing modals
-        pesertaModal.querySelector('.close-button').onclick = () => pesertaModal.style.display = 'none';
-        pdfOptionsModal.querySelector('.close-button').onclick = () => pdfOptionsModal.style.display = 'none';
-        
-        // Event listeners for main action buttons
-        downloadExcelBtn.addEventListener('click', downloadExcel);
-        generatePdfBtn.addEventListener('click', () => {
-             if (currentPesertaList.length > 0) {
-                pdfOptionsModal.style.display = 'block';
-            } else {
-                alert("Tidak ada data peserta untuk membuat daftar hadir.");
-            }
-        });
-        confirmGeneratePdfBtn.addEventListener('click', generatePdf);
-
-        // Initial load
-        loadPeserta();
-    </script>
-</body>
-</html>
-
+                const logoBase64 = 'data:image/png;base64,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
+```
