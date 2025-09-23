@@ -79,8 +79,6 @@
             transition: all 0.2s ease;
         }
         .action-button:hover { background-color: var(--gray-100); box-shadow: var(--shadow-sm); }
-        .action-button:disabled { cursor: not-allowed; opacity: 0.7; }
-        .action-button svg { width: 16px; height: 16px; }
         .primary-button {
             background-color: var(--primary-color); color: white; border: none;
             padding: 12px 20px; font-size: 14px; font-weight: 500;
@@ -203,7 +201,6 @@
             <h2>Manajemen Kegiatan</h2>
             <div class="header-buttons">
                 <div class="main-actions admin-only-feature">
-                    <!-- Tombol diubah menjadi Link -->
                     <a href="rekap-peserta.html" class="action-button">Rekap Peserta</a>
                     <a href="rekap-narasumber.html" class="action-button">Rekap Narasumber</a>
                 </div>
@@ -240,7 +237,40 @@
     </div>
 
     <div id="dataModal" class="modal">
-        <!-- ... Modal Content ... -->
+        <div class="modal-content">
+            <span class="close-button">&times;</span>
+            <h2 id="modalTitle" style="color: var(--gray-900); font-weight: 600; margin-top: 0;">Input Data Kegiatan</h2>
+            <form id="kegiatanForm">
+                <input type="hidden" id="kegiatanId">
+                <div class="form-group">
+                    <label for="namaKegiatan">Nama Kegiatan</label>
+                    <input type="text" id="namaKegiatan" required>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="tanggalMulai">Tanggal Mulai</label>
+                        <input type="date" id="tanggalMulai" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="tanggalBerakhir">Tanggal Berakhir</label>
+                        <input type="date" id="tanggalBerakhir" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="tempat">Tempat Kegiatan</label>
+                    <input type="text" id="tempat" required>
+                </div>
+                <div class="form-group admin-only-form">
+                    <label for="bidang">Bidang Pelaksana</label>
+                    <select id="bidang"></select>
+                </div>
+                 <div class="form-group admin-only-form">
+                    <label for="penanggungJawab">Penanggung Jawab</label>
+                    <input type="text" id="penanggungJawab" readonly>
+                </div>
+                <button type="submit" id="submitBtn" class="primary-button" style="width: 100%; justify-content: center; padding-top: 14px; padding-bottom: 14px;">Simpan Data</button>
+            </form>
+        </div>
     </div>
 
     <script type="module">
@@ -248,16 +278,6 @@
         import { getFirestore, collection, query, where, onSnapshot, getDocs, doc, getDoc, addDoc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore.js";
 
         const userRole = sessionStorage.getItem('userRole');
-        
-        if (userRole === 'admin') {
-            document.body.classList.add('admin-mode');
-        } else {
-            document.body.classList.add('pelaksana-mode');
-        }
-        
-        // Sisa kode JavaScript Anda yang sudah berfungsi dengan baik
-        // ... (inisialisasi, load data, modal, submit, event listener klik tabel, dll) ...
-        // TIDAK ADA PERUBAHAN PADA LOGIKA JAVASCRIPT ANDA DI SINI
         const userName = sessionStorage.getItem('userName');
         const userNip = sessionStorage.getItem('userNip');
         const userBidang = sessionStorage.getItem('userBidang');
@@ -265,6 +285,12 @@
         document.body.style.display = 'block';
         document.getElementById('userNameDisplay').textContent = `Halo, ${userName}`;
         
+        if (userRole === 'admin') {
+            document.body.classList.add('admin-mode');
+        } else {
+            document.body.classList.add('pelaksana-mode');
+        }
+
         document.getElementById('logoutButton').addEventListener('click', () => {
             sessionStorage.clear();
             window.location.href = 'login.html';
@@ -476,11 +502,42 @@
             }
 
             if (target.classList.contains('delete-btn')) {
-                // ... (logika hapus) ...
+                if (userRole !== 'admin') {
+                    const docRef = doc(db, 'kegiatan', docId);
+                    const docSnap = await getDoc(docRef);
+                    if (docSnap.data().createdBy !== userNip) {
+                        alert('Anda tidak memiliki izin untuk menghapus kegiatan ini.');
+                        return;
+                    }
+                }
+                const namaKegiatan = target.dataset.nama;
+                if (confirm(`Apakah Anda yakin ingin menghapus kegiatan "${namaKegiatan}"?`)) {
+                    await deleteDoc(doc(db, "kegiatan", docId));
+                }
             }
 
             if (target.classList.contains('edit-btn')) {
-                // ... (logika edit) ...
+                 const docRef = doc(db, 'kegiatan', docId);
+                 const docSnap = await getDoc(docRef);
+                 if (docSnap.exists()) {
+                    if (userRole !== 'admin' && docSnap.data().createdBy !== userNip) {
+                        alert('Anda tidak memiliki izin untuk mengedit kegiatan ini.');
+                        return;
+                    }
+                    const kegiatan = docSnap.data();
+                    kegiatanIdInput.value = docId;
+                    document.getElementById('namaKegiatan').value = kegiatan.nama;
+                    document.getElementById('tanggalMulai').value = kegiatan.tanggalMulai;
+                    document.getElementById('tanggalBerakhir').value = kegiatan.tanggalBerakhir;
+                    document.getElementById('tempat').value = kegiatan.tempat;
+                    if (userRole === 'admin') {
+                        populateBidangDropdown(kegiatan.bidang);
+                        pjInput.value = kegiatan.pj;
+                    }
+                    modalTitle.textContent = 'Edit Data Kegiatan';
+                    document.getElementById('submitBtn').textContent = 'Update Data';
+                    modal.style.display = 'flex';
+                 }
             }
         });
 
