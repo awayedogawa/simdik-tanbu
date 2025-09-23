@@ -212,7 +212,8 @@
 
      <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js";
-        import { getFirestore, doc, getDoc, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/9.15.0/firestore.js";
+        // --- PERBAIKAN DI SINI ---
+        import { getFirestore, doc, getDoc, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore.js";
 
         document.body.style.display = 'block';
         document.getElementById('userNameDisplay').textContent = `Halo, ${sessionStorage.getItem('userName')}`;
