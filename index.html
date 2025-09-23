@@ -478,6 +478,16 @@
             closeModal();
         });
         
+        const deleteSubcollection = async (kegiatanId, subcollectionName) => {
+            const subCollectionRef = collection(db, "kegiatan", kegiatanId, subcollectionName);
+            const snapshot = await getDocs(subCollectionRef);
+            const deletePromises = [];
+            snapshot.forEach(doc => {
+                deletePromises.push(deleteDoc(doc.ref));
+            });
+            await Promise.all(deletePromises);
+        };
+
         tableBody.addEventListener('click', async (event) => {
             const target = event.target.closest('.icon-button, a.icon-button');
             if (!target) return;
@@ -511,8 +521,18 @@
                     }
                 }
                 const namaKegiatan = target.dataset.nama;
-                if (confirm(`Apakah Anda yakin ingin menghapus kegiatan "${namaKegiatan}"?`)) {
-                    await deleteDoc(doc(db, "kegiatan", docId));
+                if (confirm(`PERINGATAN: Menghapus kegiatan "${namaKegiatan}" juga akan menghapus SEMUA data peserta dan narasumber di dalamnya. Anda yakin ingin melanjutkan?`)) {
+                    try {
+                        target.disabled = true;
+                        await deleteSubcollection(docId, 'peserta');
+                        await deleteSubcollection(docId, 'narasumber');
+                        await deleteDoc(doc(db, "kegiatan", docId));
+                        alert(`Kegiatan "${namaKegiatan}" dan semua datanya berhasil dihapus.`);
+                    } catch (error) {
+                        console.error("Gagal menghapus kegiatan:", error);
+                        alert("Terjadi kesalahan saat menghapus.");
+                        target.disabled = false;
+                    }
                 }
             }
 
