@@ -57,19 +57,38 @@
             font-size: 14px; padding: 0;
         }
         .header-actions {
-            display: flex; gap: 0.75rem; flex-wrap: wrap;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+        .main-actions {
+            display: flex;
+            gap: 0.75rem;
+            flex-wrap: wrap;
         }
         .action-button {
             background-color: var(--card-background); color: var(--gray-700);
             border: 1px solid var(--gray-200); padding: 10px 16px; font-size: 14px;
             font-weight: 500; border-radius: 6px; cursor: pointer;
             text-decoration: none; display: inline-flex; align-items: center; gap: 8px;
-            transition: background-color 0.2s ease, box-shadow 0.2s ease;
+            transition: background-color 0.2s ease, box-shadow 0.2s ease, color 0.2s ease, border-color 0.2s ease;
         }
         .action-button:hover { background-color: var(--gray-100); box-shadow: var(--shadow-sm); }
         .action-button svg { width: 16px; height: 16px; }
         .download-excel-btn { color: #059669; }
         .generate-pdf-btn { color: #D97706; }
+        .back-button {
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+            color: white;
+        }
+        .back-button:hover {
+            background-color: var(--primary-hover);
+            border-color: var(--primary-hover);
+            color: white;
+        }
         main {
             background-color: var(--card-background); border-radius: 8px;
             box-shadow: var(--shadow-md); overflow: hidden;
@@ -132,15 +151,17 @@
                 </div>
             </div>
             <div class="header-actions">
-                <a href="index.html" class="action-button">Kembali ke Dashboard</a>
-                <button id="downloadExcelBtn" class="action-button download-excel-btn">
-                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
-                    Download Excel
-                </button>
-                <button id="generatePdfBtn" class="action-button generate-pdf-btn">
-                     <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
-                    Buat Daftar Hadir
-                </button>
+                <div class="main-actions">
+                    <button id="downloadExcelBtn" class="action-button download-excel-btn">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                        Download Excel
+                    </button>
+                    <button id="generatePdfBtn" class="action-button generate-pdf-btn">
+                         <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
+                        Buat Daftar Hadir
+                    </button>
+                </div>
+                <a href="index.html" class="action-button back-button">Kembali ke Dashboard</a>
             </div>
         </header>
         <main>
@@ -295,20 +316,18 @@
 
             const tableData = currentPesertaList.map((peserta, index) => {
                 const signature = `${index + 1}. ..........................`;
-                // Jika nomor ganjil, masukkan ke kolom pertama. Jika genap, ke kolom kedua.
                 return (index % 2 === 0) 
                     ? [ index + 1, peserta.namaLengkap, peserta.jabatan, peserta.asalInstansi, signature ]
-                    : [ signature ]; // Hanya isi kolom tanda tangan kedua
+                    : [ signature ];
             });
             
-            // Logika untuk menggabungkan baris tanda tangan
             const finalTableData = [];
             for(let i = 0; i < tableData.length; i++) {
-                if (i % 2 === 0) { // Baris ganjil
-                    if (tableData[i+1]) { // Jika ada baris genap berikutnya
-                        tableData[i].push(tableData[i+1][0]); // Gabungkan
+                if (i % 2 === 0) {
+                    if (tableData[i+1]) {
+                        tableData[i].push(tableData[i+1][0]);
                     } else {
-                        tableData[i].push(''); // Jika tidak ada, kosongkan
+                        tableData[i].push('');
                     }
                     finalTableData.push(tableData[i]);
                 }
@@ -320,7 +339,7 @@
                 startY: 52,
                 theme: 'grid',
                 headStyles: { 
-                    fillColor: [41, 128, 185], // Warna biru tua
+                    fillColor: [41, 128, 185],
                     textColor: 255, 
                     fontStyle: 'bold'
                 },
@@ -330,15 +349,10 @@
                     valign: 'middle'
                 },
                 columnStyles: {
-                    0: { cellWidth: 10 }, // No
-                    1: { cellWidth: 50 }, // Nama
-                    2: { cellWidth: 40 }, // Jabatan
-                    3: { cellWidth: 50 }, // Instansi
-                    4: { cellWidth: 'auto' }, // TTD 1
-                    5: { cellWidth: 'auto' }  // TTD 2
+                    0: { cellWidth: 10 }, 1: { cellWidth: 50 }, 2: { cellWidth: 40 },
+                    3: { cellWidth: 50 }, 4: { cellWidth: 'auto' }, 5: { cellWidth: 'auto' }
                 },
                 didParseCell: function (data) {
-                    // Membuat nomor tanda tangan di kolom genap menjadi rata kanan
                     if (data.column.index === 5 && data.cell.section === 'body') {
                         data.cell.styles.halign = 'right';
                     }
