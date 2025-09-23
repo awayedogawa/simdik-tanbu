@@ -7,7 +7,6 @@
     
     <script>
         if (!sessionStorage.getItem('userRole')) {
-            // Perbaikan 1: Menggunakan path relatif yang benar
             window.location.href = './login.html';
         }
     </script>
@@ -15,6 +14,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Times+New+Roman&display=swap" rel="stylesheet">
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -218,7 +218,6 @@
         </main>
     </div>
 
-    <!-- Perbaikan 2: Menambahkan kembali Modal HTML yang hilang -->
     <div id="pesertaModal" class="modal">
         <div class="modal-content">
             <span class="close-button">&times;</span>
@@ -312,7 +311,7 @@
         document.getElementById('userNameDisplay').textContent = `Halo, ${sessionStorage.getItem('userName')}`;
         document.getElementById('logoutButton').addEventListener('click', () => {
             sessionStorage.clear();
-            window.location.href = './login.html'; // Perbaikan 1
+            window.location.href = './login.html';
         });
 
         const firebaseConfig = {
