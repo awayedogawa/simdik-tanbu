@@ -5,11 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Uji Coba - Generate Undangan</title>
     
-    <script>
-        if (sessionStorage.getItem('userRole') !== 'admin') {
-            window.location.href = 'login.html';
-        }
-    </script>
+    <!-- Skrip penjaga login telah dihapus dari sini -->
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -56,7 +52,6 @@
         .activity-info strong { color: var(--gray-900); display: block; font-size: 1rem; }
         .activity-info span { font-size: 0.875rem; color: var(--gray-500); }
         
-        /* Modal Styles */
         .modal {
             display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%;
             overflow: auto; background-color: rgba(17, 24, 39, 0.6); backdrop-filter: blur(4px);
@@ -91,7 +86,7 @@
         .form-row .form-group { flex: 1; }
     </style>
 </head>
-<body style="display: none;">
+<body>
 
     <div class="container">
         <header>
@@ -107,7 +102,6 @@
         </main>
     </div>
     
-    <!-- Modal untuk Input Data Undangan -->
     <div id="undanganModal" class="modal">
         <div class="modal-content">
             <span class="close-button">&times;</span>
@@ -158,8 +152,6 @@
      <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js";
         import { getFirestore, collection, getDocs, doc, getDoc } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore.js";
-
-        document.body.style.display = 'block';
 
         const firebaseConfig = {
             apiKey: "AIzaSyBM4RhHUdQxSEPVBGhjf4R8UGfzMmD7egU",
@@ -237,7 +229,6 @@
 
             const logoUrl = 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/74/Coats_of_arms_of_Tanah_Bumbu.svg/500px-Coats_of_arms_of_Tanah_Bumbu.svg.png';
             
-            // --- KOP SURAT ---
             doc.addImage(logoUrl, 'PNG', 15, 12, 20, 24);
             doc.setFont('times', 'bold');
             doc.setFontSize(14);
@@ -253,77 +244,53 @@
             doc.setLineWidth(0.2);
             doc.line(15, 41, 195, 41);
 
-            // --- TANGGAL SURAT ---
             doc.setFontSize(12);
             const today = new Date();
             const tglSurat = `${today.getDate()} ${new Intl.DateTimeFormat('id-ID', { month: 'long' }).format(today)} ${today.getFullYear()}`;
             doc.text(`Batulicin, ${tglSurat}`, 195, 50, { align: 'right' });
             
-            // --- DETAIL SURAT ---
             let yPos = 60;
-            doc.text('Nomor', 15, yPos);
-            doc.text(':', 40, yPos);
-            doc.text(formData.nomor, 42, yPos);
+            doc.text('Nomor', 15, yPos); doc.text(':', 40, yPos); doc.text(formData.nomor, 42, yPos);
             yPos += 5;
-            doc.text('Sifat', 15, yPos);
-            doc.text(':', 40, yPos);
-            doc.text('Biasa', 42, yPos);
+            doc.text('Sifat', 15, yPos); doc.text(':', 40, yPos); doc.text('Biasa', 42, yPos);
             yPos += 5;
-            doc.text('Lampiran', 15, yPos);
-            doc.text(':', 40, yPos);
-            doc.text(formData.lampiran, 42, yPos);
+            doc.text('Lampiran', 15, yPos); doc.text(':', 40, yPos); doc.text(formData.lampiran, 42, yPos);
             yPos += 5;
-            doc.text('Hal', 15, yPos);
-            doc.text(':', 40, yPos);
+            doc.text('Hal', 15, yPos); doc.text(':', 40, yPos);
             doc.setFont('times', 'bold');
             doc.text(formData.perihal, 42, yPos, { 'maxWidth': 150 });
             doc.line(42, yPos + 1, 42 + doc.getTextWidth(formData.perihal), yPos + 1);
             doc.setFont('times', 'normal');
             
-            // --- TUJUAN SURAT ---
             yPos += 10;
             doc.text('Yth.', 15, yPos);
-            formData.yth.forEach(line => {
-                doc.text(line, 42, yPos);
-                yPos += 5;
-            });
+            formData.yth.forEach(line => { doc.text(line, 42, yPos); yPos += 5; });
             doc.text('di -', 15, yPos);
             doc.setFont('times', 'italic');
             doc.text('Tempat', 42, yPos);
             doc.setFont('times', 'normal');
 
-            // --- ISI SURAT ---
             yPos += 15;
             const bodyText = `Dalam rangka meningkatkan kompetensi Pendidik dan Tenaga Kependidikan pada Jenjang PAUD, Dinas Pendidikan Kabupaten Tanah Bumbu akan melaksanakan ${activity.nama} yang bekerjasama dengan Balai Guru dan Tenaga Kependidikan (BGTK) Provinsi Kalimantan Selatan.\n\nSehubungan dengan hal tersebut, kami mohon kepada TK agar menugaskan 2 (dua) Guru ASN (PNS/P3K) untuk berperan aktif sebagai peserta dan berhadir pada kegiatan di maksud, yang akan di laksanakan pada :`;
             doc.text(bodyText, 15, yPos, { maxWidth: 180, align: 'justify' });
             yPos += 40;
 
-            // --- DETAIL KEGIATAN ---
-            doc.text('Hari', 40, yPos);
-            doc.text(':', 70, yPos);
-            doc.text(new Intl.DateTimeFormat('id-ID', { weekday: 'long' }).format(new Date(activity.tanggalMulai)), 72, yPos);
+            doc.text('Hari', 40, yPos); doc.text(':', 70, yPos); doc.text(new Intl.DateTimeFormat('id-ID', { weekday: 'long' }).format(new Date(activity.tanggalMulai)), 72, yPos);
             yPos += 7;
-            doc.text('Tanggal', 40, yPos);
-            doc.text(':', 70, yPos);
-            doc.text(formatDateRange(activity.tanggalMulai, activity.tanggalBerakhir), 72, yPos);
+            doc.text('Tanggal', 40, yPos); doc.text(':', 70, yPos); doc.text(formatDateRange(activity.tanggalMulai, activity.tanggalBerakhir), 72, yPos);
             yPos += 7;
-            doc.text('Waktu', 40, yPos);
-            doc.text(':', 70, yPos);
-            doc.text('Jam 08.00 WITA sampai selesai', 72, yPos);
+            doc.text('Waktu', 40, yPos); doc.text(':', 70, yPos); doc.text('Jam 08.00 WITA sampai selesai', 72, yPos);
             yPos += 7;
-            doc.text('Tempat', 40, yPos);
-            doc.text(':', 70, yPos);
+            doc.text('Tempat', 40, yPos); doc.text(':', 70, yPos);
             doc.text(activity.tempat, 72, yPos, { maxWidth: 120 });
             yPos += 14;
 
-            // --- PENUTUP ---
             const closingText = `Untuk kelancaran pelaksanaan kegiatan, dimohon untuk melakukan Registrasi Peserta pada link : ${window.location.origin}${window.location.pathname.replace('uji-coba-undangan.html', '')}daftar.html?id=${activity.id} dan peserta hadir tepat waktu serta Pakaian disesuaikan dengan Pakaian Dinas Harian (PDH) pada waktu itu. untuk informasi lebih lanjut dapat menghubungi kontak ${activity.pj}.\n\nDemikian disampaikan, atas perhatian dan kehadirannya di ucapkan terima kasih.`;
             doc.text(closingText, 15, yPos, { maxWidth: 180, align: 'justify' });
 
-            // --- TANDA TANGAN ---
             yPos += 45;
             doc.text('Kepala Dinas,', 195, yPos, { align: 'right' });
-            yPos += 25; // Spasi untuk TTD dan stempel
+            yPos += 25;
             doc.setFont('times', 'bold');
             doc.text(formData.namaPejabat, 195, yPos, { align: 'right' });
             doc.line(195 - doc.getTextWidth(formData.namaPejabat), yPos + 1, 195, yPos + 1);
@@ -356,3 +323,4 @@
     </script>
 </body>
 </html>
+
