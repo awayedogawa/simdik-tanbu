@@ -238,7 +238,40 @@
     </div>
 
     <div id="dataModal" class="modal">
-        <!-- ... Konten Modal tidak berubah ... -->
+        <div class="modal-content">
+            <span class="close-button">&times;</span>
+            <h2 id="modalTitle" style="color: var(--gray-900); font-weight: 600; margin-top: 0;">Input Data Kegiatan</h2>
+            <form id="kegiatanForm">
+                <input type="hidden" id="kegiatanId">
+                <div class="form-group">
+                    <label for="namaKegiatan">Nama Kegiatan</label>
+                    <input type="text" id="namaKegiatan" required>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="tanggalMulai">Tanggal Mulai</label>
+                        <input type="date" id="tanggalMulai" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="tanggalBerakhir">Tanggal Berakhir</label>
+                        <input type="date" id="tanggalBerakhir" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="tempat">Tempat Kegiatan</label>
+                    <input type="text" id="tempat" required>
+                </div>
+                <div class="form-group admin-only-form">
+                    <label for="bidang">Bidang Pelaksana</label>
+                    <select id="bidang"></select>
+                </div>
+                 <div class="form-group admin-only-form">
+                    <label for="penanggungJawab">Penanggung Jawab</label>
+                    <input type="text" id="penanggungJawab" readonly>
+                </div>
+                <button type="submit" id="submitBtn" class="primary-button" style="width: 100%; justify-content: center; padding-top: 14px; padding-bottom: 14px;">Simpan Data</button>
+            </form>
+        </div>
     </div>
 
     <script type="module">
@@ -246,15 +279,6 @@
         import { getFirestore, collection, query, where, onSnapshot, getDocs, doc, getDoc, addDoc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore.js";
 
         const userRole = sessionStorage.getItem('userRole');
-        
-        if (userRole === 'admin') {
-            document.body.classList.add('admin-mode');
-        } else {
-            document.body.classList.add('pelaksana-mode');
-        }
-        
-        // Sisa kode JavaScript Anda (yang sudah berfungsi dengan baik) tetap sama di sini
-        // Tidak ada perubahan pada logika JavaScript, hanya pada HTML di atas
         const userName = sessionStorage.getItem('userName');
         const userNip = sessionStorage.getItem('userNip');
         const userBidang = sessionStorage.getItem('userBidang');
@@ -262,9 +286,15 @@
         document.body.style.display = 'block';
         document.getElementById('userNameDisplay').textContent = `Halo, ${userName}`;
         
+        if (userRole === 'admin') {
+            document.body.classList.add('admin-mode');
+        } else {
+            document.body.classList.add('pelaksana-mode');
+        }
+
         document.getElementById('logoutButton').addEventListener('click', () => {
             sessionStorage.clear();
-            window.location.href = 'login.html';
+            window.location.href = './login.html';
         });
 
         const firebaseConfig = {
@@ -458,6 +488,7 @@
                 deletePromises.push(deleteDoc(doc.ref));
             });
             await Promise.all(deletePromises);
+            console.log(`Sub-koleksi ${subcollectionName} untuk kegiatan ${kegiatanId} berhasil dihapus.`);
         };
 
         tableBody.addEventListener('click', async (event) => {
