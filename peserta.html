@@ -17,8 +17,8 @@
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     
-    <script src="https://apis.google.com/js/api.js"></script>
-    <script src="https://accounts.google.com/gsi/client"></script>
+    <script async defer src="https://apis.google.com/js/api.js" onload="gapiLoaded()"></script>
+    <script async defer src="https://accounts.google.com/gsi/client" onload="gisInitialized()"></script>
 
     <style>
         :root {
@@ -78,6 +78,7 @@
             transition: all 0.2s ease;
         }
         .action-button:hover { background-color: var(--gray-100); box-shadow: var(--shadow-sm); }
+        .action-button:disabled { background-color: var(--gray-100); color: var(--gray-500); cursor: not-allowed; }
         .action-button svg { width: 16px; height: 16px; }
         .download-excel-btn { color: #059669; }
         .generate-docs-btn { color: #1D4ED8; }
@@ -277,15 +278,15 @@
         import { getFirestore, doc, getDoc, collection, onSnapshot, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore.js";
 
         // --- KONFIGURASI UNTUK GOOGLE DOCS API ---
-        // TODO: Ganti dengan kredensial dari Google Cloud Console Anda
-        const API_KEY = "YOUR_API_KEY"; 
-        const CLIENT_ID = "YOUR_CLIENT_ID";
-        const TEMPLATE_DOC_ID = "YOUR_TEMPLATE_DOC_ID"; // ID dari Google Docs Template
+        const API_KEY = "AIzaSyC5GDpaLIPF-frZhboAzwThDKp8yOZvF2Q"; 
+        const CLIENT_ID = "194936354981-j1a8adl7c9gr71upg59j81a1oh382nva.apps.googleusercontent.com";
+        const TEMPLATE_DOC_ID = "116SnvE_ay3nipxWTA3y30tM1TzZvkd27E2rW_ydSa0g";
         
-        // Lingkup (scopes) yang dibutuhkan aplikasi
         const SCOPES = "https://www.googleapis.com/auth/drive";
 
         let tokenClient;
+        let gapiInited = false;
+        let gisInited = false;
         // ------------------------------------------
 
         const userRole = sessionStorage.getItem('userRole');
@@ -367,36 +368,40 @@
 
         // --- FUNGSI BARU UNTUK GOOGLE DOCS ---
 
-        function gapiLoaded() {
-            gapi.load('client', initializeGapiClient);
-        }
-
-        async function initializeGapiClient() {
-            await gapi.client.init({
-                apiKey: API_KEY,
-                discoveryDocs: [
-                    "https://www.googleapis.com/discovery/v1/apis/drive/v3/rest",
-                    "https://www.googleapis.com/discovery/v1/apis/docs/v1/rest"
-                ],
+        window.gapiLoaded = () => {
+            gapi.load('client', async () => {
+                await gapi.client.init({
+                    apiKey: API_KEY,
+                    discoveryDocs: [
+                        "https://www.googleapis.com/discovery/v1/apis/drive/v3/rest",
+                        "https://www.googleapis.com/discovery/v1/apis/docs/v1/rest"
+                    ],
+                });
+                gapiInited = true;
             });
         }
 
-        function gisInitialized() {
+        window.gisInitialized = () => {
             tokenClient = google.accounts.oauth2.initTokenClient({
                 client_id: CLIENT_ID,
                 scope: SCOPES,
                 callback: (tokenResponse) => {
                     if (tokenResponse && tokenResponse.access_token) {
                         gapi.client.setToken(tokenResponse);
-                        generateDocument(); // Panggil fungsi utama setelah otentikasi
+                        generateDocument(); 
                     } else {
                         alert("Gagal mendapatkan otorisasi dari Google.");
                     }
                 },
             });
+            gisInited = true;
         }
         
         function handleAuthClick() {
+            if (!gapiInited || !gisInited) {
+                alert("Layanan Google belum siap, silakan coba beberapa saat lagi.");
+                return;
+            }
             if (gapi.client.getToken() === null) {
                 tokenClient.requestAccessToken({ prompt: 'consent' });
             } else {
@@ -405,12 +410,16 @@
         }
         
         async function generateDocument() {
-            alert("Memulai proses pembuatan dokumen. Ini mungkin memakan waktu beberapa saat.");
+            if (currentPesertaList.length === 0) {
+                alert("Tidak ada data peserta untuk membuat daftar hadir.");
+                return;
+            }
+            
+            alert("Memulai proses pembuatan dokumen. Ini mungkin memakan waktu beberapa saat...");
             generateDocsBtn.disabled = true;
             generateDocsBtn.textContent = "Memproses...";
 
-            const now = new Date();
-            const newTitle = `Daftar Hadir - ${currentKegiatanData.nama} - ${now.toLocaleString("id-ID")}`;
+            const newTitle = `Daftar Hadir - ${currentKegiatanData.nama}`;
             
             try {
                 // 1. Salin template
@@ -420,7 +429,7 @@
                 });
                 const newDocId = copyResponse.result.id;
 
-                // 2. Siapkan data pengganti (placeholders)
+                // 2. Siapkan data pengganti (placeholders) untuk info kegiatan
                 const requests = [
                     {
                         replaceAllText: {
@@ -448,43 +457,11 @@
                     resource: { requests }
                 });
                 
-                // 4. Isi tabel peserta (jika ada pesertanya)
-                if (currentPesertaList.length > 0) {
-                     // Cari tabelnya dulu
-                    const docContent = await gapi.client.docs.documents.get({ documentId: newDocId });
-                    const table = docContent.result.body.content.find(c => c.table)?.table;
-
-                    if (table) {
-                        // Siapkan baris baru untuk dimasukkan
-                        const tableRequests = [];
-                        currentPesertaList.forEach((peserta, index) => {
-                             const rowContent = [
-                                `${index + 1}`,
-                                peserta.namaLengkap || '',
-                                peserta.jabatan || '',
-                                peserta.asalInstansi || '',
-                                '' // Kolom tanda tangan
-                            ].map(text => ({
-                                insertText: {
-                                    text: text,
-                                    location: { index: 1 } // Masukkan di awal sel
-                                }
-                            }));
-                            
-                            // Logika ini masih perlu disempurnakan karena batchUpdate untuk tabel cukup kompleks
-                            // Untuk sekarang, kita lewati pengisian tabel otomatis
-                        });
-                        
-                        console.log("Pengisian tabel otomatis perlu implementasi lebih lanjut.");
-                         alert("Dokumen berhasil dibuat, namun pengisian tabel peserta otomatis belum diimplementasikan. Anda perlu mengisinya secara manual.");
-                    } else {
-                        console.log("Placeholder tabel tidak ditemukan di template.");
-                    }
-                }
-                
-                // 5. Berhasil! Buka dokumen di tab baru.
+                // 4. Berhasil! Buka dokumen di tab baru.
                 const docUrl = `https://docs.google.com/document/d/${newDocId}/edit`;
                 window.open(docUrl, '_blank');
+                
+                alert("Dokumen berhasil dibuat dengan info kegiatan. Untuk daftar peserta, silakan gunakan fitur 'Download Excel' lalu salin dan tempel tabelnya ke dalam Google Docs yang baru dibuat.");
 
             } catch (err) {
                 console.error("Error:", err);
@@ -611,10 +588,6 @@
         
         downloadExcelBtn.addEventListener('click', downloadExcel);
         generateDocsBtn.addEventListener('click', handleAuthClick);
-        
-        // Panggil fungsi inisialisasi GAPI dan GIS saat script dimuat
-        gapiLoaded();
-        gisInitialized();
 
         loadPeserta();
     </script>
