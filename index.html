@@ -184,7 +184,17 @@
 <body style="display: none;">
 
     <div class="hero">
+        <div class="user-info">
+            <span id="userNameDisplay"></span>
+            <button id="logoutButton" class="logout-button">Logout</button>
         </div>
+        <div class="hero-logo">
+             <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/7/74/Coats_of_arms_of_Tanah_Bumbu.svg/500px-Coats_of_arms_of_Tanah_Bumbu.svg.png" alt="Logo Kabupaten Tanah Bumbu" style="width: 100%; height: 100%; object-fit: contain;">
+        </div>
+        <h1>SIMDIK-TANBU</h1>
+        <p>(Sistem Informasi Manajemen Dinas Pendidikan)</p>
+        <p class="subtitle">Kabupaten Tanah Bumbu</p>
+    </div>
 
     <div class="dashboard-container">
         <header>
@@ -203,7 +213,28 @@
         </header>
         
         <main>
-            </main>
+            <div style="overflow-x:auto;">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>No</th>
+                            <th>Kegiatan</th>
+                            <th>Tanggal Pelaksanaan</th>
+                            <th>Tempat</th>
+                            <th class="admin-only">Bidang Pelaksana</th>
+                            <th class="admin-only">Penanggung Jawab</th>
+                            <th>Peserta</th>
+                            <th>Status</th>
+                            <th>Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody id="kegiatanTableBody"></tbody>
+                </table>
+            </div>
+             <div id="emptyState" class="empty-state">
+                <p>Memuat data...</p>
+            </div>
+        </main>
     </div>
 
     <div id="dataModal" class="modal">
@@ -222,7 +253,7 @@
         }
         
         // Sisa kode JavaScript Anda (yang sudah berfungsi dengan baik) tetap sama di sini
-        // ... (inisialisasi, load data, modal, submit, event listener klik tabel, dll) ...
+        // Tidak ada perubahan pada logika JavaScript, hanya pada HTML di atas
     </script>
 </body>
 </html>
