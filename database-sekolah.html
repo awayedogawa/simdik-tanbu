@@ -41,10 +41,6 @@
         .header-top h1 {
             color: var(--gray-900); margin: 0; font-size: 1.875rem; font-weight: 700;
         }
-        .header-top h1 small {
-            display: block; font-size: 1rem; color: var(--gray-500);
-            font-weight: 400; margin-top: 4px;
-        }
         .header-actions {
             display: flex;
             justify-content: space-between;
@@ -73,6 +69,11 @@
             width: 20px;
             height: 20px;
             color: var(--gray-500);
+        }
+        .action-button-group-header {
+            display: flex;
+            gap: 0.75rem;
+            flex-wrap: wrap;
         }
         .action-button {
             background-color: var(--card-background); color: var(--gray-700);
@@ -136,7 +137,11 @@
                     <svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" /></svg>
                     <input type="text" id="searchInput" placeholder="Cari berdasarkan Nama Sekolah atau NPSN...">
                 </div>
-                <div>
+                <div class="action-button-group-header">
+                    <button id="templateBtn" class="action-button">
+                        <svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" /></svg>
+                        Download Template
+                    </button>
                     <input type="file" id="excelFile" accept=".xlsx, .xls" style="display: none;">
                     <button id="importBtn" class="action-button import-btn">
                         <svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 16.5V9.75m0 0l-3.75 3.75M12 9.75l3.75 3.75M3.75 18.75h16.5" /></svg>
@@ -166,10 +171,14 @@
              </div>
         </main>
     </div>
+    
+    <div id="sekolahModal" class="modal">
+        <!-- ... Konten Modal tidak berubah ... -->
+    </div>
 
      <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js";
-        import { getFirestore, collection, onSnapshot, addDoc, doc, deleteDoc, writeBatch } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore.js";
+        import { getFirestore, collection, onSnapshot, addDoc, doc, deleteDoc, updateDoc, writeBatch } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore.js";
 
         document.body.style.display = 'block';
 
@@ -191,6 +200,11 @@
         const searchInput = document.getElementById('searchInput');
         const importBtn = document.getElementById('importBtn');
         const excelFile = document.getElementById('excelFile');
+        const templateBtn = document.getElementById('templateBtn'); // Tombol baru
+        
+        const sekolahModal = document.getElementById('sekolahModal');
+        const sekolahForm = document.getElementById('sekolahForm');
+        const sekolahIdInput = document.getElementById('sekolahId');
 
         let allSekolah = [];
 
@@ -202,7 +216,7 @@
         const renderTable = (data) => {
             tableBody.innerHTML = '';
             if (data.length === 0) {
-                emptyState.innerHTML = '<p>Belum ada data sekolah.</p>';
+                emptyState.innerHTML = '<p>Belum ada data sekolah. Silakan impor dari Excel.</p>';
             } else {
                 emptyState.style.display = 'none';
                 data.forEach((sekolah, index) => {
@@ -214,6 +228,7 @@
                         <td>${sekolah.kecamatan}</td>
                         <td>
                             <div class="action-button-group">
+                                <button class="icon-button edit-btn" data-id="${sekolah.id}" title="Edit"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z" /><path fill-rule="evenodd" d="M2 6a2 2 0 012-2h4a1 1 0 010 2H4v10h10v-4a1 1 0 112 0v4a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" clip-rule="evenodd" /></svg></button>
                                 <button class="icon-button delete-btn" data-id="${sekolah.id}" data-nama="${sekolah.namaSekolah}" title="Hapus"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" /></svg></button>
                             </div>
                         </td>
@@ -226,21 +241,51 @@
             const searchTerm = searchInput.value.toLowerCase();
             const filteredData = allSekolah.filter(sekolah => 
                 sekolah.namaSekolah.toLowerCase().includes(searchTerm) || 
-                sekolah.npsn.includes(searchTerm)
+                String(sekolah.npsn).includes(searchTerm)
             );
             renderTable(filteredData);
         });
 
         tableBody.addEventListener('click', async (e) => {
-            const target = e.target.closest('.delete-btn');
-            if(target){
-                const sekolahId = target.dataset.id;
+            const target = e.target.closest('.icon-button');
+            if(!target) return;
+            
+            const sekolahId = target.dataset.id;
+            const docRef = doc(db, "sekolah", sekolahId);
+
+            if(target.classList.contains('delete-btn')){
                 const namaSekolah = target.dataset.nama;
                 if(confirm(`Yakin ingin menghapus ${namaSekolah}?`)){
-                    await deleteDoc(doc(db, "sekolah", sekolahId));
+                    await deleteDoc(docRef);
+                }
+            }
+            
+            if(target.classList.contains('edit-btn')){
+                const sekolah = allSekolah.find(s => s.id === sekolahId);
+                if(sekolah){
+                    sekolahIdInput.value = sekolah.id;
+                    sekolahModal.querySelector('#npsn').value = sekolah.npsn;
+                    sekolahModal.querySelector('#namaSekolah').value = sekolah.namaSekolah;
+                    sekolahModal.querySelector('#kecamatan').value = sekolah.kecamatan;
+                    sekolahModal.style.display = 'block';
                 }
             }
         });
+
+        sekolahForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const id = sekolahIdInput.value;
+            const updatedData = {
+                npsn: sekolahModal.querySelector('#npsn').value,
+                namaSekolah: sekolahModal.querySelector('#namaSekolah').value,
+                kecamatan: sekolahModal.querySelector('#kecamatan').value
+            };
+            const docRef = doc(db, "sekolah", id);
+            await updateDoc(docRef, updatedData);
+            sekolahModal.style.display = 'none';
+        });
+
+        sekolahModal.querySelector('.close-button').onclick = () => sekolahModal.style.display = 'none';
 
         importBtn.addEventListener('click', () => excelFile.click());
         
@@ -256,26 +301,48 @@
                     const json = XLSX.utils.sheet_to_json(worksheet);
 
                     if (json.length > 0 && 'npsn' in json[0] && 'namaSekolah' in json[0] && 'kecamatan' in json[0]) {
-                        if (confirm(`Anda akan mengimpor ${json.length} data sekolah. Lanjutkan?`)) {
-                            const batch = writeBatch(db);
-                            json.forEach(item => {
-                                const docRef = doc(sekolahCollectionRef); // Create new doc with auto-ID
-                                batch.set(docRef, {
-                                    npsn: String(item.npsn),
-                                    namaSekolah: item.namaSekolah,
-                                    kecamatan: item.kecamatan
+                        if (confirm(`Anda akan mengimpor ${json.length} data sekolah. Data yang sudah ada tidak akan terhapus. Lanjutkan?`)) {
+                            try {
+                                const batch = writeBatch(db);
+                                json.forEach(item => {
+                                    const docRef = doc(sekolahCollectionRef);
+                                    batch.set(docRef, {
+                                        npsn: String(item.npsn),
+                                        namaSekolah: String(item.namaSekolah),
+                                        kecamatan: String(item.kecamatan)
+                                    });
                                 });
-                            });
-                            await batch.commit();
-                            alert('Impor data berhasil!');
+                                await batch.commit();
+                                alert('Impor data berhasil!');
+                            } catch (err) {
+                                console.error("Gagal mengimpor:", err);
+                                alert("Terjadi kesalahan saat mengimpor data.");
+                            }
                         }
                     } else {
-                        alert('Format file Excel tidak sesuai. Pastikan kolom memiliki judul: npsn, namaSekolah, kecamatan');
+                        alert('Format file Excel tidak sesuai. Pastikan kolom memiliki judul persis: npsn, namaSekolah, kecamatan (huruf kecil semua).');
                     }
+                    excelFile.value = '';
                 };
                 reader.readAsArrayBuffer(file);
             }
         });
+
+        const downloadTemplate = () => {
+            const templateData = [{
+                npsn: "Contoh: 12345678",
+                namaSekolah: "Contoh: SDN Suka Maju 1",
+                kecamatan: "Contoh: Simpang Empat"
+            }];
+            const worksheet = XLSX.utils.json_to_sheet(templateData);
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, "Template Data Sekolah");
+            XLSX.writeFile(workbook, "Template_Import_Sekolah.xlsx");
+        };
+
+        templateBtn.addEventListener('click', downloadTemplate);
+
     </script>
 </body>
 </html>
+
