@@ -14,9 +14,12 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Times+New+Roman&display=swap" rel="stylesheet">
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+
     <style>
         :root {
             --primary-color: #4F46E5; --primary-hover: #4338CA;
@@ -75,10 +78,9 @@
             transition: all 0.2s ease;
         }
         .action-button:hover { background-color: var(--gray-100); box-shadow: var(--shadow-sm); }
-        .action-button:disabled { background-color: var(--gray-100); color: var(--gray-500); cursor: not-allowed; }
         .action-button svg { width: 16px; height: 16px; }
         .download-excel-btn { color: #059669; }
-        .generate-docs-btn { color: #1D4ED8; }
+        .generate-pdf-btn { color: #D97706; }
         .back-button {
             background-color: var(--primary-color);
             border-color: var(--primary-color);
@@ -153,12 +155,17 @@
         }
         .form-row { display: flex; gap: 20px; }
         .form-row .form-group { flex: 1; }
+        .modal-footer { display: flex; justify-content: flex-end; }
         .primary-button {
             background-color: var(--primary-color); color: white; border: none;
             padding: 12px 20px; font-size: 14px; font-weight: 500;
             border-radius: 6px; cursor: pointer; transition: background-color 0.2s ease;
             display: inline-flex; align-items: center; gap: 8px;
         }
+        .checkbox-group { display: flex; flex-direction: column; gap: 1rem; margin-bottom: 1.5rem; }
+        .checkbox-item { display: flex; align-items: center; gap: 0.75rem; }
+        .checkbox-item input { width: 1rem; height: 1rem; }
+        .checkbox-item label { font-size: 14px; color: var(--gray-700); }
     </style>
 </head>
 <body style="display: none;">
@@ -178,9 +185,9 @@
                         <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
                         Download Excel
                     </button>
-                    <button id="generateDocsBtn" class="action-button generate-docs-btn">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" width="20" height="20"><path fill-rule="evenodd" d="M4 2a2 2 0 00-2 2v12a2 2 0 002 2h12a2 2 0 002-2V4a2 2 0 00-2-2H4zm0 2h12v12H4V4zm4 2a1 1 0 011 1v2a1 1 0 11-2 0V7a1 1 0 011-1zm2 0a1 1 0 00-1 1v2a1 1 0 102 0V7a1 1 0 00-1-1zm4 0a1 1 0 011 1v2a1 1 0 11-2 0V7a1 1 0 011-1zm-4 6a1 1 0 011 1v2a1 1 0 11-2 0v-2a1 1 0 011-1z" clip-rule="evenodd" /></svg>
-                        Generate via Google Docs
+                    <button id="generatePdfBtn" class="action-button generate-pdf-btn">
+                         <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
+                        Buat Daftar Hadir
                     </button>
                 </div>
                 <a href="index.html" class="action-button back-button">Kembali ke Dashboard</a>
@@ -269,22 +276,33 @@
             </form>
         </div>
     </div>
+    
+    <div id="pdfOptionsModal" class="modal">
+        <div class="modal-content">
+            <span class="close-button">&times;</span>
+            <div class="modal-header">
+                <h2>Opsi Daftar Hadir (PDF)</h2>
+            </div>
+            <div class="checkbox-group">
+                <div class="checkbox-item">
+                    <input type="checkbox" id="kosongkanTanggal">
+                    <label for="kosongkanTanggal">Kosongkan Tanggal Pelaksanaan</label>
+                </div>
+                <div class="checkbox-item">
+                    <input type="checkbox" id="kosongkanTempat">
+                    <label for="kosongkanTempat">Kosongkan Tempat Pelaksanaan</label>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="confirmGeneratePdfBtn" class="primary-button">Generate PDF</button>
+            </div>
+        </div>
+    </div>
+
 
      <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js";
         import { getFirestore, doc, getDoc, collection, onSnapshot, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore.js";
-
-        // --- KONFIGURASI UNTUK GOOGLE DOCS API ---
-        const API_KEY = "AIzaSyC5GDpaLIPF-frZhboAzwThDKp8yOZvF2Q"; 
-        const CLIENT_ID = "194936354981-j1a8adl7c9gr71upg59j81a1oh382nva.apps.googleusercontent.com";
-        const TEMPLATE_DOC_ID = "116SnvE_ay3nipxWTA3y30tM1TzZvkd27E2rW_ydSa0g";
-        
-        const SCOPES = "https://www.googleapis.com/auth/drive";
-
-        let tokenClient;
-        let gapiInited = false;
-        let gisInited = false;
-        // ------------------------------------------
 
         const userRole = sessionStorage.getItem('userRole');
         const userNip = sessionStorage.getItem('userNip');
@@ -313,11 +331,15 @@
         const emptyState = document.getElementById('emptyState');
         const dataTable = document.querySelector('.data-table');
         const downloadExcelBtn = document.getElementById('downloadExcelBtn');
-        const generateDocsBtn = document.getElementById('generateDocsBtn');
+        const generatePdfBtn = document.getElementById('generatePdfBtn');
         
         const pesertaModal = document.getElementById('pesertaModal');
         const pesertaForm = document.getElementById('pesertaForm');
         const pesertaIdInput = document.getElementById('pesertaId');
+        
+        const pdfOptionsModal = document.getElementById('pdfOptionsModal');
+        const confirmGeneratePdfBtn = document.getElementById('confirmGeneratePdfBtn');
+        const closeModalPdfBtn = pdfOptionsModal.querySelector('.close-button');
         const closeModalPesertaBtn = pesertaModal.querySelector('.close-button');
 
         let currentPesertaList = [];
@@ -363,113 +385,69 @@
             XLSX.writeFile(workbook, `Daftar Peserta - ${currentKegiatanData.nama}.xlsx`);
         };
 
-        // --- FUNGSI BARU UNTUK GOOGLE DOCS ---
+        const generatePdf = () => {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF({ orientation: 'landscape' });
 
-        window.gapiLoaded = () => {
-            gapi.load('client', async () => {
-                await gapi.client.init({
-                    apiKey: API_KEY,
-                    discoveryDocs: [
-                        "https://www.googleapis.com/discovery/v1/apis/drive/v3/rest",
-                        "https://www.googleapis.com/discovery/v1/apis/docs/v1/rest"
-                    ],
-                });
-                gapiInited = true;
+            const kosongkanTanggal = document.getElementById('kosongkanTanggal').checked;
+            const kosongkanTempat = document.getElementById('kosongkanTempat').checked;
+            
+            let yPos = 20; // Posisi awal Y di atas halaman
+
+            doc.setFontSize(16);
+            doc.setFont('times', 'bold');
+            doc.text("DAFTAR HADIR PESERTA", doc.internal.pageSize.getWidth() / 2, yPos, { align: 'center' });
+            yPos += 8;
+            
+            doc.setFontSize(12);
+            doc.text(currentKegiatanData.nama.toUpperCase(), doc.internal.pageSize.getWidth() / 2, yPos, { align: 'center' });
+            yPos += 12;
+            
+            doc.setFontSize(10);
+            doc.setFont('times', 'normal');
+            const tanggalText = kosongkanTanggal ? ".................................................." : formatDateRange(currentKegiatanData.tanggalMulai, currentKegiatanData.tanggalBerakhir);
+            const tempatText = kosongkanTempat ? ".................................................." : currentKegiatanData.tempat;
+
+            doc.text(`Tanggal : ${tanggalText}`, 14, yPos);
+            yPos += 6;
+            doc.text(`Tempat  : ${tempatText}`, 14, yPos);
+            
+            const tableData = currentPesertaList.map((peserta, index) => {
+                const signatureText = (index % 2 === 0)
+                    ? `${index + 1}. ....................`
+                    : `.................... .${index + 1}`;
+                return [ index + 1, peserta.namaLengkap, peserta.jabatan, peserta.asalInstansi, peserta.kecamatan || '-', signatureText ];
             });
-        }
 
-        window.gisInitialized = () => {
-            tokenClient = google.accounts.oauth2.initTokenClient({
-                client_id: CLIENT_ID,
-                scope: SCOPES,
-                callback: (tokenResponse) => {
-                    if (tokenResponse && tokenResponse.access_token) {
-                        gapi.client.setToken(tokenResponse);
-                        generateDocument(); 
-                    } else {
-                        alert("Gagal mendapatkan otorisasi dari Google.");
-                    }
+            doc.autoTable({
+                head: [['No', 'Nama Lengkap', 'Jabatan', 'Asal Instansi', 'Kecamatan', 'Tanda Tangan']],
+                body: tableData,
+                startY: yPos + 4,
+                theme: 'grid',
+                headStyles: { 
+                    fillColor: [41, 128, 185], textColor: 255, fontStyle: 'bold',
+                    halign: 'center', valign: 'middle'
                 },
+                styles: {
+                    cellPadding: 3.5, fontSize: 8, valign: 'middle',
+                    lineWidth: 0.1, lineColor: [0, 0, 0]
+                },
+                columnStyles: {
+                    0: { cellWidth: 10, halign: 'center' }, 1: { cellWidth: 50 },
+                    2: { cellWidth: 35 }, 3: { cellWidth: 50 },
+                    4: { cellWidth: 35 }, 5: { cellWidth: 'auto' }
+                },
+                didParseCell: function(data) {
+                    if (data.cell.section === 'body' && data.column.index === 5) {
+                        const rowNumber = data.row.index + 1;
+                        data.cell.styles.halign = (rowNumber % 2 === 0) ? 'right' : 'left';
+                    }
+                }
             });
-            gisInited = true;
-        }
-        
-        function handleAuthClick() {
-            if (!gapiInited || !gisInited) {
-                alert("Layanan Google belum siap, silakan coba beberapa saat lagi.");
-                return;
-            }
-            if (gapi.client.getToken() === null) {
-                tokenClient.requestAccessToken({ prompt: 'consent' });
-            } else {
-                 generateDocument();
-            }
-        }
-        
-        async function generateDocument() {
-            if (currentPesertaList.length === 0) {
-                alert("Tidak ada data peserta untuk membuat daftar hadir.");
-                return;
-            }
-            
-            alert("Memulai proses pembuatan dokumen. Ini mungkin memakan waktu beberapa saat...");
-            generateDocsBtn.disabled = true;
-            generateDocsBtn.textContent = "Memproses...";
 
-            const newTitle = `Daftar Hadir - ${currentKegiatanData.nama}`;
-            
-            try {
-                // 1. Salin template
-                const copyResponse = await gapi.client.drive.files.copy({
-                    fileId: TEMPLATE_DOC_ID,
-                    resource: { name: newTitle }
-                });
-                const newDocId = copyResponse.result.id;
-
-                // 2. Siapkan data pengganti (placeholders) untuk info kegiatan
-                const requests = [
-                    {
-                        replaceAllText: {
-                            containsText: { text: '{{nama_kegiatan}}', matchCase: false },
-                            replaceText: currentKegiatanData.nama || 'Tidak Ada Judul',
-                        }
-                    },
-                    {
-                        replaceAllText: {
-                            containsText: { text: '{{tanggal_kegiatan}}', matchCase: false },
-                            replaceText: formatDateRange(currentKegiatanData.tanggalMulai, currentKegiatanData.tanggalBerakhir) || 'Tidak Ada Tanggal',
-                        }
-                    },
-                    {
-                        replaceAllText: {
-                            containsText: { text: '{{tempat_kegiatan}}', matchCase: false },
-                            replaceText: currentKegiatanData.tempat || 'Tidak Ada Tempat',
-                        }
-                    },
-                ];
-
-                // 3. Update isi dokumen (selain tabel)
-                await gapi.client.docs.documents.batchUpdate({
-                    documentId: newDocId,
-                    resource: { requests }
-                });
-                
-                // 4. Berhasil! Buka dokumen di tab baru.
-                const docUrl = `https://docs.google.com/document/d/${newDocId}/edit`;
-                window.open(docUrl, '_blank');
-                
-                alert("Dokumen berhasil dibuat dengan info kegiatan. Untuk daftar peserta, silakan gunakan fitur 'Download Excel' lalu salin dan tempel tabelnya ke dalam Google Docs yang baru dibuat.");
-
-            } catch (err) {
-                console.error("Error:", err);
-                alert(`Terjadi kesalahan: ${err.result?.error?.message || err.message}`);
-            } finally {
-                generateDocsBtn.disabled = false;
-                generateDocsBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" width="20" height="20"><path fill-rule="evenodd" d="M4 2a2 2 0 00-2 2v12a2 2 0 002 2h12a2 2 0 002-2V4a2 2 0 00-2-2H4zm0 2h12v12H4V4zm4 2a1 1 0 011 1v2a1 1 0 11-2 0V7a1 1 0 011-1zm2 0a1 1 0 00-1 1v2a1 1 0 102 0V7a1 1 0 00-1-1zm4 0a1 1 0 011 1v2a1 1 0 11-2 0V7a1 1 0 011-1zm-4 6a1 1 0 011 1v2a1 1 0 11-2 0v-2a1 1 0 011-1z" clip-rule="evenodd" /></svg> Generate via Google Docs';
-            }
-        }
-        
-        // ------------------------------------------
+            doc.save(`Daftar Hadir - ${currentKegiatanData.nama}.pdf`);
+            pdfOptionsModal.style.display = 'none';
+        };
 
         const loadPeserta = async () => {
             if (!kegiatanId) {
@@ -582,14 +560,13 @@
         });
         
         closeModalPesertaBtn.onclick = () => pesertaModal.style.display = 'none';
+        closeModalPdfBtn.onclick = () => pdfOptionsModal.style.display = 'none';
         
         downloadExcelBtn.addEventListener('click', downloadExcel);
-        generateDocsBtn.addEventListener('click', handleAuthClick);
+        generatePdfBtn.addEventListener('click', () => pdfOptionsModal.style.display = 'block');
+        confirmGeneratePdfBtn.addEventListener('click', generatePdf);
 
         loadPeserta();
     </script>
-    
-    <script src="https://apis.google.com/js/api.js" onload="gapiLoaded()"></script>
-    <script src="https://accounts.google.com/gsi/client" onload="gisInitialized()"></script>
 </body>
 </html>
