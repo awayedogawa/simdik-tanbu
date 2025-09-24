@@ -371,4 +371,225 @@
                     apiKey: API_KEY,
                     discoveryDocs: [
                         "https://www.googleapis.com/discovery/v1/apis/drive/v3/rest",
-                        "https://www.googleapis.com/discovery/v1/apis/docs
+                        "https://www.googleapis.com/discovery/v1/apis/docs/v1/rest"
+                    ],
+                });
+                gapiInited = true;
+            });
+        }
+
+        window.gisInitialized = () => {
+            tokenClient = google.accounts.oauth2.initTokenClient({
+                client_id: CLIENT_ID,
+                scope: SCOPES,
+                callback: (tokenResponse) => {
+                    if (tokenResponse && tokenResponse.access_token) {
+                        gapi.client.setToken(tokenResponse);
+                        generateDocument(); 
+                    } else {
+                        alert("Gagal mendapatkan otorisasi dari Google.");
+                    }
+                },
+            });
+            gisInited = true;
+        }
+        
+        function handleAuthClick() {
+            if (!gapiInited || !gisInited) {
+                alert("Layanan Google belum siap, silakan coba beberapa saat lagi.");
+                return;
+            }
+            if (gapi.client.getToken() === null) {
+                tokenClient.requestAccessToken({ prompt: 'consent' });
+            } else {
+                 generateDocument();
+            }
+        }
+        
+        async function generateDocument() {
+            if (currentPesertaList.length === 0) {
+                alert("Tidak ada data peserta untuk membuat daftar hadir.");
+                return;
+            }
+            
+            alert("Memulai proses pembuatan dokumen. Ini mungkin memakan waktu beberapa saat...");
+            generateDocsBtn.disabled = true;
+            generateDocsBtn.textContent = "Memproses...";
+
+            const newTitle = `Daftar Hadir - ${currentKegiatanData.nama}`;
+            
+            try {
+                // 1. Salin template
+                const copyResponse = await gapi.client.drive.files.copy({
+                    fileId: TEMPLATE_DOC_ID,
+                    resource: { name: newTitle }
+                });
+                const newDocId = copyResponse.result.id;
+
+                // 2. Siapkan data pengganti (placeholders) untuk info kegiatan
+                const requests = [
+                    {
+                        replaceAllText: {
+                            containsText: { text: '{{nama_kegiatan}}', matchCase: false },
+                            replaceText: currentKegiatanData.nama || 'Tidak Ada Judul',
+                        }
+                    },
+                    {
+                        replaceAllText: {
+                            containsText: { text: '{{tanggal_kegiatan}}', matchCase: false },
+                            replaceText: formatDateRange(currentKegiatanData.tanggalMulai, currentKegiatanData.tanggalBerakhir) || 'Tidak Ada Tanggal',
+                        }
+                    },
+                    {
+                        replaceAllText: {
+                            containsText: { text: '{{tempat_kegiatan}}', matchCase: false },
+                            replaceText: currentKegiatanData.tempat || 'Tidak Ada Tempat',
+                        }
+                    },
+                ];
+
+                // 3. Update isi dokumen (selain tabel)
+                await gapi.client.docs.documents.batchUpdate({
+                    documentId: newDocId,
+                    resource: { requests }
+                });
+                
+                // 4. Berhasil! Buka dokumen di tab baru.
+                const docUrl = `https://docs.google.com/document/d/${newDocId}/edit`;
+                window.open(docUrl, '_blank');
+                
+                alert("Dokumen berhasil dibuat dengan info kegiatan. Untuk daftar peserta, silakan gunakan fitur 'Download Excel' lalu salin dan tempel tabelnya ke dalam Google Docs yang baru dibuat.");
+
+            } catch (err) {
+                console.error("Error:", err);
+                alert(`Terjadi kesalahan: ${err.result?.error?.message || err.message}`);
+            } finally {
+                generateDocsBtn.disabled = false;
+                generateDocsBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" width="20" height="20"><path fill-rule="evenodd" d="M4 2a2 2 0 00-2 2v12a2 2 0 002 2h12a2 2 0 002-2V4a2 2 0 00-2-2H4zm0 2h12v12H4V4zm4 2a1 1 0 011 1v2a1 1 0 11-2 0V7a1 1 0 011-1zm2 0a1 1 0 00-1 1v2a1 1 0 102 0V7a1 1 0 00-1-1zm4 0a1 1 0 011 1v2a1 1 0 11-2 0V7a1 1 0 011-1zm-4 6a1 1 0 011 1v2a1 1 0 11-2 0v-2a1 1 0 011-1z" clip-rule="evenodd" /></svg> Generate via Google Docs';
+            }
+        }
+        
+        // ------------------------------------------
+
+        const loadPeserta = async () => {
+            if (!kegiatanId) {
+                headerTitle.innerHTML = 'Kegiatan tidak valid <small>Error</small>';
+                emptyState.innerHTML = '<p>ID kegiatan tidak ditemukan di URL.</p>';
+                dataTable.style.display = 'none';
+                return;
+            }
+
+            const kegiatanDocRef = doc(db, "kegiatan", kegiatanId);
+            const kegiatanDocSnap = await getDoc(kegiatanDocRef);
+
+            if (kegiatanDocSnap.exists()) {
+                currentKegiatanData = kegiatanDocSnap.data();
+                headerTitle.innerHTML = `${currentKegiatanData.nama || ''} <small>Daftar Peserta</small>`;
+                const createdBy = currentKegiatanData.createdBy || null;
+                canManage = userRole === 'admin' || createdBy === userNip;
+                listenToPeserta();
+            } else {
+                 headerTitle.innerHTML = 'Kegiatan tidak ditemukan <small>Error</small>';
+                 emptyState.innerHTML = '<p>Data kegiatan ini tidak dapat ditemukan.</p>';
+                 dataTable.style.display = 'none';
+            }
+        };
+
+        const listenToPeserta = () => {
+            const pesertaCollectionRef = collection(db, "kegiatan", kegiatanId, "peserta");
+            onSnapshot(pesertaCollectionRef, (snapshot) => {
+                currentPesertaList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                tableBody.innerHTML = '';
+
+                if (currentPesertaList.length === 0) {
+                    emptyState.innerHTML = '<p>Belum ada peserta yang mendaftar.</p>';
+                    emptyState.style.display = 'block';
+                    dataTable.style.display = 'none';
+                } else {
+                    emptyState.style.display = 'none';
+                    dataTable.style.display = 'table';
+                    currentPesertaList.forEach((peserta, index) => {
+                        const row = tableBody.insertRow();
+                        row.innerHTML = `
+                            <td>${index + 1}</td>
+                            <td>${peserta.namaLengkap || ''}</td>
+                            <td>${peserta.nip || '-'}</td>
+                            <td>${peserta.asalInstansi || ''}</td>
+                            <td>${peserta.npsn || '-'}</td>
+                            <td>${peserta.kecamatan || ''}</td>
+                            <td>${peserta.jabatan || ''}</td>
+                            <td>${peserta.nomorTelepon || ''}</td>
+                            <td>
+                                ${canManage ? `
+                                <div class="action-button-group">
+                                    <button class="icon-button edit-btn" data-id="${peserta.id}" title="Edit"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z" /><path fill-rule="evenodd" d="M2 6a2 2 0 012-2h4a1 1 0 010 2H4v10h10v-4a1 1 0 112 0v4a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" clip-rule="evenodd" /></svg></button>
+                                    <button class="icon-button delete-btn" data-id="${peserta.id}" data-nama="${peserta.namaLengkap}" title="Hapus"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" /></svg></button>
+                                </div>
+                                ` : ''}
+                            </td>
+                        `;
+                    });
+                }
+            });
+        };
+        
+        tableBody.addEventListener('click', async (e) => {
+            const target = e.target.closest('.icon-button');
+            if (!target) return;
+
+            const pesertaId = target.dataset.id;
+            const pesertaRef = doc(db, "kegiatan", kegiatanId, "peserta", pesertaId);
+
+            if (target.classList.contains('delete-btn')) {
+                const nama = target.dataset.nama;
+                if (confirm(`Apakah Anda yakin ingin menghapus peserta "${nama}"?`)) {
+                    await deleteDoc(pesertaRef);
+                }
+            }
+
+            if (target.classList.contains('edit-btn')) {
+                const docSnap = await getDoc(pesertaRef);
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    pesertaIdInput.value = pesertaId;
+                    pesertaModal.querySelector('#namaLengkap').value = data.namaLengkap;
+                    pesertaModal.querySelector('#nip').value = data.nip;
+                    pesertaModal.querySelector('#asalInstansi').value = data.asalInstansi;
+                    pesertaModal.querySelector('#npsn').value = data.npsn;
+                    pesertaModal.querySelector('#jabatan').value = data.jabatan;
+                    pesertaModal.querySelector('#kecamatan').value = data.kecamatan;
+                    pesertaModal.querySelector('#nomorTelepon').value = data.nomorTelepon;
+                    pesertaModal.style.display = 'block';
+                }
+            }
+        });
+
+        pesertaForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const pesertaId = pesertaIdInput.value;
+            const updatedData = {
+                namaLengkap: pesertaModal.querySelector('#namaLengkap').value,
+                nip: pesertaModal.querySelector('#nip').value,
+                asalInstansi: pesertaModal.querySelector('#asalInstansi').value,
+                npsn: pesertaModal.querySelector('#npsn').value,
+                jabatan: pesertaModal.querySelector('#jabatan').value,
+                kecamatan: pesertaModal.querySelector('#kecamatan').value,
+                nomorTelepon: pesertaModal.querySelector('#nomorTelepon').value,
+            };
+            const pesertaRef = doc(db, "kegiatan", kegiatanId, "peserta", pesertaId);
+            await updateDoc(pesertaRef, updatedData);
+            pesertaModal.style.display = 'none';
+        });
+        
+        closeModalPesertaBtn.onclick = () => pesertaModal.style.display = 'none';
+        
+        downloadExcelBtn.addEventListener('click', downloadExcel);
+        generateDocsBtn.addEventListener('click', handleAuthClick);
+
+        loadPeserta();
+    </script>
+    
+    <script src="https://apis.google.com/js/api.js" onload="gapiLoaded()"></script>
+    <script src="https://accounts.google.com/gsi/client" onload="gisInitialized()"></script>
+</body>
+</html>
