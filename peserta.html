@@ -349,23 +349,14 @@
         const getKegiatanId = () => new URLSearchParams(window.location.search).get('id');
         const kegiatanId = getKegiatanId();
 
-        const formatDateRange = (startStr, endStr) => {
-            if (!startStr || !endStr) return '';
+        const formatSingleDate = (date) => {
             const months = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
-            const startDate = new Date(startStr);
-            const endDate = new Date(endStr);
-            
-            const startDay = startDate.getUTCDate();
-            const startMonth = startDate.getUTCMonth();
-            const startYear = startDate.getUTCFullYear();
-            const endDay = endDate.getUTCDate();
-            const endMonth = endDate.getUTCMonth();
-            const endYear = endDate.getUTCFullYear();
-
-            if (startYear === endYear && startMonth === endMonth && startDay === endDay) return `${startDay} ${months[startMonth]} ${startYear}`;
-            if (startYear === endYear && startMonth === endMonth) return `${startDay} s.d. ${endDay} ${months[startMonth]} ${startYear}`;
-            if (startYear === endYear) return `${startDay} ${months[startMonth]} s.d. ${endDay} ${months[endMonth]} ${startYear}`;
-            return `${startDay} ${months[startMonth]} ${startYear} s.d. ${endDay} ${months[endMonth]} ${endYear}`;
+            const d = new Date(date);
+            // Menggunakan getUTCDate untuk menghindari masalah timezone saat iterasi
+            const day = d.getUTCDate();
+            const month = months[d.getUTCMonth()];
+            const year = d.getUTCFullYear();
+            return `${day} ${month} ${year}`;
         };
         
         const downloadExcel = () => {
@@ -391,59 +382,77 @@
 
             const kosongkanTanggal = document.getElementById('kosongkanTanggal').checked;
             const kosongkanTempat = document.getElementById('kosongkanTempat').checked;
-            
-            let yPos = 20; // Posisi awal Y di atas halaman
 
-            doc.setFontSize(16);
-            doc.setFont('times', 'bold');
-            doc.text("DAFTAR HADIR PESERTA", doc.internal.pageSize.getWidth() / 2, yPos, { align: 'center' });
-            yPos += 8;
+            const startDate = new Date(currentKegiatanData.tanggalMulai);
+            const endDate = new Date(currentKegiatanData.tanggalBerakhir);
             
-            doc.setFontSize(12);
-            doc.text(currentKegiatanData.nama.toUpperCase(), doc.internal.pageSize.getWidth() / 2, yPos, { align: 'center' });
-            yPos += 12;
-            
-            doc.setFontSize(10);
-            doc.setFont('times', 'normal');
-            const tanggalText = kosongkanTanggal ? ".................................................." : formatDateRange(currentKegiatanData.tanggalMulai, currentKegiatanData.tanggalBerakhir);
-            const tempatText = kosongkanTempat ? ".................................................." : currentKegiatanData.tempat;
+            let loopDate = new Date(startDate);
+            let isFirstPage = true;
 
-            doc.text(`Tanggal : ${tanggalText}`, 14, yPos);
-            yPos += 6;
-            doc.text(`Tempat  : ${tempatText}`, 14, yPos);
-            
-            const tableData = currentPesertaList.map((peserta, index) => {
-                const signatureText = (index % 2 === 0)
-                    ? `${index + 1}. ....................`
-                    : `.................... .${index + 1}`;
-                return [ index + 1, peserta.namaLengkap, peserta.jabatan, peserta.asalInstansi, peserta.kecamatan || '-', signatureText ];
-            });
-
-            doc.autoTable({
-                head: [['No', 'Nama Lengkap', 'Jabatan', 'Asal Instansi', 'Kecamatan', 'Tanda Tangan']],
-                body: tableData,
-                startY: yPos + 4,
-                theme: 'grid',
-                headStyles: { 
-                    fillColor: [41, 128, 185], textColor: 255, fontStyle: 'bold',
-                    halign: 'center', valign: 'middle'
-                },
-                styles: {
-                    cellPadding: 3.5, fontSize: 8, valign: 'middle',
-                    lineWidth: 0.1, lineColor: [0, 0, 0]
-                },
-                columnStyles: {
-                    0: { cellWidth: 10, halign: 'center' }, 1: { cellWidth: 50 },
-                    2: { cellWidth: 35 }, 3: { cellWidth: 50 },
-                    4: { cellWidth: 35 }, 5: { cellWidth: 'auto' }
-                },
-                didParseCell: function(data) {
-                    if (data.cell.section === 'body' && data.column.index === 5) {
-                        const rowNumber = data.row.index + 1;
-                        data.cell.styles.halign = (rowNumber % 2 === 0) ? 'right' : 'left';
-                    }
+            // Loop untuk setiap hari dalam rentang tanggal kegiatan
+            while (loopDate <= endDate) {
+                if (!isFirstPage) {
+                    doc.addPage();
                 }
-            });
+
+                let yPos = 20;
+
+                doc.setFontSize(16);
+                doc.setFont('times', 'bold');
+                doc.text("DAFTAR HADIR PESERTA", doc.internal.pageSize.getWidth() / 2, yPos, { align: 'center' });
+                yPos += 8;
+                
+                doc.setFontSize(12);
+                doc.text(currentKegiatanData.nama.toUpperCase(), doc.internal.pageSize.getWidth() / 2, yPos, { align: 'center' });
+                yPos += 12;
+                
+                doc.setFontSize(10);
+                doc.setFont('times', 'normal');
+                
+                const tanggalText = kosongkanTanggal ? ".................................................." : formatSingleDate(loopDate);
+                const tempatText = kosongkanTempat ? ".................................................." : currentKegiatanData.tempat;
+
+                doc.text(`Tanggal : ${tanggalText}`, 14, yPos);
+                yPos += 6;
+                doc.text(`Tempat  : ${tempatText}`, 14, yPos);
+                
+                const tableData = currentPesertaList.map((peserta, index) => {
+                    const signatureText = (index % 2 === 0)
+                        ? `${index + 1}. ....................`
+                        : `.................... .${index + 1}`;
+                    return [ index + 1, peserta.namaLengkap, peserta.jabatan, peserta.asalInstansi, peserta.kecamatan || '-', signatureText ];
+                });
+
+                doc.autoTable({
+                    head: [['No', 'Nama Lengkap', 'Jabatan', 'Asal Instansi', 'Kecamatan', 'Tanda Tangan']],
+                    body: tableData,
+                    startY: yPos + 4,
+                    theme: 'grid',
+                    headStyles: { 
+                        fillColor: [41, 128, 185], textColor: 255, fontStyle: 'bold',
+                        halign: 'center', valign: 'middle'
+                    },
+                    styles: {
+                        cellPadding: 3.5, fontSize: 8, valign: 'middle',
+                        lineWidth: 0.1, lineColor: [0, 0, 0]
+                    },
+                    columnStyles: {
+                        0: { cellWidth: 10, halign: 'center' }, 1: { cellWidth: 50 },
+                        2: { cellWidth: 35 }, 3: { cellWidth: 50 },
+                        4: { cellWidth: 35 }, 5: { cellWidth: 'auto' }
+                    },
+                    didParseCell: function(data) {
+                        if (data.cell.section === 'body' && data.column.index === 5) {
+                            const rowNumber = data.row.index + 1;
+                            data.cell.styles.halign = (rowNumber % 2 === 0) ? 'right' : 'left';
+                        }
+                    }
+                });
+
+                // Pindah ke hari berikutnya
+                loopDate.setUTCDate(loopDate.getUTCDate() + 1);
+                isFirstPage = false;
+            }
 
             doc.save(`Daftar Hadir - ${currentKegiatanData.nama}.pdf`);
             pdfOptionsModal.style.display = 'none';
