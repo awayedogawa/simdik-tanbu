@@ -281,7 +281,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js";
-        import { getFirestore, collection, query, where, onSnapshot, getDocs, doc, getDoc, addDoc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore.js";
+        import { getFirestore, collection, query, where, onSnapshot, getDocs, doc, getDoc, addDoc, updateDoc, deleteDoc, orderBy } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore.js";
 
         const userRole = sessionStorage.getItem('userRole');
         const userName = sessionStorage.getItem('userName');
@@ -397,9 +397,9 @@
         const kegiatanCollectionRef = collection(db, "kegiatan");
         let q;
         if (userRole === 'admin') {
-            q = kegiatanCollectionRef; 
+            q = query(kegiatanCollectionRef, orderBy("tanggalMulai", "asc")); 
         } else {
-            q = query(kegiatanCollectionRef, where("createdBy", "==", userNip));
+            q = query(kegiatanCollectionRef, where("createdBy", "==", userNip), orderBy("tanggalMulai", "asc"));
         }
 
         onSnapshot(q, async (snapshot) => {
