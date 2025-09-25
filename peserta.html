@@ -376,7 +376,7 @@
             XLSX.writeFile(workbook, `Daftar Peserta - ${currentKegiatanData.nama}.xlsx`);
         };
 
-        const generatePdf = () => {
+        const generatePdf = async () => {
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF({ orientation: 'landscape' });
 
@@ -386,6 +386,26 @@
             const startDate = new Date(currentKegiatanData.tanggalMulai);
             const endDate = new Date(currentKegiatanData.tanggalBerakhir);
             
+            // Definisikan URL gambar
+            const logoTanbuUrl = "https://raw.githubusercontent.com/awayedogawa/simdik-tanbu/refs/heads/main/assets/Logo%20Tanbu.png";
+            const logoTutWuriUrl = "https://raw.githubusercontent.com/awayedogawa/simdik-tanbu/refs/heads/main/assets/Logo%20Tut%20Wuri.png";
+
+            // Fungsi untuk memuat gambar dan mengkonversinya ke base64 (Opsional, untuk embedding)
+            const getImageBase64 = async (url) => {
+                const response = await fetch(url);
+                const blob = await response.blob();
+                return new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onloadend = () => resolve(reader.result);
+                    reader.onerror = reject;
+                    reader.readAsDataURL(blob);
+                });
+            };
+
+            // Memuat gambar (Anda bisa memilih untuk memuat sebagai base64 jika ingin PDF standalone tanpa bergantung internet)
+            const logoTanbu = await getImageBase64(logoTanbuUrl);
+            const logoTutWuri = await getImageBase64(logoTutWuriUrl);
+
             let loopDate = new Date(startDate);
             let isFirstPage = true;
 
@@ -396,16 +416,30 @@
                 }
 
                 let yPos = 20;
+                const pageWidth = doc.internal.pageSize.getWidth();
+
+                // Tambahkan Logo Tanbu (kiri)
+                doc.addImage(logoTanbu, 'PNG', 14, yPos - 10, 25, 25); // x, y, width, height
+
+                // Tambahkan Logo Tut Wuri (kanan)
+                doc.addImage(logoTutWuri, 'PNG', pageWidth - 14 - 25, yPos - 10, 25, 25); // x, y, width, height
 
                 doc.setFontSize(16);
                 doc.setFont('times', 'bold');
-                doc.text("DAFTAR HADIR PESERTA", doc.internal.pageSize.getWidth() / 2, yPos, { align: 'center' });
+                doc.text("DAFTAR HADIR PESERTA", pageWidth / 2, yPos, { align: 'center' });
                 yPos += 8;
                 
                 doc.setFontSize(12);
-                doc.text(currentKegiatanData.nama.toUpperCase(), doc.internal.pageSize.getWidth() / 2, yPos, { align: 'center' });
+                doc.text(currentKegiatanData.nama.toUpperCase(), pageWidth / 2, yPos, { align: 'center' });
                 yPos += 12;
-                
+
+                // Garis Horizontal
+                doc.setLineWidth(0.7); // Ketebalan garis
+                doc.line(14, yPos, pageWidth - 14, yPos); // x1, y1, x2, y2
+                doc.setLineWidth(0.3); // Ketebalan garis
+                doc.line(14, yPos + 0.7, pageWidth - 14, yPos + 0.7); // Garis kedua di bawahnya
+                yPos += 8; // Tambah spasi setelah garis
+
                 doc.setFontSize(10);
                 doc.setFont('times', 'normal');
                 
@@ -437,7 +471,7 @@
                         lineWidth: 0.1, lineColor: [0, 0, 0]
                     },
                     columnStyles: {
-                        0: { cellWidth: 15, halign: 'center' }, // DIUBAH DARI 10 MENJADI 15
+                        0: { cellWidth: 15, halign: 'center' },
                         1: { cellWidth: 50 },
                         2: { cellWidth: 35 },
                         3: { cellWidth: 50 },
