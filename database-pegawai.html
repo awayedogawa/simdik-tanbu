@@ -121,9 +121,51 @@
         .delete-btn { color: var(--danger-color); }
         .delete-btn:hover { background-color: #FEE2E2; }
         
+        /* Gaya Kartu Statistik */
+        .stats-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        .stat-card {
+            background-color: var(--card-background);
+            padding: 24px;
+            border-radius: 8px;
+            box-shadow: var(--shadow-sm);
+            border: 1px solid var(--gray-200);
+        }
+        .stat-card h3 {
+            margin-top: 0;
+            margin-bottom: 1rem;
+            font-size: 1rem;
+            color: var(--gray-500);
+            font-weight: 500;
+            border-bottom: 1px solid var(--gray-100);
+            padding-bottom: 0.75rem;
+        }
+        .stat-card .stat-body {
+            max-height: 150px;
+            overflow-y: auto;
+            font-size: 14px;
+        }
+        .stat-card p {
+            display: flex;
+            justify-content: space-between;
+            margin: 4px 0;
+            padding: 4px 0;
+        }
+        .stat-card p strong {
+            font-weight: 600;
+            color: var(--gray-900);
+            background-color: var(--gray-100);
+            padding: 2px 8px;
+            border-radius: 4px;
+        }
+
         .modal {
             display: none; position: fixed; z-index: 1000; left: 0; top: 0;
-            width: 100%; height: 100%; overflow: auto;
+            width: 100%; height: 100%; overflow-y: auto;
             background-color: rgba(17, 24, 39, 0.6); backdrop-filter: blur(4px);
         }
         .modal-content {
@@ -169,7 +211,7 @@
             <div class="header-top">
                 <h1>Database Pegawai</h1>
             </div>
-            <div class="header-actions">
+             <div class="header-actions">
                 <div class="search-container">
                     <svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" /></svg>
                     <input type="text" id="searchInput" placeholder="Cari berdasarkan Nama, NIK, atau NIP...">
@@ -189,13 +231,29 @@
                         Impor dari Excel
                     </button>
                     <button id="clearBtn" class="action-button clear-btn">
-                        <svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 4.811 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" /></svg>
+                        <svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" /></svg>
                         Bersihkan Data
                     </button>
                     <a href="index.html" class="action-button back-button">Kembali</a>
                 </div>
             </div>
         </header>
+
+        <div class="stats-container">
+            <div class="stat-card" id="kecamatanStats">
+                <h3>Berdasarkan Kecamatan</h3>
+                <div class="stat-body"></div>
+            </div>
+            <div class="stat-card" id="pendidikanStats">
+                <h3>Berdasarkan Pendidikan Terakhir</h3>
+                 <div class="stat-body"></div>
+            </div>
+            <div class="stat-card" id="statusStats">
+                <h3>Berdasarkan Status Pegawai</h3>
+                 <div class="stat-body"></div>
+            </div>
+        </div>
+
         <main>
              <div style="overflow-x:auto;">
                 <table class="data-table">
@@ -206,11 +264,12 @@
                             <th>NIK</th>
                             <th>NIP</th>
                             <th>L/P</th>
+                            <th>Tempat Tugas</th>
+                            <th>Kecamatan</th>
+                            <th>Nomor HP</th>
                             <th>Jabatan</th>
                             <th>Pendidikan Terakhir</th>
                             <th>Status Pegawai</th>
-                            <th>Tempat Tugas</th>
-                            <th>Kecamatan</th>
                             <th>Aksi</th>
                         </tr>
                     </thead>
@@ -255,29 +314,33 @@
                         </select>
                     </div>
                      <div class="form-group">
-                        <label for="jabatan">Jabatan</label>
-                        <input type="text" id="jabatan" required>
+                        <label for="tempatTugas">Tempat Tugas</label>
+                        <input type="text" id="tempatTugas" required>
                     </div>
                 </div>
                 <div class="form-row">
                     <div class="form-group">
-                        <label for="pendidikanTerakhir">Pendidikan Terakhir</label>
-                        <input type="text" id="pendidikanTerakhir" required>
+                        <label for="kecamatan">Kecamatan</label>
+                        <input type="text" id="kecamatan" required>
                     </div>
                     <div class="form-group">
-                        <label for="statusPegawai">Status Pegawai</label>
-                        <input type="text" id="statusPegawai" required>
+                        <label for="nomorHp">Nomor HP</label>
+                        <input type="tel" id="nomorHp">
                     </div>
                 </div>
                  <div class="form-row">
                     <div class="form-group">
-                        <label for="tempatTugas">Tempat Tugas</label>
-                        <input type="text" id="tempatTugas" required>
+                        <label for="jabatan">Jabatan</label>
+                        <input type="text" id="jabatan" required>
                     </div>
                     <div class="form-group">
-                        <label for="kecamatan">Kecamatan</label>
-                        <input type="text" id="kecamatan" required>
+                        <label for="pendidikanTerakhir">Pendidikan Terakhir</label>
+                        <input type="text" id="pendidikanTerakhir" required>
                     </div>
+                </div>
+                 <div class="form-group">
+                    <label for="statusPegawai">Status Pegawai</label>
+                    <input type="text" id="statusPegawai" required>
                 </div>
                 <button type="submit" id="submitBtn" class="primary-button" style="width: 100%; justify-content:center;">Update Data</button>
             </form>
@@ -325,6 +388,7 @@
         onSnapshot(q, (snapshot) => {
             allPegawai = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
             renderTable(allPegawai);
+            renderStats(allPegawai);
         }, (error) => {
             console.error("Firestore snapshot error: ", error);
             if (error.code === 'failed-precondition') {
@@ -332,6 +396,24 @@
                 emptyState.innerHTML = `<p>Error: Query memerlukan indeks komposit. Silakan buat indeks dengan mengklik link berikut di console browser Anda, lalu segarkan halaman ini.</p><p style="word-break:break-all; font-size:12px;">${link ? `<a href="${link[0]}" target="_blank">Buat Indeks</a>` : 'Buka Console (F12) untuk link pembuatan indeks.'}</p>`;
             }
         });
+
+        const renderStats = (data) => {
+            const kecamatanStats = data.reduce((acc, p) => { acc[p.kecamatan] = (acc[p.kecamatan] || 0) + 1; return acc; }, {});
+            const pendidikanStats = data.reduce((acc, p) => { acc[p.pendidikanTerakhir] = (acc[p.pendidikanTerakhir] || 0) + 1; return acc; }, {});
+            const statusStats = data.reduce((acc, p) => { acc[p.statusPegawai] = (acc[p.statusPegawai] || 0) + 1; return acc; }, {});
+
+            const populateCard = (elementId, statsData) => {
+                const cardBody = document.querySelector(`#${elementId} .stat-body`);
+                cardBody.innerHTML = '';
+                Object.entries(statsData).sort((a,b) => a[0].localeCompare(b[0])).forEach(([key, value]) => {
+                    cardBody.innerHTML += `<p><span>${key || 'N/A'}</span> <strong>${value}</strong></p>`;
+                });
+            };
+
+            populateCard('kecamatanStats', kecamatanStats);
+            populateCard('pendidikanStats', pendidikanStats);
+            populateCard('statusStats', statusStats);
+        };
 
         const renderTable = (data) => {
             tableBody.innerHTML = '';
@@ -348,11 +430,12 @@
                         <td>${pegawai.nik || ''}</td>
                         <td>${pegawai.nip || '-'}</td>
                         <td>${pegawai.lp || ''}</td>
+                        <td>${pegawai.tempatTugas || ''}</td>
+                        <td>${pegawai.kecamatan || ''}</td>
+                        <td>${pegawai.nomorHp || '-'}</td>
                         <td>${pegawai.jabatan || ''}</td>
                         <td>${pegawai.pendidikanTerakhir || ''}</td>
                         <td>${pegawai.statusPegawai || ''}</td>
-                        <td>${pegawai.tempatTugas || ''}</td>
-                        <td>${pegawai.kecamatan || ''}</td>
                         <td>
                             <div class="action-button-group">
                                 <button class="icon-button edit-btn" data-id="${pegawai.id}" title="Edit"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z" /><path fill-rule="evenodd" d="M2 6a2 2 0 012-2h4a1 1 0 010 2H4v10h10v-4a1 1 0 112 0v4a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" clip-rule="evenodd" /></svg></button>
@@ -400,11 +483,12 @@
                     pegawaiModal.querySelector('#nik').value = data.nik || '';
                     pegawaiModal.querySelector('#nip').value = data.nip || '';
                     pegawaiModal.querySelector('#lp').value = data.lp || '';
+                    pegawaiModal.querySelector('#tempatTugas').value = data.tempatTugas || '';
+                    pegawaiModal.querySelector('#kecamatan').value = data.kecamatan || '';
+                    pegawaiModal.querySelector('#nomorHp').value = data.nomorHp || '';
                     pegawaiModal.querySelector('#jabatan').value = data.jabatan || '';
                     pegawaiModal.querySelector('#pendidikanTerakhir').value = data.pendidikanTerakhir || '';
                     pegawaiModal.querySelector('#statusPegawai').value = data.statusPegawai || '';
-                    pegawaiModal.querySelector('#tempatTugas').value = data.tempatTugas || '';
-                    pegawaiModal.querySelector('#kecamatan').value = data.kecamatan || '';
                     
                     pegawaiModal.style.display = 'block';
                 }
@@ -427,11 +511,12 @@
                 nik: pegawaiModal.querySelector('#nik').value,
                 nip: pegawaiModal.querySelector('#nip').value,
                 lp: pegawaiModal.querySelector('#lp').value,
+                tempatTugas: pegawaiModal.querySelector('#tempatTugas').value,
+                kecamatan: pegawaiModal.querySelector('#kecamatan').value,
+                nomorHp: pegawaiModal.querySelector('#nomorHp').value,
                 jabatan: pegawaiModal.querySelector('#jabatan').value,
                 pendidikanTerakhir: pegawaiModal.querySelector('#pendidikanTerakhir').value,
                 statusPegawai: pegawaiModal.querySelector('#statusPegawai').value,
-                tempatTugas: pegawaiModal.querySelector('#tempatTugas').value,
-                kecamatan: pegawaiModal.querySelector('#kecamatan').value,
             };
 
             if (id) { // Update
@@ -457,18 +542,18 @@
                     const worksheet = workbook.Sheets[sheetName];
                     const jsonFromExcel = XLSX.utils.sheet_to_json(worksheet);
                     
-                    const requiredColumns = ['nama', 'nik', 'lp', 'jabatan', 'pendidikanTerakhir', 'statusPegawai', 'tempatTugas', 'kecamatan'];
+                    const requiredColumns = ['nama', 'nik', 'lp', 'tempatTugas', 'kecamatan', 'jabatan', 'pendidikanTerakhir', 'statusPegawai'];
                     const firstRow = jsonFromExcel[0] || {};
                     const hasRequiredColumns = requiredColumns.every(col => col in firstRow);
 
                     if (jsonFromExcel.length === 0 || !hasRequiredColumns) {
-                        alert(`Format file Excel tidak sesuai. Pastikan kolom memiliki judul persis: ${requiredColumns.join(', ')} (dan nip jika ada).`);
+                        alert(`Format file Excel tidak sesuai. Pastikan kolom memiliki judul persis: ${requiredColumns.join(', ')}.`);
                         excelFile.value = '';
                         return;
                     }
 
                     if (confirm(`Anda akan memproses ${jsonFromExcel.length} data pegawai. Lanjutkan?`)) {
-                        const existingNiks = new Set(allPegawai.map(p => p.nik));
+                        const existingNiks = new Set(allPegawai.map(p => p.nik).filter(Boolean));
                         const newData = [];
                         const duplicateData = [];
 
@@ -476,8 +561,8 @@
                             const nik = String(item.nik || '').trim();
                             if (nik && !existingNiks.has(nik)) {
                                 newData.push(item);
-                                existingNiks.add(nik); // Tambahkan ke set agar tidak ada duplikat dalam file excel itu sendiri
-                            } else {
+                                existingNiks.add(nik);
+                            } else if (nik) {
                                 duplicateData.push(item);
                             }
                         });
@@ -492,11 +577,12 @@
                                         nik: String(item.nik || ''),
                                         nip: String(item.nip || ''),
                                         lp: String(item.lp || ''),
+                                        tempatTugas: String(item.tempatTugas || ''),
+                                        kecamatan: String(item.kecamatan || ''),
+                                        nomorHp: String(item.nomorHp || ''),
                                         jabatan: String(item.jabatan || ''),
                                         pendidikanTerakhir: String(item.pendidikanTerakhir || ''),
                                         statusPegawai: String(item.statusPegawai || ''),
-                                        tempatTugas: String(item.tempatTugas || ''),
-                                        kecamatan: String(item.kecamatan || ''),
                                     });
                                 });
                                 await batch.commit();
@@ -526,11 +612,12 @@
                 nik: "1234567890123456",
                 nip: "198501012010011001",
                 lp: "L",
+                tempatTugas: "SDN Suka Maju 1",
+                kecamatan: "Simpang Empat",
+                nomorHp: "081234567890",
                 jabatan: "Guru Kelas",
                 pendidikanTerakhir: "S1 PGSD",
-                statusPegawai: "PNS",
-                tempatTugas: "SDN Suka Maju 1",
-                kecamatan: "Simpang Empat"
+                statusPegawai: "PNS"
             }];
             const worksheet = XLSX.utils.json_to_sheet(templateData);
             const workbook = XLSX.utils.book_new();
