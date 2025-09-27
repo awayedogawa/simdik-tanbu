@@ -101,27 +101,32 @@
         }
         .data-table { width: 100%; border-collapse: collapse; }
         .data-table th, .data-table td {
-            padding: 12px 16px; text-align: left; vertical-align: middle;
-            border-bottom: 1px solid var(--gray-200); font-size: 14px;
+            padding: 10px; text-align: left; vertical-align: middle;
+            border-bottom: 1px solid var(--gray-200); font-size: 12px;
         }
         .data-table th {
             background-color: var(--gray-100); color: var(--gray-500);
-            font-size: 12px; font-weight: 500; text-transform: uppercase;
+            font-size: 11px; font-weight: 600; text-transform: uppercase;
+        }
+        .duplicate-warning {
+            background-color: #FEE2E2 !important;
+        }
+        .duplicate-warning td:first-child {
+            border-left: 4px solid var(--danger-color);
         }
         .empty-state { text-align: center; padding: 48px; color: var(--gray-500); }
-        .action-button-group { display: flex; justify-content: flex-end; gap: 12px; }
+        .action-button-group { display: flex; justify-content: flex-end; gap: 8px; }
         .icon-button {
             background: none; border: none; cursor: pointer; padding: 4px;
             border-radius: 50%; display: flex; align-items: center;
             justify-content: center; transition: background-color 0.2s ease;
         }
-        .icon-button svg { width: 18px; height: 18px; }
+        .icon-button svg { width: 16px; height: 16px; }
         .edit-btn { color: var(--warning-color); }
         .edit-btn:hover { background-color: #FEF3C7; }
         .delete-btn { color: var(--danger-color); }
         .delete-btn:hover { background-color: #FEE2E2; }
         
-        /* Gaya Kartu Statistik */
         .stats-container {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
@@ -149,18 +154,33 @@
             overflow-y: auto;
             font-size: 14px;
         }
-        .stat-card p {
+        .stat-item {
             display: flex;
             justify-content: space-between;
             margin: 4px 0;
-            padding: 4px 0;
+            padding: 4px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
         }
-        .stat-card p strong {
+        .stat-item:hover {
+            background-color: var(--gray-100);
+        }
+        .stat-item strong {
             font-weight: 600;
             color: var(--gray-900);
-            background-color: var(--gray-100);
+            background-color: var(--gray-200);
             padding: 2px 8px;
             border-radius: 4px;
+            font-size: 12px;
+        }
+        #clearFilterBtn {
+            display: none; /* Muncul saat filter aktif */
+            background-color: var(--danger-color);
+            color: white;
+        }
+        #clearFilterBtn:hover {
+            background-color: var(--danger-hover);
         }
 
         .modal {
@@ -217,7 +237,8 @@
                     <input type="text" id="searchInput" placeholder="Cari berdasarkan Nama, NIK, atau NIP...">
                 </div>
                 <div class="action-button-group-header">
-                     <button id="addPegawaiBtn" class="action-button">
+                    <button id="clearFilterBtn" class="action-button">Tampilkan Semua</button>
+                    <button id="addPegawaiBtn" class="action-button">
                         <svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
                         Tambah Pegawai
                     </button>
@@ -239,7 +260,7 @@
             </div>
         </header>
 
-        <div class="stats-container">
+        <div class="stats-container" id="statsContainer">
             <div class="stat-card" id="kecamatanStats">
                 <h3>Berdasarkan Kecamatan</h3>
                 <div class="stat-body"></div>
@@ -268,8 +289,8 @@
                             <th>Kecamatan</th>
                             <th>Nomor HP</th>
                             <th>Jabatan</th>
-                            <th>Pendidikan Terakhir</th>
-                            <th>Status Pegawai</th>
+                            <th>Pend. Terakhir</th>
+                            <th>Status</th>
                             <th>Aksi</th>
                         </tr>
                     </thead>
@@ -313,7 +334,7 @@
                             <option value="P">Perempuan</option>
                         </select>
                     </div>
-                     <div class="form-group">
+                    <div class="form-group">
                         <label for="tempatTugas">Tempat Tugas</label>
                         <input type="text" id="tempatTugas" required>
                     </div>
@@ -374,6 +395,7 @@
         const excelFile = document.getElementById('excelFile');
         const templateBtn = document.getElementById('templateBtn');
         const clearBtn = document.getElementById('clearBtn');
+        const clearFilterBtn = document.getElementById('clearFilterBtn');
         
         const pegawaiModal = document.getElementById('pegawaiModal');
         const pegawaiForm = document.getElementById('pegawaiForm');
@@ -386,7 +408,17 @@
         const q = query(pegawaiCollectionRef, orderBy("kecamatan", "asc"), orderBy("nama", "asc"));
 
         onSnapshot(q, (snapshot) => {
-            allPegawai = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            let unsortedData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            
+            // Urutkan: duplikat di atas, lalu berdasarkan kecamatan, lalu nama
+            allPegawai = unsortedData.sort((a, b) => {
+                if (a.isDuplicate && !b.isDuplicate) return -1;
+                if (!a.isDuplicate && b.isDuplicate) return 1;
+                const kecCompare = (a.kecamatan || '').localeCompare(b.kecamatan || '');
+                if (kecCompare !== 0) return kecCompare;
+                return (a.nama || '').localeCompare(b.nama || '');
+            });
+            
             renderTable(allPegawai);
             renderStats(allPegawai);
         }, (error) => {
@@ -402,17 +434,22 @@
             const pendidikanStats = data.reduce((acc, p) => { acc[p.pendidikanTerakhir] = (acc[p.pendidikanTerakhir] || 0) + 1; return acc; }, {});
             const statusStats = data.reduce((acc, p) => { acc[p.statusPegawai] = (acc[p.statusPegawai] || 0) + 1; return acc; }, {});
 
-            const populateCard = (elementId, statsData) => {
+            const populateCard = (elementId, statsData, filterType) => {
                 const cardBody = document.querySelector(`#${elementId} .stat-body`);
                 cardBody.innerHTML = '';
                 Object.entries(statsData).sort((a,b) => a[0].localeCompare(b[0])).forEach(([key, value]) => {
-                    cardBody.innerHTML += `<p><span>${key || 'N/A'}</span> <strong>${value}</strong></p>`;
+                    const item = document.createElement('div');
+                    item.className = 'stat-item';
+                    item.dataset.filterType = filterType;
+                    item.dataset.filterValue = key;
+                    item.innerHTML = `<span>${key || 'N/A'}</span> <strong>${value}</strong>`;
+                    cardBody.appendChild(item);
                 });
             };
 
-            populateCard('kecamatanStats', kecamatanStats);
-            populateCard('pendidikanStats', pendidikanStats);
-            populateCard('statusStats', statusStats);
+            populateCard('kecamatanStats', kecamatanStats, 'kecamatan');
+            populateCard('pendidikanStats', pendidikanStats, 'pendidikanTerakhir');
+            populateCard('statusStats', statusStats, 'statusPegawai');
         };
 
         const renderTable = (data) => {
@@ -424,6 +461,9 @@
                 emptyState.style.display = 'none';
                 data.forEach((pegawai, index) => {
                     const row = tableBody.insertRow();
+                    if (pegawai.isDuplicate) {
+                        row.classList.add('duplicate-warning');
+                    }
                     row.innerHTML = `
                         <td>${index + 1}</td>
                         <td>${pegawai.nama || ''}</td>
@@ -446,6 +486,24 @@
                 });
             }
         };
+        
+        document.getElementById('statsContainer').addEventListener('click', (e) => {
+            const target = e.target.closest('.stat-item');
+            if (!target) return;
+
+            const filterType = target.dataset.filterType;
+            const filterValue = target.dataset.filterValue;
+            
+            const filteredData = allPegawai.filter(p => p[filterType] === filterValue);
+            renderTable(filteredData);
+            clearFilterBtn.style.display = 'inline-flex';
+        });
+
+        clearFilterBtn.addEventListener('click', () => {
+            renderTable(allPegawai);
+            searchInput.value = '';
+            clearFilterBtn.style.display = 'none';
+        });
 
         searchInput.addEventListener('input', () => {
             const searchTerm = searchInput.value.toLowerCase();
@@ -455,6 +513,7 @@
                 (pegawai.nip && pegawai.nip.includes(searchTerm))
             );
             renderTable(filteredData);
+            clearFilterBtn.style.display = 'inline-flex';
         });
 
         tableBody.addEventListener('click', async (e) => {
@@ -519,9 +578,14 @@
                 statusPegawai: pegawaiModal.querySelector('#statusPegawai').value,
             };
 
-            if (id) { // Update
+            if (id) {
+                // Saat mengedit, pastikan flag duplikat dihapus jika NIK diubah menjadi unik
+                const existingNik = allPegawai.find(p => p.nik === data.nik && p.id !== id);
+                data.isDuplicate = !!existingNik;
                 await updateDoc(doc(db, "pegawai", id), data);
-            } else { // Create
+            } else { 
+                const existingNik = allPegawai.find(p => p.nik === data.nik);
+                data.isDuplicate = !!existingNik;
                 await addDoc(pegawaiCollectionRef, data);
             }
             pegawaiModal.style.display = 'none';
@@ -542,7 +606,7 @@
                     const worksheet = workbook.Sheets[sheetName];
                     const jsonFromExcel = XLSX.utils.sheet_to_json(worksheet);
                     
-                    const requiredColumns = ['nama', 'nik', 'lp', 'tempatTugas', 'kecamatan', 'jabatan', 'pendidikanTerakhir', 'statusPegawai'];
+                    const requiredColumns = ['nama', 'nik', 'lp', 'tempatTugas', 'kecamatan', 'jabatan', 'pendidikanTerakhir', 'statusPegawai', 'nomorHp'];
                     const firstRow = jsonFromExcel[0] || {};
                     const hasRequiredColumns = requiredColumns.every(col => col in firstRow);
 
@@ -554,51 +618,27 @@
 
                     if (confirm(`Anda akan memproses ${jsonFromExcel.length} data pegawai. Lanjutkan?`)) {
                         const existingNiks = new Set(allPegawai.map(p => p.nik).filter(Boolean));
-                        const newData = [];
-                        const duplicateData = [];
+                        const batch = writeBatch(db);
 
                         jsonFromExcel.forEach(item => {
                             const nik = String(item.nik || '').trim();
-                            if (nik && !existingNiks.has(nik)) {
-                                newData.push(item);
-                                existingNiks.add(nik);
-                            } else if (nik) {
-                                duplicateData.push(item);
-                            }
+                            const docRef = doc(collection(db, "pegawai"));
+                            batch.set(docRef, {
+                                nama: String(item.nama || ''),
+                                nik: nik,
+                                nip: String(item.nip || ''),
+                                lp: String(item.lp || ''),
+                                tempatTugas: String(item.tempatTugas || ''),
+                                kecamatan: String(item.kecamatan || ''),
+                                nomorHp: String(item.nomorHp || ''),
+                                jabatan: String(item.jabatan || ''),
+                                pendidikanTerakhir: String(item.pendidikanTerakhir || ''),
+                                statusPegawai: String(item.statusPegawai || ''),
+                                isDuplicate: nik ? existingNiks.has(nik) : false
+                            });
                         });
-
-                        try {
-                            if (newData.length > 0) {
-                                const batch = writeBatch(db);
-                                newData.forEach(item => {
-                                    const docRef = doc(collection(db, "pegawai"));
-                                    batch.set(docRef, {
-                                        nama: String(item.nama || ''),
-                                        nik: String(item.nik || ''),
-                                        nip: String(item.nip || ''),
-                                        lp: String(item.lp || ''),
-                                        tempatTugas: String(item.tempatTugas || ''),
-                                        kecamatan: String(item.kecamatan || ''),
-                                        nomorHp: String(item.nomorHp || ''),
-                                        jabatan: String(item.jabatan || ''),
-                                        pendidikanTerakhir: String(item.pendidikanTerakhir || ''),
-                                        statusPegawai: String(item.statusPegawai || ''),
-                                    });
-                                });
-                                await batch.commit();
-                            }
-
-                            let summaryMessage = `${newData.length} data baru berhasil diimpor.`;
-                            if (duplicateData.length > 0) {
-                                const duplicateNames = duplicateData.map(item => `${item.nama} (NIK: ${item.nik})`).join('\n');
-                                summaryMessage += `\n\n${duplicateData.length} data berikut dilewati karena NIK sudah ada di database:\n${duplicateNames}`;
-                            }
-                            alert(summaryMessage);
-
-                        } catch (err) {
-                            console.error("Gagal mengimpor:", err);
-                            alert("Terjadi kesalahan saat mengimpor data.");
-                        }
+                        await batch.commit();
+                        alert(`${jsonFromExcel.length} data telah diproses dan diimpor.`);
                     }
                     excelFile.value = '';
                 };
