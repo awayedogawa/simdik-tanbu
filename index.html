@@ -23,8 +23,8 @@
             --danger-color: #EF4444; --danger-hover: #DC2626;
             --warning-color: #F59E0B; --warning-hover: #D97706;
             --info-color: #3B82F6; --info-hover: #EBF1FF;
-            --success-color: #10B981; --success-hover: #D1FAE5;
-            --success-darker: #059669; /* Warna hover baru */
+            --success-color: #10B981; --success-hover: #059669;
+            --success-darker: #047857; /* Sedikit lebih gelap untuk border */
             --gray-100: #F3F4F6; --gray-200: #E5E7EB; --gray-500: #6B7280;
             --gray-700: #374151; --gray-900: #111827;
             --background-color: #F9FAFB; --card-background: #FFFFFF;
@@ -80,14 +80,32 @@
             transition: all 0.2s ease;
         }
         .action-button:hover { background-color: var(--gray-100); box-shadow: var(--shadow-sm); }
+        
+        /* === PERUBAHAN CSS UNTUK TOMBOL 3D === */
         .primary-button {
-            background-color: var(--success-color); /* Diubah */
-            color: white; border: none;
-            padding: 12px 20px; font-size: 14px; font-weight: 500;
-            border-radius: 6px; cursor: pointer; transition: background-color 0.2s ease;
-            display: flex; align-items: center; gap: 8px;
+            background-color: var(--success-color);
+            color: white;
+            border: none;
+            border-bottom: 4px solid var(--success-darker); /* Efek tebal di bawah */
+            padding: 12px 20px;
+            font-size: 14px;
+            font-weight: 600; /* Dibuat lebih tebal */
+            border-radius: 6px;
+            cursor: pointer;
+            transition: transform 0.1s ease, background-color 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
-        .primary-button:hover { background-color: var(--success-darker); } /* Diubah */
+        .primary-button:hover { 
+            background-color: var(--success-hover);
+        }
+        .primary-button:active {
+            transform: translateY(2px); /* Efek tertekan */
+            border-bottom-width: 2px; /* Border bawah menipis */
+        }
+        /* === AKHIR PERUBAHAN CSS === */
+
         main {
             background-color: var(--card-background); border-radius: 8px;
             box-shadow: var(--shadow-md); overflow: hidden;
@@ -203,6 +221,7 @@
             <h2>Manajemen Kegiatan</h2>
             <div class="header-buttons">
                 <div class="main-actions admin-only-feature">
+                    <a href="pelaksana.html" class="action-button">Manajemen Pelaksana</a>
                     <a href="database-sekolah.html" class="action-button">Database Sekolah</a>
                     <a href="rekap-peserta.html" class="action-button">Rekap Peserta</a>
                     <a href="rekap-narasumber.html" class="action-button">Rekap Narasumber</a>
@@ -394,19 +413,13 @@
         const kegiatanCollectionRef = collection(db, "kegiatan");
         let q;
         if (userRole === 'admin') {
-            q = query(kegiatanCollectionRef, orderBy("tanggalMulai", "desc"));
+            q = query(kegiatanCollectionRef, orderBy("tanggalMulai", "asc")); 
         } else {
-            q = query(kegiatanCollectionRef, where("createdBy", "==", userNip));
+            q = query(kegiatanCollectionRef, where("createdBy", "==", userNip), orderBy("tanggalMulai", "asc"));
         }
 
         onSnapshot(q, async (snapshot) => {
             const allDocs = snapshot.docs;
-            
-            // Perbaikan 2: Tambahkan sorting manual untuk Pelaksana
-            if(userRole === 'pelaksana') {
-                allDocs.sort((a, b) => new Date(b.data().tanggalMulai) - new Date(a.data().tanggalMulai));
-            }
-
             tableBody.innerHTML = '';
 
             if (allDocs.length === 0) {
@@ -496,6 +509,7 @@
                 deletePromises.push(deleteDoc(doc.ref));
             });
             await Promise.all(deletePromises);
+            console.log(`Sub-koleksi ${subcollectionName} untuk kegiatan ${kegiatanId} berhasil dihapus.`);
         };
 
         tableBody.addEventListener('click', async (event) => {
@@ -522,6 +536,14 @@
             }
 
             if (target.classList.contains('delete-btn')) {
+                if (userRole !== 'admin') {
+                    const docRef = doc(db, 'kegiatan', docId);
+                    const docSnap = await getDoc(docRef);
+                    if (docSnap.data().createdBy !== userNip) {
+                        alert('Anda tidak memiliki izin untuk menghapus kegiatan ini.');
+                        return;
+                    }
+                }
                 const namaKegiatan = target.dataset.nama;
                 if (confirm(`PERINGATAN: Menghapus kegiatan "${namaKegiatan}" juga akan menghapus SEMUA data peserta dan narasumber di dalamnya. Anda yakin ingin melanjutkan?`)) {
                     try {
@@ -567,4 +589,3 @@
     </script>
 </body>
 </html>
-
