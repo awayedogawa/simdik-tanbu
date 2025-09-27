@@ -74,8 +74,8 @@
             display: flex;
             gap: 0.75rem;
             flex-wrap: wrap;
-            flex-grow: 1; /* Memastikan grup tombol memenuhi sisa ruang */
-            justify-content: flex-end; /* Mendorong tombol ke kanan */
+            flex-grow: 1;
+            justify-content: flex-end;
         }
         .action-button {
             background-color: var(--card-background); color: var(--gray-700);
@@ -93,7 +93,7 @@
             background-color: var(--primary-color);
             border-color: var(--primary-color);
             color: white;
-            margin-left: auto; /* Mendorong tombol ini ke paling kanan di dalam grupnya */
+            margin-left: auto;
         }
         .back-button:hover {
             background-color: var(--primary-hover);
@@ -112,11 +112,11 @@
             font-size: 11px; font-weight: 600; text-transform: uppercase;
         }
         .duplicate-warning {
-            background-color: #FEF3C7 !important;
-            color: #92400E;
+            background-color: #FEE2E2 !important;
+            color: #991B1B;
         }
         .duplicate-warning td:first-child {
-            border-left: 4px solid var(--warning-color);
+            border-left: 4px solid var(--danger-color);
         }
         .empty-state { text-align: center; padding: 48px; color: var(--gray-500); }
         .action-button-group { display: flex; justify-content: flex-end; gap: 8px; }
@@ -434,17 +434,14 @@
             statusPegawai: null
         };
         
-        const q = query(pegawaiCollectionRef, orderBy("kecamatan", "asc"), orderBy("nama", "asc"));
+        const q = query(pegawaiCollectionRef); // Query dasar, pengurutan dilakukan di client-side untuk mengakomodasi NIK ganda di atas
 
         onSnapshot(q, (snapshot) => {
             allPegawai = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            applyAndRenderFilters();
+            applyAndRenderFilters(); 
         }, (error) => {
             console.error("Firestore snapshot error: ", error);
-            if (error.code === 'failed-precondition') {
-                const link = error.message.match(/https:\/\/[^\s]+/);
-                emptyState.innerHTML = `<p>Error: Query memerlukan indeks komposit. Silakan buat indeks dengan mengklik link berikut di console browser Anda, lalu segarkan halaman ini.</p><p style="word-break:break-all; font-size:12px;">${link ? `<a href="${link[0]}" target="_blank">Buat Indeks</a>` : 'Buka Console (F12) untuk link pembuatan indeks.'}</p>`;
-            }
+            emptyState.innerHTML = `<p>Gagal memuat data. Periksa koneksi dan console (F12) untuk error.</p>`;
         });
 
         const applyAndRenderFilters = () => {
@@ -453,7 +450,7 @@
             const searchTerm = searchInput.value.toLowerCase();
             if (searchTerm) {
                  filteredData = filteredData.filter(p => 
-                    p.nama.toLowerCase().includes(searchTerm) || 
+                    (p.nama && p.nama.toLowerCase().includes(searchTerm)) || 
                     (p.nik && p.nik.includes(searchTerm)) ||
                     (p.nip && p.nip.includes(searchTerm))
                 );
@@ -494,7 +491,11 @@
                         tempFilteredData = tempFilteredData.filter(p => p[key] === activeFilters[key]);
                     }
                 }
-                return tempFilteredData.reduce((acc, p) => { acc[p[groupBy]] = (acc[p[groupBy]] || 0) + 1; return acc; }, {});
+                return tempFilteredData.reduce((acc, p) => { 
+                    const key = p[groupBy] || 'N/A';
+                    acc[key] = (acc[key] || 0) + 1; 
+                    return acc; 
+                }, {});
             };
 
             const kecamatanStats = filterAndCount(allPegawai, 'kecamatan', 'kecamatan');
@@ -512,7 +513,7 @@
                     }
                     item.dataset.filterType = filterType;
                     item.dataset.filterValue = key;
-                    item.innerHTML = `<span>${key || 'N/A'}</span> <strong>${value}</strong>`;
+                    item.innerHTML = `<span>${key}</span> <strong>${value}</strong>`;
                     cardBody.appendChild(item);
                 });
             };
@@ -623,9 +624,10 @@
         pegawaiForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             const id = pegawaiIdInput.value;
+            const nikValue = pegawaiModal.querySelector('#nik').value;
             const data = {
                 nama: pegawaiModal.querySelector('#nama').value,
-                nik: pegawaiModal.querySelector('#nik').value,
+                nik: nikValue,
                 nip: pegawaiModal.querySelector('#nip').value,
                 lp: pegawaiModal.querySelector('#lp').value,
                 tempatTugas: pegawaiModal.querySelector('#tempatTugas').value,
@@ -634,21 +636,20 @@
                 jabatan: pegawaiModal.querySelector('#jabatan').value,
                 pendidikanTerakhir: pegawaiModal.querySelector('#pendidikanTerakhir').value,
                 statusPegawai: pegawaiModal.querySelector('#statusPegawai').value,
+                isDuplicate: false
             };
 
-            const existingNik = allPegawai.find(p => p.nik === data.nik && p.id !== id);
-            data.isDuplicate = !!existingNik;
+            const duplicateCheck = allPegawai.find(p => p.nik === nikValue && p.id !== id);
+            if(duplicateCheck){
+                data.isDuplicate = true;
+                await updateDoc(doc(db, "pegawai", duplicateCheck.id), { isDuplicate: true });
+            }
 
             if (id) {
                 await updateDoc(doc(db, "pegawai", id), data);
             } else { 
                 await addDoc(pegawaiCollectionRef, data);
             }
-            
-            if (existingNik) {
-                await updateDoc(doc(db, "pegawai", existingNik.id), { isDuplicate: true });
-            }
-
             pegawaiModal.style.display = 'none';
         });
 
@@ -679,20 +680,36 @@
 
                     if (confirm(`Anda akan memproses ${jsonFromExcel.length} data pegawai. Lanjutkan?`)) {
                         const existingNiks = new Set(allPegawai.map(p => p.nik).filter(Boolean));
+                        const niksToUpdate = new Set();
+                        
                         const batch = writeBatch(db);
-
                         jsonFromExcel.forEach(item => {
                             const nik = String(item.nik || '').trim();
+                            const isDuplicate = nik ? existingNiks.has(nik) : false;
+                            if (isDuplicate) {
+                                niksToUpdate.add(nik);
+                            }
                             const docRef = doc(collection(db, "pegawai"));
                             batch.set(docRef, {
                                 nama: String(item.nama || ''), nik: nik, nip: String(item.nip || ''), lp: String(item.lp || ''),
                                 tempatTugas: String(item.tempatTugas || ''), kecamatan: String(item.kecamatan || ''),
                                 nomorHp: String(item.nomorHp || ''), jabatan: String(item.jabatan || ''),
                                 pendidikanTerakhir: String(item.pendidikanTerakhir || ''), statusPegawai: String(item.statusPegawai || ''),
-                                isDuplicate: nik ? existingNiks.has(nik) : false
+                                isDuplicate: isDuplicate
                             });
                         });
                         await batch.commit();
+
+                        // Langkah kedua: Update data lama yang sekarang menjadi duplikat
+                        if (niksToUpdate.size > 0) {
+                            const updateBatch = writeBatch(db);
+                            const originalsToUpdate = allPegawai.filter(p => niksToUpdate.has(p.nik));
+                            originalsToUpdate.forEach(p => {
+                                updateBatch.update(doc(db, "pegawai", p.id), { isDuplicate: true });
+                            });
+                            await updateBatch.commit();
+                        }
+                        
                         alert(`${jsonFromExcel.length} data telah diproses dan diimpor. Data dengan NIK yang sudah ada ditandai sebagai duplikat.`);
                     }
                     excelFile.value = '';
