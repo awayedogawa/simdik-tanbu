@@ -74,6 +74,8 @@
             display: flex;
             gap: 0.75rem;
             flex-wrap: wrap;
+            flex-grow: 1; /* Memastikan grup tombol memenuhi sisa ruang */
+            justify-content: flex-end; /* Mendorong tombol ke kanan */
         }
         .action-button {
             background-color: var(--card-background); color: var(--gray-700);
@@ -91,6 +93,7 @@
             background-color: var(--primary-color);
             border-color: var(--primary-color);
             color: white;
+            margin-left: auto; /* Mendorong tombol ini ke paling kanan di dalam grupnya */
         }
         .back-button:hover {
             background-color: var(--primary-hover);
@@ -109,7 +112,7 @@
             font-size: 11px; font-weight: 600; text-transform: uppercase;
         }
         .duplicate-warning {
-            background-color: #FEF3C7 !important; /* Warna kuning untuk warning */
+            background-color: #FEF3C7 !important;
             color: #92400E;
         }
         .duplicate-warning td:first-child {
@@ -130,7 +133,7 @@
         
         .stats-container {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
             gap: 1.5rem;
             margin-bottom: 2rem;
         }
@@ -154,6 +157,12 @@
             max-height: 150px;
             overflow-y: auto;
             font-size: 14px;
+        }
+        #totalPegawaiCard .stat-body {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--gray-900);
+            text-align: center;
         }
         .stat-item {
             display: flex;
@@ -270,6 +279,10 @@
         </header>
 
         <div class="stats-container" id="statsContainer">
+             <div class="stat-card" id="totalPegawaiCard">
+                <h3>Total Pegawai</h3>
+                <div class="stat-body">0</div>
+            </div>
             <div class="stat-card" id="kecamatanStats">
                 <h3>Berdasarkan Kecamatan</h3>
                 <div class="stat-body"></div>
@@ -343,7 +356,7 @@
                             <option value="P">Perempuan</option>
                         </select>
                     </div>
-                     <div class="form-group">
+                    <div class="form-group">
                         <label for="tempatTugas">Tempat Tugas</label>
                         <input type="text" id="tempatTugas" required>
                     </div>
@@ -406,6 +419,7 @@
         const clearBtn = document.getElementById('clearBtn');
         const clearFilterBtn = document.getElementById('clearFilterBtn');
         const statsContainer = document.getElementById('statsContainer');
+        const totalPegawaiCardBody = document.querySelector('#totalPegawaiCard .stat-body');
         
         const pegawaiModal = document.getElementById('pegawaiModal');
         const pegawaiForm = document.getElementById('pegawaiForm');
@@ -420,20 +434,22 @@
             statusPegawai: null
         };
         
-        const q = query(pegawaiCollectionRef); // Query dasar, pengurutan dilakukan di client-side
+        const q = query(pegawaiCollectionRef, orderBy("kecamatan", "asc"), orderBy("nama", "asc"));
 
         onSnapshot(q, (snapshot) => {
             allPegawai = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            applyAndRenderFilters(); // Panggil fungsi utama untuk render
+            applyAndRenderFilters();
         }, (error) => {
             console.error("Firestore snapshot error: ", error);
-            emptyState.innerHTML = `<p>Gagal memuat data. Periksa koneksi dan console (F12) untuk error.</p>`;
+            if (error.code === 'failed-precondition') {
+                const link = error.message.match(/https:\/\/[^\s]+/);
+                emptyState.innerHTML = `<p>Error: Query memerlukan indeks komposit. Silakan buat indeks dengan mengklik link berikut di console browser Anda, lalu segarkan halaman ini.</p><p style="word-break:break-all; font-size:12px;">${link ? `<a href="${link[0]}" target="_blank">Buat Indeks</a>` : 'Buka Console (F12) untuk link pembuatan indeks.'}</p>`;
+            }
         });
 
         const applyAndRenderFilters = () => {
             let filteredData = [...allPegawai];
-
-            // Terapkan filter text search
+            
             const searchTerm = searchInput.value.toLowerCase();
             if (searchTerm) {
                  filteredData = filteredData.filter(p => 
@@ -443,7 +459,6 @@
                 );
             }
 
-            // Terapkan filter dari kartu statistik
             if (activeFilters.kecamatan) {
                 filteredData = filteredData.filter(p => p.kecamatan === activeFilters.kecamatan);
             }
@@ -454,7 +469,6 @@
                 filteredData = filteredData.filter(p => p.statusPegawai === activeFilters.statusPegawai);
             }
             
-            // Urutkan data yang sudah difilter
             filteredData.sort((a, b) => {
                 if (a.isDuplicate && !b.isDuplicate) return -1;
                 if (!a.isDuplicate && b.isDuplicate) return 1;
@@ -464,15 +478,15 @@
             });
 
             renderTable(filteredData);
-            renderStats(); // Render ulang statistik berdasarkan filter aktif
+            renderStats();
             
-            // Tampilkan/sembunyikan tombol "Tampilkan Semua"
             const isFilterActive = Object.values(activeFilters).some(v => v !== null) || searchTerm;
             clearFilterBtn.style.display = isFilterActive ? 'inline-flex' : 'none';
         };
 
         const renderStats = () => {
-            // Kalkulasi berdasarkan data yang sudah terfilter sebagian
+            totalPegawaiCardBody.textContent = allPegawai.length;
+
             const filterAndCount = (data, groupBy, ignoreFilter) => {
                 let tempFilteredData = [...data];
                 for (const key in activeFilters) {
@@ -535,7 +549,7 @@
                         <td>
                             <div class="action-button-group">
                                 <button class="icon-button edit-btn" data-id="${pegawai.id}" title="Edit"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z" /><path fill-rule="evenodd" d="M2 6a2 2 0 012-2h4a1 1 0 010 2H4v10h10v-4a1 1 0 112 0v4a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" clip-rule="evenodd" /></svg></button>
-                                <button class="icon-button delete-btn" data-id="${pegawai.id}" data-nama="${pegawai.nama}" title="Hapus"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h--3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" /></svg></button>
+                                <button class="icon-button delete-btn" data-id="${pegawai.id}" data-nama="${pegawai.nama}" title="Hapus"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" /></svg></button>
                             </div>
                         </td>
                     `;
@@ -546,16 +560,9 @@
         statsContainer.addEventListener('click', (e) => {
             const target = e.target.closest('.stat-item');
             if (!target) return;
-
             const filterType = target.dataset.filterType;
             const filterValue = target.dataset.filterValue;
-
-            if (activeFilters[filterType] === filterValue) {
-                activeFilters[filterType] = null; // Batalkan filter jika diklik lagi
-            } else {
-                activeFilters[filterType] = filterValue;
-            }
-            
+            activeFilters[filterType] = activeFilters[filterType] === filterValue ? null : filterValue;
             applyAndRenderFilters();
         });
 
@@ -627,20 +634,21 @@
                 jabatan: pegawaiModal.querySelector('#jabatan').value,
                 pendidikanTerakhir: pegawaiModal.querySelector('#pendidikanTerakhir').value,
                 statusPegawai: pegawaiModal.querySelector('#statusPegawai').value,
-                isDuplicate: false // Default-nya bukan duplikat saat ditambah manual
             };
 
-            // Cek apakah NIK sudah ada
             const existingNik = allPegawai.find(p => p.nik === data.nik && p.id !== id);
-            if (existingNik) {
-                data.isDuplicate = true;
-            }
+            data.isDuplicate = !!existingNik;
 
-            if (id) { 
+            if (id) {
                 await updateDoc(doc(db, "pegawai", id), data);
             } else { 
                 await addDoc(pegawaiCollectionRef, data);
             }
+            
+            if (existingNik) {
+                await updateDoc(doc(db, "pegawai", existingNik.id), { isDuplicate: true });
+            }
+
             pegawaiModal.style.display = 'none';
         });
 
@@ -677,16 +685,10 @@
                             const nik = String(item.nik || '').trim();
                             const docRef = doc(collection(db, "pegawai"));
                             batch.set(docRef, {
-                                nama: String(item.nama || ''),
-                                nik: nik,
-                                nip: String(item.nip || ''),
-                                lp: String(item.lp || ''),
-                                tempatTugas: String(item.tempatTugas || ''),
-                                kecamatan: String(item.kecamatan || ''),
-                                nomorHp: String(item.nomorHp || ''),
-                                jabatan: String(item.jabatan || ''),
-                                pendidikanTerakhir: String(item.pendidikanTerakhir || ''),
-                                statusPegawai: String(item.statusPegawai || ''),
+                                nama: String(item.nama || ''), nik: nik, nip: String(item.nip || ''), lp: String(item.lp || ''),
+                                tempatTugas: String(item.tempatTugas || ''), kecamatan: String(item.kecamatan || ''),
+                                nomorHp: String(item.nomorHp || ''), jabatan: String(item.jabatan || ''),
+                                pendidikanTerakhir: String(item.pendidikanTerakhir || ''), statusPegawai: String(item.statusPegawai || ''),
                                 isDuplicate: nik ? existingNiks.has(nik) : false
                             });
                         });
@@ -701,16 +703,9 @@
 
         const downloadTemplate = () => {
             const templateData = [{
-                nama: "Contoh: Budi Santoso, S.Pd.",
-                nik: "1234567890123456",
-                nip: "198501012010011001",
-                lp: "L",
-                tempatTugas: "SDN Suka Maju 1",
-                kecamatan: "Simpang Empat",
-                nomorHp: "081234567890",
-                jabatan: "Guru Kelas",
-                pendidikanTerakhir: "S1 PGSD",
-                statusPegawai: "PNS"
+                nama: "Contoh: Budi Santoso, S.Pd.", nik: "1234567890123456", nip: "198501012010011001", lp: "L",
+                tempatTugas: "SDN Suka Maju 1", kecamatan: "Simpang Empat", nomorHp: "081234567890",
+                jabatan: "Guru Kelas", pendidikanTerakhir: "S1 PGSD", statusPegawai: "PNS"
             }];
             const worksheet = XLSX.utils.json_to_sheet(templateData);
             const workbook = XLSX.utils.book_new();
