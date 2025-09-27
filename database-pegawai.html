@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Database Pegawai - SIMDIK-TANBU</title>
+    
+    <script>
+        if (sessionStorage.getItem('userRole') !== 'admin') {
+            window.location.href = './login.html';
+        }
+    </script>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+    <style>
+        :root {
+            --primary-color: #4F46E5; --primary-hover: #4338CA;
+            --danger-color: #EF4444; --danger-hover: #DC2626;
+            --warning-color: #F59E0B; --warning-hover: #D97706;
+            --gray-100: #F3F4F6; --gray-200: #E5E7EB; --gray-500: #6B7280;
+            --gray-700: #374151; --gray-900: #111827;
+            --background-color: #F9FAFB; --card-background: #FFFFFF;
+            --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+            --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        }
+        body {
+            font-family: 'Inter', sans-serif; background-color: var(--background-color);
+            margin: 0; padding: 2rem; color: var(--gray-700);
+        }
+        .container { max-width: 1280px; margin: 0 auto; }
+        header { margin-bottom: 1.5rem; }
+        .header-top {
+            display: flex; justify-content: space-between; align-items: flex-start;
+            position: relative; padding-bottom: 1.5rem;
+        }
+        .header-top h1 {
+            color: var(--gray-900); margin: 0; font-size: 1.875rem; font-weight: 700;
+        }
+        .header-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        .search-container {
+            position: relative;
+            width: 100%;
+            max-width: 400px;
+        }
+        #searchInput {
+            width: 100%;
+            padding: 10px 16px 10px 40px;
+            border-radius: 6px;
+            border: 1px solid var(--gray-200);
+            box-sizing: border-box;
+        }
+        .search-container svg {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 20px;
+            height: 20px;
+            color: var(--gray-500);
+        }
+        .action-button-group-header {
+            display: flex;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+        }
+        .action-button {
+            background-color: var(--card-background); color: var(--gray-700);
+            border: 1px solid var(--gray-200); padding: 10px 16px; font-size: 14px;
+            font-weight: 500; border-radius: 6px; cursor: pointer;
+            text-decoration: none; display: inline-flex; align-items: center; gap: 8px;
+            transition: all 0.2s ease;
+        }
+        .action-button:hover { background-color: var(--gray-100); box-shadow: var(--shadow-sm); }
+        .action-button svg { width: 16px; height: 16px; }
+        .import-btn { color: #059669; }
+        .clear-btn { color: var(--danger-color); }
+        .clear-btn:hover { background-color: #FEE2E2; }
+        .back-button {
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+            color: white;
+        }
+        .back-button:hover {
+            background-color: var(--primary-hover);
+        }
+        main {
+            background-color: var(--card-background); border-radius: 8px;
+            box-shadow: var(--shadow-md); overflow: hidden;
+        }
+        .data-table { width: 100%; border-collapse: collapse; }
+        .data-table th, .data-table td {
+            padding: 12px 16px; text-align: left; vertical-align: middle;
+            border-bottom: 1px solid var(--gray-200); font-size: 14px;
+        }
+        .data-table th {
+            background-color: var(--gray-100); color: var(--gray-500);
+            font-size: 12px; font-weight: 500; text-transform: uppercase;
+        }
+        .empty-state { text-align: center; padding: 48px; color: var(--gray-500); }
+        .action-button-group { display: flex; justify-content: flex-end; gap: 12px; }
+        .icon-button {
+            background: none; border: none; cursor: pointer; padding: 4px;
+            border-radius: 50%; display: flex; align-items: center;
+            justify-content: center; transition: background-color 0.2s ease;
+        }
+        .icon-button svg { width: 18px; height: 18px; }
+        .edit-btn { color: var(--warning-color); }
+        .edit-btn:hover { background-color: #FEF3C7; }
+        .delete-btn { color: var(--danger-color); }
+        .delete-btn:hover { background-color: #FEE2E2; }
+        
+        .modal {
+            display: none; position: fixed; z-index: 1000; left: 0; top: 0;
+            width: 100%; height: 100%; overflow: auto;
+            background-color: rgba(17, 24, 39, 0.6); backdrop-filter: blur(4px);
+        }
+        .modal-content {
+            background-color: var(--card-background); margin: 5% auto; padding: 32px;
+            border-radius: 8px; width: 90%; max-width: 600px; position: relative;
+            box-shadow: var(--shadow-md); animation: fadeIn 0.3s ease-out;
+        }
+        @keyframes fadeIn {
+            from {opacity: 0; transform: translateY(-20px) scale(0.98);}
+            to {opacity: 1; transform: translateY(0) scale(1);}
+        }
+        .modal-header h2 { margin: 0; color: var(--gray-900); }
+        .close-button {
+            color: var(--gray-500); position: absolute; top: 16px; right: 16px;
+            font-size: 28px; font-weight: bold; cursor: pointer;
+        }
+        .form-group { margin-bottom: 20px; }
+        .form-group label {
+            display: block; margin-bottom: 8px; font-weight: 500;
+            font-size: 14px; color: var(--gray-700);
+        }
+        .form-group input, .form-group select {
+            width: 100%; padding: 10px 12px; box-sizing: border-box;
+            border: 1px solid var(--gray-200); border-radius: 6px;
+            transition: all 0.2s ease;
+        }
+        .form-group input:focus, .form-group select:focus {
+            outline: none; border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.2);
+        }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .primary-button {
+            background-color: var(--primary-color); color: white; border: none;
+            padding: 12px 20px; font-size: 14px; font-weight: 500;
+            border-radius: 6px; cursor: pointer;
+        }
+    </style>
+</head>
+<body style="display: none;">
+
+    <div class="container">
+        <header>
+            <div class="header-top">
+                <h1>Database Pegawai</h1>
+            </div>
+            <div class="header-actions">
+                <div class="search-container">
+                    <svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" /></svg>
+                    <input type="text" id="searchInput" placeholder="Cari berdasarkan Nama, NIK, atau NIP...">
+                </div>
+                <div class="action-button-group-header">
+                     <button id="addPegawaiBtn" class="action-button">
+                        <svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
+                        Tambah Pegawai
+                    </button>
+                    <button id="templateBtn" class="action-button">
+                        <svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" /></svg>
+                        Download Template
+                    </button>
+                    <input type="file" id="excelFile" accept=".xlsx, .xls" style="display: none;">
+                    <button id="importBtn" class="action-button import-btn">
+                        <svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 16.5V9.75m0 0l-3.75 3.75M12 9.75l3.75 3.75M3.75 18.75h16.5" /></svg>
+                        Impor dari Excel
+                    </button>
+                    <button id="clearBtn" class="action-button clear-btn">
+                        <svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" /></svg>
+                        Bersihkan Data
+                    </button>
+                    <a href="index.html" class="action-button back-button">Kembali ke Dashboard</a>
+                </div>
+            </div>
+        </header>
+        <main>
+             <div style="overflow-x:auto;">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>No</th>
+                            <th>Nama</th>
+                            <th>NIK</th>
+                            <th>NIP</th>
+                            <th>L/P</th>
+                            <th>Tempat Tugas</th>
+                            <th>Jabatan</th>
+                            <th>Pendidikan Terakhir</th>
+                            <th>Status Pegawai</th>
+                            <th>Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody id="pegawaiTableBody"></tbody>
+                </table>
+            </div>
+             <div id="emptyState" class="empty-state">
+                <p>Memuat data pegawai...</p>
+             </div>
+        </main>
+    </div>
+    
+    <div id="pegawaiModal" class="modal">
+        <div class="modal-content">
+            <span class="close-button">&times;</span>
+            <div class="modal-header">
+                <h2 id="modalTitle">Edit Data Pegawai</h2>
+            </div>
+            <form id="pegawaiForm">
+                <input type="hidden" id="pegawaiId">
+                <div class="form-group">
+                    <label for="nama">Nama Lengkap</label>
+                    <input type="text" id="nama" required>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="nik">NIK</label>
+                        <input type="text" id="nik" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="nip">NIP (kosongkan jika tidak ada)</label>
+                        <input type="text" id="nip">
+                    </div>
+                </div>
+                <div class="form-row">
+                     <div class="form-group">
+                        <label for="lp">L/P</label>
+                        <select id="lp" required>
+                            <option value="">-- Pilih Jenis Kelamin --</option>
+                            <option value="L">Laki-laki</option>
+                            <option value="P">Perempuan</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="tempatTugas">Tempat Tugas</label>
+                        <input type="text" id="tempatTugas" required>
+                    </div>
+                </div>
+                 <div class="form-row">
+                    <div class="form-group">
+                        <label for="jabatan">Jabatan</label>
+                        <input type="text" id="jabatan" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="pendidikanTerakhir">Pendidikan Terakhir</label>
+                        <input type="text" id="pendidikanTerakhir" required>
+                    </div>
+                </div>
+                 <div class="form-group">
+                    <label for="statusPegawai">Status Pegawai</label>
+                    <input type="text" id="statusPegawai" required>
+                </div>
+                <button type="submit" id="submitBtn" class="primary-button" style="width: 100%; justify-content:center;">Update Data</button>
+            </form>
+        </div>
+    </div>
+
+     <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js";
+        import { getFirestore, collection, onSnapshot, doc, getDoc, addDoc, deleteDoc, updateDoc, writeBatch, query, orderBy } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore.js";
+
+        document.body.style.display = 'block';
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyBM4RhHUdQxSEPVBGhjf4R8UGfzMmD7egU",
+            authDomain: "dashboard-kegiatan-saya.firebaseapp.com",
+            projectId: "dashboard-kegiatan-saya",
+            storageBucket: "dashboard-kegiatan-saya.appspot.com",
+            messagingSenderId: "1078549240220",
+            appId: "1:1078549240220:web:7d372e7b50b6f9545a9059"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const pegawaiCollectionRef = collection(db, "pegawai");
+
+        const tableBody = document.getElementById('pegawaiTableBody');
+        const emptyState = document.getElementById('emptyState');
+        const searchInput = document.getElementById('searchInput');
+        const addPegawaiBtn = document.getElementById('addPegawaiBtn');
+        const importBtn = document.getElementById('importBtn');
+        const excelFile = document.getElementById('excelFile');
+        const templateBtn = document.getElementById('templateBtn');
+        const clearBtn = document.getElementById('clearBtn');
+        
+        const pegawaiModal = document.getElementById('pegawaiModal');
+        const pegawaiForm = document.getElementById('pegawaiForm');
+        const pegawaiIdInput = document.getElementById('pegawaiId');
+        const modalTitle = document.getElementById('modalTitle');
+        const submitBtn = document.getElementById('submitBtn');
+
+        let allPegawai = [];
+        
+        const q = query(pegawaiCollectionRef, orderBy("nama", "asc"));
+
+        onSnapshot(q, (snapshot) => {
+            allPegawai = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            renderTable(allPegawai);
+        });
+
+        const renderTable = (data) => {
+            tableBody.innerHTML = '';
+            if (data.length === 0) {
+                emptyState.style.display = 'block';
+                emptyState.innerHTML = '<p>Belum ada data pegawai. Silakan impor dari Excel atau tambah manual.</p>';
+            } else {
+                emptyState.style.display = 'none';
+                data.forEach((pegawai, index) => {
+                    const row = tableBody.insertRow();
+                    row.innerHTML = `
+                        <td>${index + 1}</td>
+                        <td>${pegawai.nama || ''}</td>
+                        <td>${pegawai.nik || ''}</td>
+                        <td>${pegawai.nip || '-'}</td>
+                        <td>${pegawai.lp || ''}</td>
+                        <td>${pegawai.tempatTugas || ''}</td>
+                        <td>${pegawai.jabatan || ''}</td>
+                        <td>${pegawai.pendidikanTerakhir || ''}</td>
+                        <td>${pegawai.statusPegawai || ''}</td>
+                        <td>
+                            <div class="action-button-group">
+                                <button class="icon-button edit-btn" data-id="${pegawai.id}" title="Edit"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z" /><path fill-rule="evenodd" d="M2 6a2 2 0 012-2h4a1 1 0 010 2H4v10h10v-4a1 1 0 112 0v4a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" clip-rule="evenodd" /></svg></button>
+                                <button class="icon-button delete-btn" data-id="${pegawai.id}" data-nama="${pegawai.nama}" title="Hapus"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" /></svg></button>
+                            </div>
+                        </td>
+                    `;
+                });
+            }
+        };
+
+        searchInput.addEventListener('input', () => {
+            const searchTerm = searchInput.value.toLowerCase();
+            const filteredData = allPegawai.filter(pegawai => 
+                pegawai.nama.toLowerCase().includes(searchTerm) || 
+                (pegawai.nik && pegawai.nik.includes(searchTerm)) ||
+                (pegawai.nip && pegawai.nip.includes(searchTerm))
+            );
+            renderTable(filteredData);
+        });
+
+        tableBody.addEventListener('click', async (e) => {
+            const target = e.target.closest('.icon-button');
+            if(!target) return;
+            
+            const pegawaiId = target.dataset.id;
+            const docRef = doc(db, "pegawai", pegawaiId);
+
+            if(target.classList.contains('delete-btn')){
+                const namaPegawai = target.dataset.nama;
+                if(confirm(`Yakin ingin menghapus data pegawai: ${namaPegawai}?`)){
+                    await deleteDoc(docRef);
+                }
+            }
+            
+            if(target.classList.contains('edit-btn')){
+                const docSnap = await getDoc(docRef);
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    pegawaiIdInput.value = pegawaiId;
+                    modalTitle.textContent = 'Edit Data Pegawai';
+                    submitBtn.textContent = 'Update Data';
+
+                    pegawaiModal.querySelector('#nama').value = data.nama || '';
+                    pegawaiModal.querySelector('#nik').value = data.nik || '';
+                    pegawaiModal.querySelector('#nip').value = data.nip || '';
+                    pegawaiModal.querySelector('#lp').value = data.lp || '';
+                    pegawaiModal.querySelector('#tempatTugas').value = data.tempatTugas || '';
+                    pegawaiModal.querySelector('#jabatan').value = data.jabatan || '';
+                    pegawaiModal.querySelector('#pendidikanTerakhir').value = data.pendidikanTerakhir || '';
+                    pegawaiModal.querySelector('#statusPegawai').value = data.statusPegawai || '';
+                    
+                    pegawaiModal.style.display = 'block';
+                }
+            }
+        });
+        
+        addPegawaiBtn.addEventListener('click', () => {
+            pegawaiForm.reset();
+            pegawaiIdInput.value = '';
+            modalTitle.textContent = 'Tambah Data Pegawai';
+            submitBtn.textContent = 'Simpan Data';
+            pegawaiModal.style.display = 'block';
+        });
+
+        pegawaiForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const id = pegawaiIdInput.value;
+            const data = {
+                nama: pegawaiModal.querySelector('#nama').value,
+                nik: pegawaiModal.querySelector('#nik').value,
+                nip: pegawaiModal.querySelector('#nip').value,
+                lp: pegawaiModal.querySelector('#lp').value,
+                tempatTugas: pegawaiModal.querySelector('#tempatTugas').value,
+                jabatan: pegawaiModal.querySelector('#jabatan').value,
+                pendidikanTerakhir: pegawaiModal.querySelector('#pendidikanTerakhir').value,
+                statusPegawai: pegawaiModal.querySelector('#statusPegawai').value,
+            };
+
+            if (id) { // Update
+                await updateDoc(doc(db, "pegawai", id), data);
+            } else { // Create
+                await addDoc(pegawaiCollectionRef, data);
+            }
+            pegawaiModal.style.display = 'none';
+        });
+
+        pegawaiModal.querySelector('.close-button').onclick = () => pegawaiModal.style.display = 'none';
+
+        importBtn.addEventListener('click', () => excelFile.click());
+        
+        excelFile.addEventListener('change', (event) => {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = async (e) => {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const sheetName = workbook.SheetNames[0];
+                    const worksheet = workbook.Sheets[sheetName];
+                    const json = XLSX.utils.sheet_to_json(worksheet);
+                    
+                    const requiredColumns = ['nama', 'nik', 'lp', 'tempatTugas', 'jabatan', 'pendidikanTerakhir', 'statusPegawai'];
+                    const firstRow = json[0] || {};
+                    const hasRequiredColumns = requiredColumns.every(col => col in firstRow);
+
+                    if (json.length > 0 && hasRequiredColumns) {
+                        if (confirm(`Anda akan mengimpor ${json.length} data pegawai. Lanjutkan?`)) {
+                            try {
+                                const batch = writeBatch(db);
+                                json.forEach(item => {
+                                    const docRef = doc(collection(db, "pegawai"));
+                                    batch.set(docRef, {
+                                        nama: String(item.nama || ''),
+                                        nik: String(item.nik || ''),
+                                        nip: String(item.nip || ''),
+                                        lp: String(item.lp || ''),
+                                        tempatTugas: String(item.tempatTugas || ''),
+                                        jabatan: String(item.jabatan || ''),
+                                        pendidikanTerakhir: String(item.pendidikanTerakhir || ''),
+                                        statusPegawai: String(item.statusPegawai || ''),
+                                    });
+                                });
+                                await batch.commit();
+                                alert('Impor data berhasil!');
+                            } catch (err) {
+                                console.error("Gagal mengimpor:", err);
+                                alert("Terjadi kesalahan saat mengimpor data.");
+                            }
+                        }
+                    } else {
+                        alert(`Format file Excel tidak sesuai. Pastikan kolom memiliki judul persis: ${requiredColumns.join(', ')} (dan nip jika ada).`);
+                    }
+                    excelFile.value = '';
+                };
+                reader.readAsArrayBuffer(file);
+            }
+        });
+
+        const downloadTemplate = () => {
+            const templateData = [{
+                nama: "Contoh: Budi Santoso, S.Pd.",
+                nik: "1234567890123456",
+                nip: "198501012010011001",
+                lp: "L",
+                tempatTugas: "SDN Suka Maju 1",
+                jabatan: "Guru Kelas",
+                pendidikanTerakhir: "S1 PGSD",
+                statusPegawai: "PNS"
+            }];
+            const worksheet = XLSX.utils.json_to_sheet(templateData);
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, "Template Data Pegawai");
+            XLSX.writeFile(workbook, "Template_Import_Pegawai.xlsx");
+        };
+
+        templateBtn.addEventListener('click', downloadTemplate);
+
+        const clearAllData = async () => {
+            if(allPegawai.length === 0) {
+                alert("Database pegawai sudah kosong.");
+                return;
+            }
+            const confirmation = prompt('PERINGATAN: Tindakan ini akan menghapus SEMUA data pegawai secara permanen. Ketik "HAPUS" untuk mengonfirmasi.');
+            if (confirmation === 'HAPUS') {
+                try {
+                    clearBtn.textContent = 'Menghapus...';
+                    clearBtn.disabled = true;
+                    const batch = writeBatch(db);
+                    allPegawai.forEach(pegawai => {
+                        batch.delete(doc(db, "pegawai", pegawai.id));
+                    });
+                    await batch.commit();
+                    alert('Semua data pegawai berhasil dihapus.');
+                } catch(error) {
+                    console.error("Gagal membersihkan data:", error);
+                    alert("Terjadi kesalahan saat membersihkan data.");
+                } finally {
+                    clearBtn.textContent = 'Bersihkan Data';
+                    clearBtn.disabled = false;
+                }
+            } else {
+                alert("Penghapusan dibatalkan.");
+            }
+        };
+        
+        clearBtn.addEventListener('click', clearAllData);
+    </script>
+</body>
+</html>
