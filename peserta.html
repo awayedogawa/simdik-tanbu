@@ -302,7 +302,7 @@
 
      <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js";
-        import { getFirestore, doc, getDoc, collection, onSnapshot, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore.js";
+        import { getFirestore, doc, getDoc, collection, onSnapshot, updateDoc, deleteDoc, query, orderBy } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore.js";
 
         const userRole = sessionStorage.getItem('userRole');
         const userNip = sessionStorage.getItem('userNip');
@@ -352,7 +352,6 @@
         const formatSingleDate = (date) => {
             const months = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
             const d = new Date(date);
-            // Menggunakan getUTCDate untuk menghindari masalah timezone saat iterasi
             const day = d.getUTCDate();
             const month = months[d.getUTCMonth()];
             const year = d.getUTCFullYear();
@@ -389,7 +388,6 @@
             let loopDate = new Date(startDate);
             let isFirstPage = true;
 
-            // Loop untuk setiap hari dalam rentang tanggal kegiatan
             while (loopDate <= endDate) {
                 if (!isFirstPage) {
                     doc.addPage();
@@ -452,7 +450,6 @@
                     }
                 });
 
-                // Pindah ke hari berikutnya
                 loopDate.setUTCDate(loopDate.getUTCDate() + 1);
                 isFirstPage = false;
             }
@@ -487,7 +484,9 @@
 
         const listenToPeserta = () => {
             const pesertaCollectionRef = collection(db, "kegiatan", kegiatanId, "peserta");
-            onSnapshot(pesertaCollectionRef, (snapshot) => {
+            const q = query(pesertaCollectionRef, orderBy("tanggalDaftar", "desc"));
+            
+            onSnapshot(q, (snapshot) => {
                 currentPesertaList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                 tableBody.innerHTML = '';
 
