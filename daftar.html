@@ -213,48 +213,64 @@
 
             cekNpsnBtn.textContent = 'Mencari...';
             cekNpsnBtn.disabled = true;
+            
+            const kegiatanId = getKegiatanId();
 
-            const sekolahRef = collection(db, "sekolah");
-            const qSekolah = query(sekolahRef, where("npsn", "==", npsn));
-            const sekolahSnapshot = await getDocs(qSekolah);
+            try {
+                // Cari sekolah berdasarkan NPSN
+                const sekolahRef = collection(db, "sekolah");
+                const qSekolah = query(sekolahRef, where("npsn", "==", npsn));
+                const sekolahSnapshot = await getDocs(qSekolah);
 
-            if (sekolahSnapshot.empty) {
-                npsnMessage.textContent = 'NPSN tidak ditemukan di database.';
+                if (sekolahSnapshot.empty) {
+                    throw new Error('NPSN tidak ditemukan di database.');
+                }
+
+                const sekolahData = sekolahSnapshot.docs[0].data();
+                formPendaftaran.querySelector('#asalInstansi').value = sekolahData.namaSekolah;
+                formPendaftaran.querySelector('#kecamatan').value = sekolahData.kecamatan;
+                npsnMessage.textContent = `Sekolah ditemukan: ${sekolahData.namaSekolah}`;
+                npsnMessage.className = 'message success';
+                npsnInput.readOnly = true;
+                cekNpsnBtn.style.display = 'none';
+
+                // Ambil data peserta yang sudah terdaftar untuk kegiatan ini
+                const pesertaRef = collection(db, "kegiatan", kegiatanId, "peserta");
+                const qPeserta = query(pesertaRef);
+                const pesertaSnapshot = await getDocs(qPeserta);
+                const registeredNiks = new Set(pesertaSnapshot.docs.map(doc => doc.data().nik));
+
+                // Ambil data pegawai berdasarkan sekolah
+                const pegawaiRef = collection(db, "pegawai");
+                const qPegawai = query(pegawaiRef, where("tempatTugas", "==", sekolahData.namaSekolah));
+                const pegawaiSnapshot = await getDocs(qPegawai);
+                allPegawaiInSchool = pegawaiSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                
+                // Filter pegawai yang belum terdaftar
+                const availablePegawai = allPegawaiInSchool.filter(pegawai => !registeredNiks.has(pegawai.nik));
+                
+                pegawaiSelect.innerHTML = '<option value="">-- Pilih Nama Anda --</option>';
+                if (availablePegawai.length > 0) {
+                    availablePegawai.sort((a, b) => a.nama.localeCompare(b.nama));
+                    availablePegawai.forEach(pegawai => {
+                        pegawaiSelect.innerHTML += `<option value="${pegawai.id}">${pegawai.nama}</option>`;
+                    });
+                    pegawaiMessage.style.display = 'none';
+                } else {
+                    pegawaiMessage.textContent = 'Tidak ada pegawai yang tersedia untuk didaftarkan dari sekolah ini, kemungkinan semua sudah terdaftar.';
+                    pegawaiMessage.className = 'message error';
+                    pegawaiMessage.style.display = 'block';
+                }
+                pegawaiContainer.classList.remove('hidden');
+
+            } catch (error) {
+                npsnMessage.textContent = error.message;
                 npsnMessage.className = 'message error';
+            } finally {
                 npsnMessage.style.display = 'block';
                 cekNpsnBtn.textContent = 'Cek Sekolah';
                 cekNpsnBtn.disabled = false;
-                return;
             }
-
-            const sekolahData = sekolahSnapshot.docs[0].data();
-            formPendaftaran.querySelector('#asalInstansi').value = sekolahData.namaSekolah;
-            formPendaftaran.querySelector('#kecamatan').value = sekolahData.kecamatan;
-            npsnMessage.textContent = `Sekolah ditemukan: ${sekolahData.namaSekolah}`;
-            npsnMessage.className = 'message success';
-            npsnMessage.style.display = 'block';
-            npsnInput.readOnly = true;
-            cekNpsnBtn.style.display = 'none';
-
-            const pegawaiRef = collection(db, "pegawai");
-            const qPegawai = query(pegawaiRef, where("tempatTugas", "==", sekolahData.namaSekolah));
-            const pegawaiSnapshot = await getDocs(qPegawai);
-
-            allPegawaiInSchool = pegawaiSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            
-            pegawaiSelect.innerHTML = '<option value="">-- Pilih Nama Anda --</option>';
-            if (allPegawaiInSchool.length > 0) {
-                allPegawaiInSchool.sort((a, b) => a.nama.localeCompare(b.nama)); // Urutkan nama A-Z
-                allPegawaiInSchool.forEach(pegawai => {
-                    pegawaiSelect.innerHTML += `<option value="${pegawai.id}">${pegawai.nama}</option>`;
-                });
-                pegawaiMessage.style.display = 'none';
-            } else {
-                pegawaiMessage.textContent = 'Tidak ada data pegawai yang terdaftar di sekolah ini. Silakan hubungi Admin.';
-                pegawaiMessage.className = 'message error';
-                pegawaiMessage.style.display = 'block';
-            }
-            pegawaiContainer.classList.remove('hidden');
         });
         
         pegawaiSelect.addEventListener('change', () => {
