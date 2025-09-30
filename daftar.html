@@ -171,19 +171,12 @@
                 const now = new Date();
                 
                 const endDate = new Date(data.tanggalBerakhir);
-                endDate.setHours(23, 59, 59, 999);
+                endDate.setHours(23, 59, 59, 999); // Set ke akhir hari
+
+                // Pendaftaran ditutup hanya jika tanggal hari ini sudah melewati tanggal berakhirnya kegiatan
                 if (now > endDate) {
                     loadingState.classList.add('hidden');
-                    document.getElementById('closedMessage').textContent = 'Mohon maaf, acara ini telah selesai dilaksanakan.';
-                    closedState.classList.remove('hidden');
-                    return;
-                }
-
-                const startDate = new Date(data.tanggalMulai);
-                const registrationDeadline = new Date(startDate.getTime() - (12 * 60 * 60 * 1000)); 
-                if (now > registrationDeadline) {
-                    loadingState.classList.add('hidden');
-                    document.getElementById('closedMessage').textContent = 'Mohon maaf, pendaftaran untuk acara ini telah ditutup 12 jam sebelum acara dimulai.';
+                    document.getElementById('closedMessage').textContent = 'Mohon maaf, pendaftaran untuk acara ini telah selesai dilaksanakan.';
                     closedState.classList.remove('hidden');
                     return;
                 }
@@ -265,4 +258,3 @@
 
 </body>
 </html>
-
