@@ -284,9 +284,15 @@
                         <input type="date" id="tanggalBerakhir" required>
                     </div>
                 </div>
-                <div class="form-group">
-                    <label for="tempat">Tempat Kegiatan</label>
-                    <input type="text" id="tempat" required>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="tempat">Tempat Kegiatan</label>
+                        <input type="text" id="tempat" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="kuotaSekolah">Kuota per Sekolah (0 jika tak terbatas)</label>
+                        <input type="number" id="kuotaSekolah" required value="0" min="0">
+                    </div>
                 </div>
                 <div class="form-group admin-only-form">
                     <label for="bidang">Bidang Pelaksana</label>
@@ -481,6 +487,7 @@
                 tanggalMulai: document.getElementById('tanggalMulai').value,
                 tanggalBerakhir: document.getElementById('tanggalBerakhir').value,
                 tempat: document.getElementById('tempat').value,
+                kuotaSekolah: parseInt(document.getElementById('kuotaSekolah').value, 10) || 0,
             };
 
             if (userRole === 'admin') {
@@ -576,6 +583,7 @@
                     document.getElementById('tanggalMulai').value = kegiatan.tanggalMulai;
                     document.getElementById('tanggalBerakhir').value = kegiatan.tanggalBerakhir;
                     document.getElementById('tempat').value = kegiatan.tempat;
+                    document.getElementById('kuotaSekolah').value = kegiatan.kuotaSekolah || 0;
                     if (userRole === 'admin') {
                         populateBidangDropdown(kegiatan.bidang);
                         pjInput.value = kegiatan.pj;
