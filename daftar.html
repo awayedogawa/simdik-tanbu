@@ -53,9 +53,7 @@
         }
         .primary-button:hover { background-color: #4338CA; }
         .primary-button:disabled { background-color: var(--gray-200); cursor: not-allowed; }
-        .form-row { display: flex; gap: 20px; }
-        .form-row .form-group { flex: 1; }
-        .npsn-check-group { display: flex; gap: 10px; align-items: flex-end; }
+        .check-group { display: flex; gap: 10px; align-items: flex-end; }
         .message {
             padding: 12px; border-radius: 6px; font-size: 14px;
             margin-top: 10px; text-align: center;
@@ -81,39 +79,49 @@
             
             <h2>Form Pendaftaran Peserta</h2>
             
-            <div class="form-group">
-                <label for="npsnCheck">NPSN Sekolah (Wajib Diisi)</label>
-                <div class="npsn-check-group">
+            <div id="npsnContainer" class="form-group">
+                <label for="npsnCheck">Langkah 1: Masukkan NPSN Sekolah Anda</label>
+                <div class="check-group">
                     <input type="text" id="npsnCheck" required style="flex-grow: 1;">
                     <button type="button" id="cekNpsnBtn" class="primary-button" style="width: auto; flex-shrink: 0;">Cek NPSN</button>
                 </div>
                 <div id="npsnMessage" class="message" style="display: none;"></div>
             </div>
+
+            <div id="nikContainer" class="form-group hidden">
+                <hr>
+                <label for="nikCheck">Langkah 2: Masukkan NIK Anda</label>
+                <div class="check-group">
+                    <input type="text" id="nikCheck" required style="flex-grow: 1;">
+                    <button type="button" id="cekNikBtn" class="primary-button" style="width: auto; flex-shrink: 0;">Cek NIK</button>
+                </div>
+                <div id="nikMessage" class="message" style="display: none;"></div>
+            </div>
             
             <form id="formPendaftaran" class="hidden">
+                <hr>
                  <div class="form-group">
                     <label for="asalInstansi">Asal Instansi/Sekolah</label>
                     <input type="text" id="asalInstansi" readonly required>
                 </div>
-                <div class="form-group">
+                 <div class="form-group">
                     <label for="kecamatan">Kecamatan</label>
                     <input type="text" id="kecamatan" readonly required>
                 </div>
-                <hr>
                 <div class="form-group">
-                    <label for="namaLengkap">Nama Lengkap (Beserta Gelar Akademik)</label>
+                    <label for="namaLengkap">Nama Lengkap (Bisa diedit jika ada salah ketik/gelar)</label>
                     <input type="text" id="namaLengkap" required>
                 </div>
                 <div class="form-group">
-                    <label for="nip">NIP (Jika ada)</label>
-                    <input type="text" id="nip">
+                    <label for="nip">NIP</label>
+                    <input type="text" id="nip" readonly>
                 </div>
                 <div class="form-group">
                     <label for="jabatan">Jabatan</label>
-                    <input type="text" id="jabatan" required>
+                    <input type="text" id="jabatan" readonly>
                 </div>
                 <div class="form-group">
-                    <label for="nomorTelepon">Nomor Telepon/WA</label>
+                    <label for="nomorTelepon">Nomor Telepon/WA (Bisa diedit)</label>
                     <input type="tel" id="nomorTelepon" required>
                 </div>
                 <button type="submit" class="primary-button">Daftar Sekarang</button>
@@ -125,7 +133,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js";
-        import { getFirestore, doc, getDoc, collection, addDoc, query, where, getDocs, getCountFromServer } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore.js";
+        import { getFirestore, doc, getDoc, collection, addDoc, query, where, getDocs, getCountFromServer, updateDoc } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyBM4RhHUdQxSEPVBGhjf4R8UGfzMmD7egU",
@@ -139,17 +147,27 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
+        // DOM Elements
         const loadingState = document.getElementById('loadingState');
         const errorState = document.getElementById('errorState');
         const closedState = document.getElementById('closedState');
         const registrationContent = document.getElementById('registrationContent');
         const successState = document.getElementById('successState');
-        const formPendaftaran = document.getElementById('formPendaftaran');
+        
+        const npsnContainer = document.getElementById('npsnContainer');
         const npsnInput = document.getElementById('npsnCheck');
         const cekNpsnBtn = document.getElementById('cekNpsnBtn');
         const npsnMessage = document.getElementById('npsnMessage');
+
+        const nikContainer = document.getElementById('nikContainer');
+        const nikInput = document.getElementById('nikCheck');
+        const cekNikBtn = document.getElementById('cekNikBtn');
+        const nikMessage = document.getElementById('nikMessage');
+
+        const formPendaftaran = document.getElementById('formPendaftaran');
         
         let kegiatanData = {};
+        let foundPegawaiId = null;
 
         const getKegiatanId = () => new URLSearchParams(window.location.search).get('id');
         const formatDate = (dateString) => {
@@ -211,14 +229,15 @@
 
             if (!querySnapshot.empty) {
                 const sekolahData = querySnapshot.docs[0].data();
-                document.getElementById('asalInstansi').value = sekolahData.namaSekolah;
-                document.getElementById('kecamatan').value = sekolahData.kecamatan;
+                formPendaftaran.querySelector('#asalInstansi').value = sekolahData.namaSekolah;
+                formPendaftaran.querySelector('#kecamatan').value = sekolahData.kecamatan;
                 
                 npsnMessage.textContent = `Sekolah ditemukan: ${sekolahData.namaSekolah}`;
                 npsnMessage.className = 'message success';
                 npsnInput.readOnly = true;
                 cekNpsnBtn.style.display = 'none';
-                formPendaftaran.classList.remove('hidden');
+                
+                nikContainer.classList.remove('hidden'); // Tampilkan langkah cek NIK
             } else {
                 npsnMessage.textContent = 'NPSN tidak ditemukan di database.';
                 npsnMessage.className = 'message error';
@@ -226,6 +245,46 @@
             npsnMessage.style.display = 'block';
             cekNpsnBtn.textContent = 'Cek NPSN';
             cekNpsnBtn.disabled = false;
+        });
+
+        cekNikBtn.addEventListener('click', async () => {
+            const nik = nikInput.value.trim();
+            if(!nik) {
+                nikMessage.textContent = 'NIK tidak boleh kosong.';
+                nikMessage.className = 'message error';
+                nikMessage.style.display = 'block';
+                return;
+            }
+
+            cekNikBtn.textContent = 'Mencari...';
+            cekNikBtn.disabled = true;
+
+            const pegawaiRef = collection(db, "pegawai");
+            const q = query(pegawaiRef, where("nik", "==", nik));
+            const querySnapshot = await getDocs(q);
+
+            if (!querySnapshot.empty) {
+                const pegawaiData = querySnapshot.docs[0].data();
+                foundPegawaiId = querySnapshot.docs[0].id; // Simpan ID dokumen pegawai
+
+                // Isi form otomatis
+                formPendaftaran.querySelector('#namaLengkap').value = pegawaiData.nama || '';
+                formPendaftaran.querySelector('#nip').value = pegawaiData.nip || '';
+                formPendaftaran.querySelector('#jabatan').value = pegawaiData.jabatan || '';
+                formPendaftaran.querySelector('#nomorTelepon').value = pegawaiData.nomorHp || '';
+
+                nikMessage.textContent = `Data ditemukan untuk: ${pegawaiData.nama}`;
+                nikMessage.className = 'message success';
+                nikInput.readOnly = true;
+                cekNikBtn.style.display = 'none';
+                formPendaftaran.classList.remove('hidden'); // Tampilkan form pendaftaran
+            } else {
+                nikMessage.textContent = 'NIK Anda tidak ditemukan di database. Silakan hubungi Admin atau Pelaksana Kegiatan untuk mendaftarkan data Anda.';
+                nikMessage.className = 'message error';
+            }
+            nikMessage.style.display = 'block';
+            cekNikBtn.textContent = 'Cek NIK';
+            cekNikBtn.disabled = false;
         });
 
         formPendaftaran.addEventListener('submit', async (e) => {
@@ -239,10 +298,9 @@
             const pj = kegiatanData.pj || "Panitia";
             const npsn = npsnInput.value;
 
-            // Cek kuota jika kuota > 0
             if (kuota > 0) {
-                const pesertaCollectionRef = collection(db, "kegiatan", kegiatanId, "peserta");
-                const q = query(pesertaCollectionRef, where("npsn", "==", npsn));
+                const pesertaCollRef = collection(db, "kegiatan", kegiatanId, "peserta");
+                const q = query(pesertaCollRef, where("npsn", "==", npsn));
                 const snapshot = await getCountFromServer(q);
                 const jumlahTerdaftar = snapshot.data().count;
 
@@ -266,12 +324,24 @@
             };
 
             try {
+                // Simpan data ke subkoleksi 'peserta'
                 const pesertaCollectionRef = collection(db, "kegiatan", kegiatanId, "peserta");
                 await addDoc(pesertaCollectionRef, dataPeserta);
+
+                // Jika data berasal dari database pegawai (ada foundPegawaiId), update data masternya
+                if (foundPegawaiId) {
+                    const pegawaiDocRef = doc(db, "pegawai", foundPegawaiId);
+                    await updateDoc(pegawaiDocRef, {
+                        nama: dataPeserta.namaLengkap,
+                        nomorHp: dataPeserta.nomorTelepon
+                    });
+                }
+
                 registrationContent.classList.add('hidden');
                 successState.classList.remove('hidden');
+
             } catch (error) {
-                console.error("Error adding document: ", error);
+                console.error("Error adding/updating document: ", error);
                 alert("Pendaftaran gagal, silakan coba lagi.");
                 submitBtn.disabled = false;
                 submitBtn.textContent = "Daftar Sekarang";
