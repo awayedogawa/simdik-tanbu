@@ -101,7 +101,7 @@
                     <label for="namaLengkap">Nama Lengkap (Bisa diedit jika ada salah ketik/gelar)</label>
                     <input type="text" id="namaLengkap" required>
                 </div>
-                <div class="form-group">
+                <div class="form-group hidden">
                     <label for="nik">NIK</label>
                     <input type="text" id="nik" readonly>
                 </div>
@@ -236,7 +236,6 @@
             npsnInput.readOnly = true;
             cekNpsnBtn.style.display = 'none';
 
-            // Ambil data pegawai berdasarkan sekolah
             const pegawaiRef = collection(db, "pegawai");
             const qPegawai = query(pegawaiRef, where("tempatTugas", "==", sekolahData.namaSekolah));
             const pegawaiSnapshot = await getDocs(qPegawai);
@@ -245,6 +244,7 @@
             
             pegawaiSelect.innerHTML = '<option value="">-- Pilih Nama Anda --</option>';
             if (allPegawaiInSchool.length > 0) {
+                allPegawaiInSchool.sort((a, b) => a.nama.localeCompare(b.nama)); // Urutkan nama A-Z
                 allPegawaiInSchool.forEach(pegawai => {
                     pegawaiSelect.innerHTML += `<option value="${pegawai.id}">${pegawai.nama}</option>`;
                 });
