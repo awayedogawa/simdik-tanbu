@@ -125,7 +125,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js";
-        import { getFirestore, doc, getDoc, collection, addDoc, query, where, getDocs } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore.js";
+        import { getFirestore, doc, getDoc, collection, addDoc, query, where, getDocs, getCountFromServer } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyBM4RhHUdQxSEPVBGhjf4R8UGfzMmD7egU",
@@ -148,6 +148,8 @@
         const npsnInput = document.getElementById('npsnCheck');
         const cekNpsnBtn = document.getElementById('cekNpsnBtn');
         const npsnMessage = document.getElementById('npsnMessage');
+        
+        let kegiatanData = {};
 
         const getKegiatanId = () => new URLSearchParams(window.location.search).get('id');
         const formatDate = (dateString) => {
@@ -167,13 +169,12 @@
             const docSnap = await getDoc(docRef);
 
             if (docSnap.exists()) {
-                const data = docSnap.data();
+                kegiatanData = docSnap.data();
                 const now = new Date();
                 
-                const endDate = new Date(data.tanggalBerakhir);
-                endDate.setHours(23, 59, 59, 999); // Set ke akhir hari
+                const endDate = new Date(kegiatanData.tanggalBerakhir);
+                endDate.setHours(23, 59, 59, 999);
 
-                // Pendaftaran ditutup hanya jika tanggal hari ini sudah melewati tanggal berakhirnya kegiatan
                 if (now > endDate) {
                     loadingState.classList.add('hidden');
                     document.getElementById('closedMessage').textContent = 'Mohon maaf, pendaftaran untuk acara ini telah selesai dilaksanakan.';
@@ -181,9 +182,9 @@
                     return;
                 }
 
-                document.getElementById('namaKegiatanDisplay').textContent = data.nama;
-                document.getElementById('tanggalDisplay').textContent = `${formatDate(data.tanggalMulai)} - ${formatDate(data.tanggalBerakhir)}`;
-                document.getElementById('tempatDisplay').textContent = data.tempat;
+                document.getElementById('namaKegiatanDisplay').textContent = kegiatanData.nama;
+                document.getElementById('tanggalDisplay').textContent = `${formatDate(kegiatanData.tanggalMulai)} - ${formatDate(kegiatanData.tanggalBerakhir)}`;
+                document.getElementById('tempatDisplay').textContent = kegiatanData.tempat;
                 loadingState.classList.add('hidden');
                 registrationContent.classList.remove('hidden');
             } else {
@@ -229,13 +230,35 @@
 
         formPendaftaran.addEventListener('submit', async (e) => {
             e.preventDefault();
+            const submitBtn = e.target.querySelector('button[type="submit"]');
+            submitBtn.disabled = true;
+            submitBtn.textContent = "Memproses...";
+
             const kegiatanId = getKegiatanId();
+            const kuota = kegiatanData.kuotaSekolah || 0;
+            const pj = kegiatanData.pj || "Panitia";
+            const npsn = npsnInput.value;
+
+            // Cek kuota jika kuota > 0
+            if (kuota > 0) {
+                const pesertaCollectionRef = collection(db, "kegiatan", kegiatanId, "peserta");
+                const q = query(pesertaCollectionRef, where("npsn", "==", npsn));
+                const snapshot = await getCountFromServer(q);
+                const jumlahTerdaftar = snapshot.data().count;
+
+                if (jumlahTerdaftar >= kuota) {
+                    alert(`Mohon maaf, kuota pendaftaran untuk sekolah Anda (${kuota} orang) sudah terpenuhi.\n\nSilakan hubungi Penanggung Jawab Kegiatan: ${pj}`);
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = "Daftar Sekarang";
+                    return;
+                }
+            }
             
             const dataPeserta = {
                 namaLengkap: document.getElementById('namaLengkap').value,
                 nip: document.getElementById('nip').value,
                 asalInstansi: document.getElementById('asalInstansi').value,
-                npsn: npsnInput.value,
+                npsn: npsn,
                 jabatan: document.getElementById('jabatan').value,
                 kecamatan: document.getElementById('kecamatan').value,
                 nomorTelepon: document.getElementById('nomorTelepon').value,
@@ -250,6 +273,8 @@
             } catch (error) {
                 console.error("Error adding document: ", error);
                 alert("Pendaftaran gagal, silakan coba lagi.");
+                submitBtn.disabled = false;
+                submitBtn.textContent = "Daftar Sekarang";
             }
         });
 
