@@ -309,7 +309,6 @@
                             <th>L/P</th>
                             <th>Tempat Tugas</th>
                             <th>Kecamatan</th>
-                            <th>Nomor HP</th>
                             <th>Jabatan</th>
                             <th>Pend. Terakhir</th>
                             <th>Status</th>
@@ -366,11 +365,6 @@
                         <label for="kecamatan">Kecamatan</label>
                         <input type="text" id="kecamatan" required>
                     </div>
-                    <div class="form-group">
-                        <label for="nomorHp">Nomor HP</label>
-                        <input type="tel" id="nomorHp">
-                    </div>
-                </div>
                  <div class="form-row">
                     <div class="form-group">
                         <label for="jabatan">Jabatan</label>
@@ -543,7 +537,6 @@
                         <td>${pegawai.lp || ''}</td>
                         <td>${pegawai.tempatTugas || ''}</td>
                         <td>${pegawai.kecamatan || ''}</td>
-                        <td>${pegawai.nomorHp || '-'}</td>
                         <td>${pegawai.jabatan || ''}</td>
                         <td>${pegawai.pendidikanTerakhir || ''}</td>
                         <td>${pegawai.statusPegawai || ''}</td>
@@ -603,7 +596,6 @@
                     pegawaiModal.querySelector('#lp').value = data.lp || '';
                     pegawaiModal.querySelector('#tempatTugas').value = data.tempatTugas || '';
                     pegawaiModal.querySelector('#kecamatan').value = data.kecamatan || '';
-                    pegawaiModal.querySelector('#nomorHp').value = data.nomorHp || '';
                     pegawaiModal.querySelector('#jabatan').value = data.jabatan || '';
                     pegawaiModal.querySelector('#pendidikanTerakhir').value = data.pendidikanTerakhir || '';
                     pegawaiModal.querySelector('#statusPegawai').value = data.statusPegawai || '';
@@ -632,7 +624,6 @@
                 lp: pegawaiModal.querySelector('#lp').value,
                 tempatTugas: pegawaiModal.querySelector('#tempatTugas').value,
                 kecamatan: pegawaiModal.querySelector('#kecamatan').value,
-                nomorHp: pegawaiModal.querySelector('#nomorHp').value,
                 jabatan: pegawaiModal.querySelector('#jabatan').value,
                 pendidikanTerakhir: pegawaiModal.querySelector('#pendidikanTerakhir').value,
                 statusPegawai: pegawaiModal.querySelector('#statusPegawai').value,
@@ -668,7 +659,7 @@
                     const worksheet = workbook.Sheets[sheetName];
                     const jsonFromExcel = XLSX.utils.sheet_to_json(worksheet);
                     
-                    const requiredColumns = ['nama', 'nik', 'lp', 'tempatTugas', 'kecamatan', 'jabatan', 'pendidikanTerakhir', 'statusPegawai', 'nomorHp'];
+                    const requiredColumns = ['nama', 'nik', 'lp', 'tempatTugas', 'kecamatan', 'jabatan', 'pendidikanTerakhir', 'statusPegawai'];
                     const firstRow = jsonFromExcel[0] || {};
                     const hasRequiredColumns = requiredColumns.every(col => col in firstRow);
 
@@ -693,7 +684,7 @@
                             batch.set(docRef, {
                                 nama: String(item.nama || ''), nik: nik, nip: String(item.nip || ''), lp: String(item.lp || ''),
                                 tempatTugas: String(item.tempatTugas || ''), kecamatan: String(item.kecamatan || ''),
-                                nomorHp: String(item.nomorHp || ''), jabatan: String(item.jabatan || ''),
+                                jabatan: String(item.jabatan || ''),
                                 pendidikanTerakhir: String(item.pendidikanTerakhir || ''), statusPegawai: String(item.statusPegawai || ''),
                                 isDuplicate: isDuplicate
                             });
@@ -721,7 +712,7 @@
         const downloadTemplate = () => {
             const templateData = [{
                 nama: "Contoh: Budi Santoso, S.Pd.", nik: "1234567890123456", nip: "198501012010011001", lp: "L",
-                tempatTugas: "SDN Suka Maju 1", kecamatan: "Simpang Empat", nomorHp: "081234567890",
+                tempatTugas: "SDN Suka Maju 1", kecamatan: "Simpang Empat", 
                 jabatan: "Guru Kelas", pendidikanTerakhir: "S1 PGSD", statusPegawai: "PNS"
             }];
             const worksheet = XLSX.utils.json_to_sheet(templateData);
