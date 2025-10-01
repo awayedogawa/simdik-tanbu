@@ -288,7 +288,6 @@
                 formPendaftaran.querySelector('#nik').value = pegawaiData.nik || '';
                 formPendaftaran.querySelector('#nip').value = pegawaiData.nip || '';
                 formPendaftaran.querySelector('#jabatan').value = pegawaiData.jabatan || '';
-                formPendaftaran.querySelector('#nomorTelepon').value = pegawaiData.nomorHp || '';
 
                 formPendaftaran.classList.remove('hidden');
             }
@@ -338,8 +337,7 @@
                 if (foundPegawaiId) {
                     const pegawaiDocRef = doc(db, "pegawai", foundPegawaiId);
                     await updateDoc(pegawaiDocRef, {
-                        nama: dataPeserta.namaLengkap,
-                        nomorHp: dataPeserta.nomorTelepon
+                        nama: dataPeserta.namaLengkap
                     });
                 }
 
