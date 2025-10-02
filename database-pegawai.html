@@ -252,7 +252,7 @@
              <div class="header-actions">
                 <div class="search-container">
                     <svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" /></svg>
-                    <input type="text" id="searchInput" placeholder="Cari berdasarkan Nama, NIK, atau NIP...">
+                    <input type="text" id="searchInput" placeholder="Cari berdasarkan Nama, atau NIP...">
                 </div>
                 <div class="action-button-group-header">
                      <button id="addPegawaiBtn" class="action-button">
@@ -304,7 +304,6 @@
                         <tr>
                             <th>No</th>
                             <th>Nama</th>
-                            <th>NIK</th>
                             <th>NIP</th>
                             <th>L/P</th>
                             <th>Tempat Tugas</th>
@@ -337,10 +336,6 @@
                     <input type="text" id="nama" required>
                 </div>
                 <div class="form-row">
-                    <div class="form-group">
-                        <label for="nik">NIK</label>
-                        <input type="text" id="nik" required>
-                    </div>
                     <div class="form-group">
                         <label for="nip">NIP (kosongkan jika tidak ada)</label>
                         <input type="text" id="nip">
@@ -444,8 +439,7 @@
             const searchTerm = searchInput.value.toLowerCase();
             if (searchTerm) {
                  filteredData = filteredData.filter(p => 
-                    (p.nama && p.nama.toLowerCase().includes(searchTerm)) || 
-                    (p.nik && p.nik.includes(searchTerm)) ||
+                    (p.nama && p.nama.toLowerCase().includes(searchTerm)) ||
                     (p.nip && p.nip.includes(searchTerm))
                 );
             }
@@ -532,7 +526,6 @@
                     row.innerHTML = `
                         <td>${index + 1}</td>
                         <td>${pegawai.nama || ''}</td>
-                        <td>${pegawai.nik || ''}</td>
                         <td>${pegawai.nip || '-'}</td>
                         <td>${pegawai.lp || ''}</td>
                         <td>${pegawai.tempatTugas || ''}</td>
@@ -591,7 +584,6 @@
                     submitBtn.textContent = 'Update Data';
 
                     pegawaiModal.querySelector('#nama').value = data.nama || '';
-                    pegawaiModal.querySelector('#nik').value = data.nik || '';
                     pegawaiModal.querySelector('#nip').value = data.nip || '';
                     pegawaiModal.querySelector('#lp').value = data.lp || '';
                     pegawaiModal.querySelector('#tempatTugas').value = data.tempatTugas || '';
@@ -616,10 +608,8 @@
         pegawaiForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             const id = pegawaiIdInput.value;
-            const nikValue = pegawaiModal.querySelector('#nik').value;
             const data = {
                 nama: pegawaiModal.querySelector('#nama').value,
-                nik: nikValue,
                 nip: pegawaiModal.querySelector('#nip').value,
                 lp: pegawaiModal.querySelector('#lp').value,
                 tempatTugas: pegawaiModal.querySelector('#tempatTugas').value,
@@ -659,7 +649,7 @@
                     const worksheet = workbook.Sheets[sheetName];
                     const jsonFromExcel = XLSX.utils.sheet_to_json(worksheet);
                     
-                    const requiredColumns = ['nama', 'nik', 'lp', 'tempatTugas', 'kecamatan', 'jabatan', 'pendidikanTerakhir', 'statusPegawai'];
+                    const requiredColumns = ['nama', 'lp', 'tempatTugas', 'kecamatan', 'jabatan', 'pendidikanTerakhir', 'statusPegawai'];
                     const firstRow = jsonFromExcel[0] || {};
                     const hasRequiredColumns = requiredColumns.every(col => col in firstRow);
 
@@ -682,7 +672,7 @@
                             }
                             const docRef = doc(collection(db, "pegawai"));
                             batch.set(docRef, {
-                                nama: String(item.nama || ''), nik: nik, nip: String(item.nip || ''), lp: String(item.lp || ''),
+                                nama: String(item.nama || ''), nip: String(item.nip || ''), lp: String(item.lp || ''),
                                 tempatTugas: String(item.tempatTugas || ''), kecamatan: String(item.kecamatan || ''),
                                 jabatan: String(item.jabatan || ''),
                                 pendidikanTerakhir: String(item.pendidikanTerakhir || ''), statusPegawai: String(item.statusPegawai || ''),
