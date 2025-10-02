@@ -205,7 +205,6 @@
                             <th>NPSN</th>
                             <th>Kecamatan</th>
                             <th>Jabatan</th>
-                            <th>No. Telepon/WA</th>
                             <th>Aksi</th>
                         </tr>
                     </thead>
@@ -267,10 +266,6 @@
                             <option value="Teluk Kepayang">Teluk Kepayang</option>
                         </select>
                     </div>
-                </div>
-                <div class="form-group">
-                    <label for="nomorTelepon">Nomor Telepon/WA</label>
-                    <input type="tel" id="nomorTelepon" required>
                 </div>
                 <button type="submit" class="primary-button" style="width:100%; justify-content:center;">Update Data</button>
             </form>
@@ -367,7 +362,6 @@
                 'No': index + 1, 'Nama Lengkap': peserta.namaLengkap, 'NIP': peserta.nip || '-',
                 'Asal Instansi/Sekolah': peserta.asalInstansi, 'NPSN': peserta.npsn || '-',
                 'Kecamatan': peserta.kecamatan || '-', 'Jabatan': peserta.jabatan,
-                'No. Telepon/WA': peserta.nomorTelepon
             }));
             const worksheet = XLSX.utils.json_to_sheet(dataToExport);
             const workbook = XLSX.utils.book_new();
@@ -507,7 +501,6 @@
                             <td>${peserta.npsn || '-'}</td>
                             <td>${peserta.kecamatan || ''}</td>
                             <td>${peserta.jabatan || ''}</td>
-                            <td>${peserta.nomorTelepon || ''}</td>
                             <td>
                                 ${canManage ? `
                                 <div class="action-button-group">
@@ -547,7 +540,6 @@
                     pesertaModal.querySelector('#npsn').value = data.npsn;
                     pesertaModal.querySelector('#jabatan').value = data.jabatan;
                     pesertaModal.querySelector('#kecamatan').value = data.kecamatan;
-                    pesertaModal.querySelector('#nomorTelepon').value = data.nomorTelepon;
                     pesertaModal.style.display = 'block';
                 }
             }
@@ -563,7 +555,6 @@
                 npsn: pesertaModal.querySelector('#npsn').value,
                 jabatan: pesertaModal.querySelector('#jabatan').value,
                 kecamatan: pesertaModal.querySelector('#kecamatan').value,
-                nomorTelepon: pesertaModal.querySelector('#nomorTelepon').value,
             };
             const pesertaRef = doc(db, "kegiatan", kegiatanId, "peserta", pesertaId);
             await updateDoc(pesertaRef, updatedData);
