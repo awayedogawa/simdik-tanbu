@@ -151,7 +151,7 @@
         };
 
         const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app); // Inisialisasi Firebase Auth
+        const auth = getAuth(app);
         const db = getFirestore(app);
 
         const adminToggle = document.getElementById('adminToggle');
@@ -176,7 +176,6 @@
             errorMessage.style.display = 'none';
         });
         
-        // --- LOGIKA BARU UNTUK LOGIN ADMIN ---
         adminForm.addEventListener('submit', (e) => {
             e.preventDefault();
             const email = document.getElementById('adminEmail').value;
@@ -184,19 +183,17 @@
 
             signInWithEmailAndPassword(auth, email, password)
                 .then((userCredential) => {
-                    // Cek custom claim untuk verifikasi peran admin
-                    return userCredential.user.getIdTokenResult();
+                    // Paksa refresh token untuk mendapatkan custom claim terbaru
+                    return userCredential.user.getIdTokenResult(true);
                 })
                 .then((idTokenResult) => {
-                    // Jika token memiliki claim 'admin: true'
                     if (idTokenResult.claims.admin) {
                         sessionStorage.setItem('userRole', 'admin');
                         sessionStorage.setItem('userName', 'Admin Utama');
                         window.location.href = 'index.html';
                     } else {
-                        // Jika login berhasil tapi bukan admin
                         showError('Akses ditolak. Anda bukan Admin.');
-                        auth.signOut(); // Langsung logout pengguna
+                        auth.signOut();
                     }
                 })
                 .catch((error) => {
@@ -204,7 +201,6 @@
                 });
         });
 
-        // --- LOGIKA BARU UNTUK LOGIN PELAKSANA ---
         pelaksanaForm.addEventListener('submit', (e) => {
             e.preventDefault();
             const email = document.getElementById('pelaksanaEmail').value;
@@ -213,9 +209,7 @@
             signInWithEmailAndPassword(auth, email, password)
                 .then(async (userCredential) => {
                     const user = userCredential.user;
-                    // Setelah login berhasil, ambil data pelaksana dari Firestore
                     const pelaksanaRef = collection(db, "pelaksana");
-                    // user.uid adalah NIP pelaksana
                     const q = query(pelaksanaRef, where("nip", "==", user.uid));
                     const querySnapshot = await getDocs(q);
 
@@ -229,7 +223,6 @@
                         
                         window.location.href = 'index.html';
                     } else {
-                         // Jika akun auth ada tapi data di firestore tidak ada
                         showError('Data pelaksana tidak ditemukan.');
                         auth.signOut();
                     }
