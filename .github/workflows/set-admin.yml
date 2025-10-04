@@ -1,0 +1,25 @@
+# .github/workflows/set-admin.yml
+name: Set Admin Claim Manually
+
+on:
+  workflow_dispatch: # Ini membuat workflow hanya bisa dijalankan secara manual
+
+jobs:
+  set-claim:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: Install dependencies
+        run: npm install firebase-admin
+
+      - name: Run set admin script
+        run: node index.js
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
