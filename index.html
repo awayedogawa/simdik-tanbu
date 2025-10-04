@@ -6,7 +6,6 @@
     <title>SIMDIK-TANBU Dashboard</title>
     
     <script>
-        // Pengecekan awal bisa tetap di sini
         if (!sessionStorage.getItem('userRole')) {
             window.location.href = './login.html';
         }
@@ -332,34 +331,203 @@
 
         let allPelaksana = [];
 
-        // --- FUNGSI UTAMA UNTUK MEMUAT DATA ---
-        const initDashboard = (user) => {
+        // --- FUNGSI BANTUAN (HELPER FUNCTIONS) ---
+        const loadPelaksanaData = async () => {
+            const userRole = sessionStorage.getItem('userRole');
+            if (userRole !== 'admin') return;
+            const pelaksanaCollection = collection(db, "pelaksana");
+            const snapshot = await getDocs(pelaksanaCollection);
+            allPelaksana = snapshot.docs.map(doc => doc.data());
+        };
+
+        const populateBidangDropdown = (selectedBidang = '') => {
+            bidangSelect.innerHTML = '<option value="">-- Pilih Bidang --</option>';
+            const uniqueBidang = [...new Set(allPelaksana.map(p => p.bidang))];
+            uniqueBidang.forEach(bidang => {
+                const option = document.createElement('option');
+                option.value = bidang;
+                option.textContent = bidang;
+                if (bidang === selectedBidang) option.selected = true;
+                bidangSelect.appendChild(option);
+            });
+        };
+
+        const formatDateRange = (startStr, endStr) => {
+            if (!startStr || !endStr) return '';
+            const months = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
+            const startDate = new Date(startStr);
+            const endDate = new Date(endStr);
+            const startDay = startDate.getUTCDate(), startMonth = startDate.getUTCMonth(), startYear = startDate.getUTCFullYear();
+            const endDay = endDate.getUTCDate(), endMonth = endDate.getUTCMonth(), endYear = endDate.getUTCFullYear();
+            if (startYear === endYear && startMonth === endMonth && startDay === endDay) return `${startDay} ${months[startMonth]} ${startYear}`;
+            if (startYear === endYear && startMonth === endMonth) return `${startDay} s.d. ${endDay} ${months[startMonth]} ${startYear}`;
+            if (startYear === endYear) return `${startDay} ${months[startMonth]} s.d. ${endDay} ${months[endMonth]} ${startYear}`;
+            return `${startDay} ${months[startMonth]} ${startYear} s.d. ${endDay} ${months[endMonth]} ${endYear}`;
+        };
+
+        const getStatus = (tanggalMulai, tanggalBerakhir) => {
+            const today = new Date();
+            const startDate = new Date(tanggalMulai);
+            const endDate = new Date(tanggalBerakhir);
+            today.setHours(0, 0, 0, 0);
+            startDate.setHours(0, 0, 0, 0);
+            endDate.setHours(0, 0, 0, 0);
+            if (today < startDate) return '<span class="status-badge status-belum">Belum</span>';
+            if (today >= startDate && today <= endDate) return '<span class="status-badge status-berlangsung">Sedang Berlangsung</span>';
+            return '<span class="status-badge status-selesai">Selesai</span>';
+        };
+
+        const deleteSubcollection = async (kegiatanId, subcollectionName) => {
+            const subCollectionRef = collection(db, "kegiatan", kegiatanId, subcollectionName);
+            const snapshot = await getDocs(subCollectionRef);
+            const deletePromises = [];
+            snapshot.forEach(doc => {
+                deletePromises.push(deleteDoc(doc.ref));
+            });
+            await Promise.all(deletePromises);
+        };
+
+        // --- EVENT LISTENERS UI ---
+        const openAddModal = () => {
+            const userRole = sessionStorage.getItem('userRole');
+            form.reset();
+            kegiatanIdInput.value = '';
+            modalTitle.textContent = 'Input Data Kegiatan';
+            document.getElementById('submitBtn').textContent = 'Simpan Data';
+            if (userRole === 'admin') {
+                populateBidangDropdown();
+                pjInput.value = '';
+            }
+            modal.style.display = 'flex';
+        };
+        const closeModal = () => { modal.style.display = 'none'; };
+        openBtn.onclick = openAddModal;
+        closeBtn.onclick = closeModal;
+        window.onclick = (event) => { if (event.target == modal) closeModal(); };
+
+        form.addEventListener('submit', async (event) => {
+            event.preventDefault();
             const userRole = sessionStorage.getItem('userRole');
             const userName = sessionStorage.getItem('userName');
             const userNip = sessionStorage.getItem('userNip');
             const userBidang = sessionStorage.getItem('userBidang');
 
+            let kegiatanData = {
+                nama: document.getElementById('namaKegiatan').value,
+                tanggalMulai: document.getElementById('tanggalMulai').value,
+                tanggalBerakhir: document.getElementById('tanggalBerakhir').value,
+                tempat: document.getElementById('tempat').value,
+                kuotaSekolah: parseInt(document.getElementById('kuotaSekolah').value, 10) || 0,
+            };
+
+            if (userRole === 'admin') {
+                kegiatanData.bidang = bidangSelect.value;
+                kegiatanData.pj = pjInput.value;
+                // Admin createdBy diisi NIP pelaksana yang dipilih, bukan 'admin'
+                const pelaksana = allPelaksana.find(p => p.bidang === bidangSelect.value);
+                kegiatanData.createdBy = pelaksana ? pelaksana.nip : 'admin_fallback';
+            } else {
+                kegiatanData.bidang = userBidang;
+                kegiatanData.pj = userName;
+                kegiatanData.createdBy = userNip;
+            }
+
+            const docId = kegiatanIdInput.value;
+            if (docId) {
+                await updateDoc(doc(db, "kegiatan", docId), kegiatanData);
+            } else {
+                await addDoc(collection(db, "kegiatan"), kegiatanData);
+            }
+            closeModal();
+        });
+
+        tableBody.addEventListener('click', async (event) => {
+            const target = event.target.closest('.icon-button, a.icon-button');
+            if (!target) return;
+            
+            const userRole = sessionStorage.getItem('userRole');
+            const userNip = sessionStorage.getItem('userNip');
+            
+            if (target.tagName === 'BUTTON') event.preventDefault();
+            const docId = target.dataset.id;
+            
+            if (target.classList.contains('link-btn')) {
+                const link = `${window.location.origin}${window.location.pathname.replace('index.html', '')}daftar.html?id=${docId}`;
+                await navigator.clipboard.writeText(link);
+                alert('Link pendaftaran peserta telah disalin!');
+            }
+            
+            if (target.classList.contains('narsum-link-btn')) {
+                const link = `${window.location.origin}${window.location.pathname.replace('index.html', '')}narasumber.html?id=${docId}`;
+                await navigator.clipboard.writeText(link);
+                alert('Link pengisian data narasumber telah disalin!');
+            }
+
+            if (target.classList.contains('delete-btn')) {
+                const docRef = doc(db, 'kegiatan', docId);
+                const docSnap = await getDoc(docRef);
+                if (userRole !== 'admin' && docSnap.data().createdBy !== userNip) {
+                    alert('Anda tidak memiliki izin untuk menghapus kegiatan ini.');
+                    return;
+                }
+                const namaKegiatan = target.dataset.nama;
+                if (confirm(`PERINGATAN: Menghapus kegiatan "${namaKegiatan}" juga akan menghapus SEMUA data di dalamnya. Anda yakin ingin melanjutkan?`)) {
+                    await deleteSubcollection(docId, 'peserta');
+                    await deleteSubcollection(docId, 'narasumber');
+                    await deleteSubcollection(docId, 'pengeluaran');
+                    await deleteDoc(docRef);
+                }
+            }
+
+            if (target.classList.contains('edit-btn')) {
+                 const docRef = doc(db, 'kegiatan', docId);
+                 const docSnap = await getDoc(docRef);
+                 if (docSnap.exists()) {
+                    if (userRole !== 'admin' && docSnap.data().createdBy !== userNip) {
+                        alert('Anda tidak memiliki izin untuk mengedit kegiatan ini.');
+                        return;
+                    }
+                    const kegiatan = docSnap.data();
+                    kegiatanIdInput.value = docId;
+                    document.getElementById('namaKegiatan').value = kegiatan.nama;
+                    document.getElementById('tanggalMulai').value = kegiatan.tanggalMulai;
+                    document.getElementById('tanggalBerakhir').value = kegiatan.tanggalBerakhir;
+                    document.getElementById('tempat').value = kegiatan.tempat;
+                    document.getElementById('kuotaSekolah').value = kegiatan.kuotaSekolah || 0;
+                    if (userRole === 'admin') {
+                        populateBidangDropdown(kegiatan.bidang);
+                        pjInput.value = kegiatan.pj;
+                    }
+                    modalTitle.textContent = 'Edit Data Kegiatan';
+                    document.getElementById('submitBtn').textContent = 'Update Data';
+                    modal.style.display = 'flex';
+                 }
+            }
+        });
+        
+        // --- FUNGSI UTAMA UNTUK MEMUAT DATA DASHBOARD ---
+        const initDashboard = (user) => {
+            const userRole = sessionStorage.getItem('userRole');
+            const userName = sessionStorage.getItem('userName');
+            
             document.body.style.display = 'block';
             document.getElementById('userNameDisplay').textContent = `Halo, ${userName}`;
             
             if (userRole === 'admin') {
                 document.body.classList.add('admin-mode');
-                loadPelaksanaData(); // Muat data pelaksana hanya jika admin
+                loadPelaksanaData();
             } else {
                 document.body.classList.add('pelaksana-mode');
             }
             
-            // Buat query berdasarkan peran pengguna
             const kegiatanCollectionRef = collection(db, "kegiatan");
             let q;
             if (userRole === 'admin') {
                 q = query(kegiatanCollectionRef, orderBy("tanggalMulai", "asc"));
             } else {
-                // Gunakan user.uid dari auth state untuk keamanan
                 q = query(kegiatanCollectionRef, where("createdBy", "==", user.uid), orderBy("tanggalMulai", "asc"));
             }
 
-            // Dengarkan perubahan data
             onSnapshot(q, async (snapshot) => {
                 const allDocs = snapshot.docs;
                 tableBody.innerHTML = '';
@@ -397,7 +565,7 @@
                             <td>
                                 <div class="action-button-grid">
                                     <a href="peserta.html?id=${docId}" class="icon-button view-btn" title="Lihat Peserta"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M10 8a3 3 0 100-6 3 3 0 000 6zM3.465 14.493a1.23 1.23 0 00.41 1.412A9.957 9.957 0 0010 18c2.31 0 4.438-.784 6.131-2.095a1.23 1.23 0 00.41-1.412A9.99 9.99 0 0010 12.001c-2.31 0-4.438.784-6.131 2.094z" /></svg></a>
-                                    <a href="data-narasumber.html?id=${docId}" class="icon-button narsum-btn" title="Lihat Data Narasumber"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" /></svg></a>
+                                    <a href="narasumber.html?id=${docId}" class="icon-button narsum-btn" title="Data Narasumber"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" /></svg></a>
                                     <a href="pengeluaran.html?id=${docId}" class="icon-button biaya-btn" title="Rincian Biaya"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M3.5 3A1.5 1.5 0 002 4.5v2.25a1.5 1.5 0 001.5 1.5h1.5a1.5 1.5 0 001.5-1.5V4.5A1.5 1.5 0 006.5 3h-3zM13.5 3A1.5 1.5 0 0012 4.5v2.25a1.5 1.5 0 001.5 1.5h1.5a1.5 1.5 0 001.5-1.5V4.5A1.5 1.5 0 0016.5 3h-3zM3.5 11A1.5 1.5 0 002 12.5v2.25a1.5 1.5 0 001.5 1.5h1.5a1.5 1.5 0 001.5-1.5v-2.25A1.5 1.5 0 005 11h-1.5zM12 12.5a1.5 1.5 0 011.5-1.5h3a1.5 1.5 0 011.5 1.5v2.25a1.5 1.5 0 01-1.5 1.5h-3a1.5 1.5 0 01-1.5-1.5v-2.25z" /></svg></a>
                                     <button class="icon-button edit-btn" data-id="${docId}" title="Edit"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z" /><path fill-rule="evenodd" d="M2 6a2 2 0 012-2h4a1 1 0 010 2H4v10h10v-4a1 1 0 112 0v4a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" clip-rule="evenodd" /></svg></button>
                                     <button class="icon-button link-btn" data-id="${docId}" title="Salin Link Pendaftaran"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M12.232 4.232a2.5 2.5 0 013.536 3.536l-1.225 1.224a.75.75 0 001.061 1.06l1.224-1.224a4 4 0 00-5.656-5.656l-3 3a4 4 0 00.225 5.865.75.75 0 00.977-1.138 2.5 2.5 0 01-.142-3.665l3-3z" /><path d="M8.603 3.799a4.49 4.49 0 014.49 4.49l-4.49 4.49a4.49 4.49 0 01-6.35 0A4.49 4.49 0 012 8.289l4.49-4.49a4.49 4.49 0 012.113-.79z" /></svg></button>
@@ -409,7 +577,6 @@
                     });
                 }
             }, (error) => {
-                // Tangani error dari onSnapshot, termasuk permission-denied
                 console.error("Error saat memuat data kegiatan: ", error);
                 emptyState.innerHTML = `<p style="color:red;">Gagal memuat data. Error: ${error.message}</p>`;
                 emptyState.style.display = 'block';
@@ -417,34 +584,19 @@
             });
         };
 
-        // --- LISTENER STATUS AUTENTIKASI ---
+        // --- LISTENER STATUS AUTENTIKASI (TITIK MASUK APLIKASI) ---
         onAuthStateChanged(auth, (user) => {
             if (user) {
-                // Pengguna sudah login dan statusnya siap
                 initDashboard(user);
             } else {
-                // Pengguna belum login
                 sessionStorage.clear();
                 window.location.href = './login.html';
             }
         });
-
-        // --- EVENT LISTENERS LAINNYA (TETAP SAMA) ---
-        const loadPelaksanaData = async () => { /* ... (kode tidak berubah) ... */ };
-        bidangSelect.addEventListener('change', () => { /* ... (kode tidak berubah) ... */ });
-        const openAddModal = () => { /* ... (kode tidak berubah) ... */ };
-        const closeModal = () => { /* ... (kode tidak berubah) ... */ };
-        form.addEventListener('submit', async (event) => { /* ... (kode tidak berubah) ... */ });
-        const deleteSubcollection = async (kegiatanId, subcollectionName) => { /* ... (kode tidak berubah) ... */ };
-        tableBody.addEventListener('click', async (event) => { /* ... (kode tidak berubah) ... */ });
+        
         document.getElementById('logoutButton').addEventListener('click', () => {
-            signOut(auth); // Gunakan signOut dari Firebase Auth
+            signOut(auth);
         });
-        
-        // (Salin-tempel fungsi-fungsi helper yang tidak berubah dari kode lama Anda ke sini)
-        // loadPelaksanaData, populateBidangDropdown, openAddModal, closeModal, 
-        // formatDateRange, getStatus, form submit listener, deleteSubcollection, tableBody click listener
-        
     </script>
 </body>
 </html>
