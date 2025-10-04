@@ -1,8 +1,7 @@
-// index.js
 const admin = require('firebase-admin');
 
-// Ambil konfigurasi dari GitHub Secret yang sudah di-decode
-const serviceAccount = JSON.parse(Buffer.from(process.env.FIREBASE_SERVICE_ACCOUNT, 'base64').toString('ascii'));
+// LANGSUNG PARSE DARI SECRET, TANPA DECODE BASE64
+const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
 
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount)
