@@ -80,9 +80,15 @@
         if (sessionStorage.getItem('userRole') !== 'admin') {
             window.location.href = './login.html';
         }
-
         document.body.style.display = 'block';
-        const firebaseConfig = { /* ... Salin firebaseConfig Anda di sini ... */ };
+        const firebaseConfig = {
+            apiKey: "AIzaSyBM4RhHUdQxSEPVBGhjf4R8UGfzMmD7egU",
+            authDomain: "dashboard-kegiatan-saya.firebaseapp.com",
+            projectId: "dashboard-kegiatan-saya",
+            storageBucket: "dashboard-kegiatan-saya.appspot.com",
+            messagingSenderId: "1078549240220",
+            appId: "1:1078549240220:web:7d372e7b50b6f9545a9059"
+        };
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
