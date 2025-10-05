@@ -237,7 +237,6 @@
         import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-auth.js";
         import { getFirestore, collection, onSnapshot, doc, getDoc, addDoc, deleteDoc, updateDoc, writeBatch, query, orderBy } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore.js";
 
-        // --- KONFIGURASI FIREBASE ---
         const firebaseConfig = {
             apiKey: "AIzaSyBM4RhHUdQxSEPVBGhjf4R8UGfzMmD7egU",
             authDomain: "dashboard-kegiatan-saya.firebaseapp.com",
@@ -246,17 +245,16 @@
             messagingSenderId: "1078549240220",
             appId: "1:1078549240220:web:7d372e7b50b6f9545a9059"
         };
+
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
 
-        // --- FUNGSI UTAMA UNTUK MENJALANKAN HALAMAN ---
         const initPage = (user) => {
             document.body.style.display = 'block';
             document.getElementById('userNameDisplay').textContent = `Halo, ${sessionStorage.getItem('userName')}`;
 
             const pegawaiCollectionRef = collection(db, "pegawai");
-
             const tableBody = document.getElementById('pegawaiTableBody');
             const emptyState = document.getElementById('emptyState');
             const searchInput = document.getElementById('searchInput');
@@ -268,7 +266,6 @@
             const clearFilterBtn = document.getElementById('clearFilterBtn');
             const statsContainer = document.getElementById('statsContainer');
             const totalPegawaiCardBody = document.querySelector('#totalPegawaiCard .stat-body');
-            
             const pegawaiModal = document.getElementById('pegawaiModal');
             const pegawaiForm = document.getElementById('pegawaiForm');
             const pegawaiIdInput = document.getElementById('pegawaiId');
@@ -290,12 +287,10 @@
             }, (error) => {
                 console.error("Firestore snapshot error: ", error);
                 emptyState.innerHTML = `<p style="color:red;">Gagal memuat data: ${error.message}</p>`;
-                emptyState.style.display = 'block';
             });
 
             const applyAndRenderFilters = () => {
                 let filteredData = [...allPegawai];
-                
                 const searchTerm = searchInput.value.toLowerCase();
                 if (searchTerm) {
                      filteredData = filteredData.filter(p => 
@@ -303,7 +298,6 @@
                         (p.nip && p.nip.includes(searchTerm))
                     );
                 }
-
                 if (activeFilters.kecamatan) {
                     filteredData = filteredData.filter(p => p.kecamatan === activeFilters.kecamatan);
                 }
@@ -314,16 +308,17 @@
                     filteredData = filteredData.filter(p => p.statusPegawai === activeFilters.statusPegawai);
                 }
                 
-                // Cek duplikasi NIP
                 const nipCounts = filteredData.reduce((acc, p) => {
-                    if (p.nip) {
-                        acc[p.nip] = (acc[p.nip] || 0) + 1;
+                    const trimmedNip = p.nip ? String(p.nip).trim() : '';
+                    if (trimmedNip) {
+                        acc[trimmedNip] = (acc[trimmedNip] || 0) + 1;
                     }
                     return acc;
                 }, {});
 
                 filteredData.forEach(p => {
-                    p.isDuplicate = p.nip && nipCounts[p.nip] > 1;
+                    const trimmedNip = p.nip ? String(p.nip).trim() : '';
+                    p.isDuplicate = trimmedNip && nipCounts[trimmedNip] > 1;
                 });
 
                 filteredData.sort((a, b) => {
@@ -419,15 +414,12 @@
                 activeFilters[filterType] = activeFilters[filterType] === filterValue ? null : filterValue;
                 applyAndRenderFilters();
             });
-
             clearFilterBtn.addEventListener('click', () => {
                 activeFilters = { kecamatan: null, pendidikanTerakhir: null, statusPegawai: null };
                 searchInput.value = '';
                 applyAndRenderFilters();
             });
-
             searchInput.addEventListener('input', applyAndRenderFilters);
-
             tableBody.addEventListener('click', async (e) => {
                 const target = e.target.closest('.icon-button');
                 if(!target) return;
@@ -461,7 +453,6 @@
                     }
                 }
             });
-            
             addPegawaiBtn.addEventListener('click', () => {
                 pegawaiForm.reset();
                 pegawaiIdInput.value = '';
@@ -469,7 +460,6 @@
                 submitBtn.textContent = 'Simpan Data';
                 pegawaiModal.style.display = 'block';
             });
-
             pegawaiForm.addEventListener('submit', async (e) => {
                 e.preventDefault();
                 const id = pegawaiIdInput.value;
@@ -483,7 +473,6 @@
                     pendidikanTerakhir: pegawaiModal.querySelector('#pendidikanTerakhir').value,
                     statusPegawai: pegawaiModal.querySelector('#statusPegawai').value,
                 };
-
                 if (id) {
                     await updateDoc(doc(db, "pegawai", id), data);
                 } else { 
@@ -491,11 +480,8 @@
                 }
                 pegawaiModal.style.display = 'none';
             });
-
             pegawaiModal.querySelector('.close-button').onclick = () => pegawaiModal.style.display = 'none';
-
             importBtn.addEventListener('click', () => excelFile.click());
-            
             excelFile.addEventListener('change', (event) => {
                 const file = event.target.files[0];
                 if (file) {
@@ -513,10 +499,8 @@
 
                         if (jsonFromExcel.length === 0 || !hasRequiredColumns) {
                             alert(`Format file Excel tidak sesuai. Pastikan kolom memiliki judul persis: ${requiredColumns.join(', ')}.`);
-                            excelFile.value = '';
-                            return;
+                            excelFile.value = ''; return;
                         }
-
                         if (confirm(`Anda akan memproses ${jsonFromExcel.length} data pegawai. Lanjutkan?`)) {
                             const batch = writeBatch(db);
                             jsonFromExcel.forEach(item => {
@@ -536,7 +520,6 @@
                     reader.readAsArrayBuffer(file);
                 }
             });
-
             const downloadTemplate = () => {
                 const templateData = [{
                     nama: "Contoh: Budi Santoso, S.Pd.", nip: "198501012010011001", lp: "L",
@@ -548,9 +531,7 @@
                 XLSX.utils.book_append_sheet(workbook, worksheet, "Template Data Pegawai");
                 XLSX.writeFile(workbook, "Template_Import_Pegawai.xlsx");
             };
-
             templateBtn.addEventListener('click', downloadTemplate);
-
             const clearAllData = async () => {
                 if(allPegawai.length === 0) {
                     alert("Database pegawai sudah kosong."); return;
@@ -573,7 +554,6 @@
                     alert("Penghapusan dibatalkan.");
                 }
             };
-            
             clearBtn.addEventListener('click', clearAllData);
         };
         
