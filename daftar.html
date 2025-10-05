@@ -86,6 +86,9 @@
           <button type="button" id="cekNpsnBtn" class="primary-button" style="width: auto; flex-shrink: 0;">Cek Sekolah</button>
         </div>
         <div id="npsnMessage" class="message" style="display: none;"></div>
+        <div id="sekolahInfo" class="hidden" style="margin-top:8px; font-size:14px; color:var(--gray-700);">
+         Nama Sekolah: <strong id="namaSekolahDisplay"></strong>
+         </div>
       </div>
 
       <div id="pegawaiContainer" class="form-group hidden">
@@ -236,7 +239,10 @@
           showMessage(npsnMessage, 'NPSN Sekolah tidak ditemukan di database.', 'error');
           return;
         }
+        /* TAMPILKAN NAMA SEKOLAH */
         const namaSekolah = sekolahSnap.docs[0].data().namaSekolah;
+        document.getElementById('namaSekolahDisplay').textContent = namaSekolah;
+        document.getElementById('sekolahInfo').classList.remove('hidden');
 
         const pegawaiRef = query(collection(db, "pegawai"), where("tempatTugas", "==", namaSekolah));
         const pegawaiSnap = await getDocs(pegawaiRef);
