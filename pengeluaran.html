@@ -16,7 +16,6 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     
     <style>
-        /* (CSS tidak berubah) */
         :root {
             --primary-color: #4F46E5; --primary-hover: #4338CA;
             --danger-color: #EF4444; --danger-hover: #DC2626;
@@ -32,6 +31,9 @@
             margin: 0; padding: 2rem; color: var(--gray-700);
         }
         .container { max-width: 1280px; margin: 0 auto; }
+        .user-info { display: flex; align-items: center; gap: 1rem; font-size: 14px; position: absolute; top: 2rem; right: 2rem; }
+        .user-info span { color: var(--gray-700); font-weight: 500; }
+        .logout-button { background: none; border: none; color: var(--primary-color); font-weight: 500; cursor: pointer; text-decoration: underline; padding: 0; font-size: 14px; }
         header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem; }
         header h1 { color: var(--gray-900); margin: 0; font-size: 1.5rem; font-weight: 700; }
         header h1 small { display: block; font-size: 1rem; color: var(--gray-500); font-weight: 400; margin-top: 4px; }
@@ -67,6 +69,11 @@
     </style>
 </head>
 <body style="display: none;">
+
+    <div class="user-info">
+        <span id="userNameDisplay"></span>
+        <button id="logoutButton" class="logout-button">Logout</button>
+    </div>
 
     <div class="container">
         <header>
@@ -202,6 +209,7 @@
             [nilaiBrutoEl, pajakEl, biayaAdminEl].forEach(el => el.addEventListener('input', calculateNet));
 
             const kegiatanId = new URLSearchParams(window.location.search).get('id');
+            
             if (!kegiatanId) {
                 alert('ID Kegiatan tidak ditemukan!');
                 window.location.href = 'index.html';
@@ -215,25 +223,132 @@
                 if (docSnap.exists()) {
                     headerTitle.innerHTML = `Rincian Biaya <small>${docSnap.data().nama}</small>`;
                 }
-            }).catch(error => {
-                console.error("Gagal memuat nama kegiatan:", error);
-                headerTitle.innerHTML = `Rincian Biaya <small>Gagal memuat</small>`;
-            });
+            }).catch(error => console.error("Gagal memuat nama kegiatan:", error));
 
-            const openModal = () => { /* ... (Sama seperti kode lama) ... */ };
+            const openModal = () => {
+                form.reset();
+                biayaIdInput.value = '';
+                modalTitle.textContent = 'Tambah Rincian Biaya';
+                submitBtn.textContent = 'Simpan Data';
+                calculateNet();
+                modal.style.display = 'block';
+            };
             const closeModal = () => modal.style.display = 'none';
+            
             openModalBtn.onclick = openModal;
             closeModalBtn.onclick = closeModal;
 
             onSnapshot(pengeluaranCollectionRef, (snapshot) => {
-                // ... (Seluruh isi fungsi onSnapshot sama seperti kode lama Anda)
+                const allBiaya = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                tableBody.innerHTML = '';
+                tableFooter.innerHTML = '';
+
+                if (allBiaya.length === 0) {
+                    emptyState.innerHTML = '<p>Belum ada rincian biaya. Silakan tambahkan.</p>';
+                    emptyState.style.display = 'block';
+                } else {
+                    emptyState.style.display = 'none';
+                    let totalBruto = 0, totalPajak = 0, totalAdmin = 0, totalTransfer = 0;
+
+                    allBiaya.forEach((biaya, index) => {
+                        const bruto = parseFloat(biaya.nilaiBruto) || 0;
+                        const pajak = parseFloat(biaya.pajak) || 0;
+                        const admin = parseFloat(biaya.biayaAdmin) || 0;
+                        const transfer = bruto - pajak - admin;
+
+                        totalBruto += bruto;
+                        totalPajak += pajak;
+                        totalAdmin += admin;
+                        totalTransfer += transfer;
+
+                        const row = tableBody.insertRow();
+                        row.innerHTML = `
+                            <td>${index + 1}</td>
+                            <td>${biaya.uraian}</td>
+                            <td>${biaya.namaPenerima}</td>
+                            <td>${biaya.namaBank} - ${biaya.nomorRekening}</td>
+                            <td>${bruto.toLocaleString('id-ID')}</td>
+                            <td>${pajak.toLocaleString('id-ID')}</td>
+                            <td>${admin.toLocaleString('id-ID')}</td>
+                            <td>${transfer.toLocaleString('id-ID')}</td>
+                            <td>
+                                <div class="action-button-group">
+                                    <button class="icon-button edit-btn" data-id="${biaya.id}" title="Edit"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z" /><path fill-rule="evenodd" d="M2 6a2 2 0 012-2h4a1 1 0 010 2H4v10h10v-4a1 1 0 112 0v4a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" clip-rule="evenodd" /></svg></button>
+                                    <button class="icon-button delete-btn" data-id="${biaya.id}" data-nama="${biaya.uraian}" title="Hapus"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" /></svg></button>
+                                </div>
+                            </td>
+                        `;
+                    });
+                    
+                    const footerRow = tableFooter.insertRow();
+                    footerRow.innerHTML = `
+                        <td colspan="4" style="text-align: right;"><strong>TOTAL</strong></td>
+                        <td><strong>${totalBruto.toLocaleString('id-ID')}</strong></td>
+                        <td><strong>${totalPajak.toLocaleString('id-ID')}</strong></td>
+                        <td><strong>${totalAdmin.toLocaleString('id-ID')}</strong></td>
+                        <td><strong>${totalTransfer.toLocaleString('id-ID')}</strong></td>
+                        <td></td>
+                    `;
+                }
             }, (error) => {
                 console.error("Gagal memuat rincian biaya:", error);
                 emptyState.innerHTML = `<p style="color:red;">Gagal memuat data: ${error.message}</p>`;
             });
 
-            tableBody.addEventListener('click', async (e) => { /* ... (Sama seperti kode lama) ... */ });
-            form.addEventListener('submit', async (e) => { /* ... (Sama seperti kode lama) ... */ });
+            tableBody.addEventListener('click', async (e) => {
+                const target = e.target.closest('.icon-button');
+                if (!target) return;
+                
+                const id = target.dataset.id;
+                const docRef = doc(db, "kegiatan", kegiatanId, "pengeluaran", id);
+
+                if (target.classList.contains('edit-btn')) {
+                    const docSnap = await getDoc(docRef);
+                    if (docSnap.exists()) {
+                        const data = docSnap.data();
+                        biayaIdInput.value = id;
+                        modal.querySelector('#uraian').value = data.uraian;
+                        modal.querySelector('#namaPenerima').value = data.namaPenerima;
+                        modal.querySelector('#namaBank').value = data.namaBank;
+                        modal.querySelector('#nomorRekening').value = data.nomorRekening;
+                        nilaiBrutoEl.value = data.nilaiBruto;
+                        pajakEl.value = data.pajak;
+                        biayaAdminEl.value = data.biayaAdmin;
+                        calculateNet();
+                        modalTitle.textContent = 'Edit Rincian Biaya';
+                        submitBtn.textContent = 'Update Data';
+                        modal.style.display = 'block';
+                    }
+                }
+
+                if (target.classList.contains('delete-btn')) {
+                    const nama = target.dataset.nama;
+                    if (confirm(`Apakah Anda yakin ingin menghapus pengeluaran "${nama}"?`)) {
+                        await deleteDoc(docRef);
+                    }
+                }
+            });
+
+            form.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const id = biayaIdInput.value;
+                const data = {
+                    uraian: form.querySelector('#uraian').value,
+                    namaPenerima: form.querySelector('#namaPenerima').value,
+                    namaBank: form.querySelector('#namaBank').value,
+                    nomorRekening: form.querySelector('#nomorRekening').value,
+                    nilaiBruto: parseFloat(nilaiBrutoEl.value) || 0,
+                    pajak: parseFloat(pajakEl.value) || 0,
+                    biayaAdmin: parseFloat(biayaAdminEl.value) || 0,
+                };
+
+                if (id) {
+                    await updateDoc(doc(db, "kegiatan", kegiatanId, "pengeluaran", id), data);
+                } else {
+                    await addDoc(pengeluaranCollectionRef, data);
+                }
+                closeModal();
+            });
         };
 
         onAuthStateChanged(auth, (user) => {
