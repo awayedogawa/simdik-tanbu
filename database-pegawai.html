@@ -58,6 +58,8 @@
         .data-table { width: 100%; border-collapse: collapse; }
         .data-table th, .data-table td { padding: 10px; text-align: left; vertical-align: middle; border-bottom: 1px solid var(--gray-200); font-size: 12px; }
         .data-table th { background-color: var(--gray-100); color: var(--gray-500); font-size: 11px; font-weight: 600; text-transform: uppercase; }
+        .duplicate-warning { background-color: #FEF3C7 !important; }
+        .duplicate-warning td:first-child { border-left: 4px solid var(--warning-color); }
         .empty-state { text-align: center; padding: 48px; color: var(--gray-500); }
         .action-button-group { display: flex; justify-content: flex-end; gap: 8px; }
         .icon-button { background: none; border: none; cursor: pointer; padding: 4px; border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: background-color 0.2s ease; }
@@ -94,8 +96,8 @@
             </div>
              <div class="header-actions">
                 <div class="search-container">
-                    <svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5S 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" /></svg>
-                    <input type="text" id="searchInput" placeholder="Cari berdasarkan Nama...">
+                    <svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" /></svg>
+                    <input type="text" id="searchInput" placeholder="Cari berdasarkan Nama atau NIP...">
                 </div>
                 <div class="action-button-group-header">
                      <button id="addPegawaiBtn" class="action-button">
@@ -110,6 +112,10 @@
                     <button id="importBtn" class="action-button import-btn">
                         <svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 16.5V9.75m0 0l-3.75 3.75M12 9.75l3.75 3.75M3.75 18.75h16.5" /></svg>
                         Impor dari Excel
+                    </button>
+                     <button id="clearBtn" class="action-button clear-btn">
+                        <svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" /></svg>
+                        Bersihkan Data
                     </button>
                     <a href="index.html" class="action-button back-button">Kembali</a>
                 </div>
@@ -234,10 +240,12 @@
             const prevBtn = document.getElementById('prevBtn');
             const nextBtn = document.getElementById('nextBtn');
             const pageIndicator = document.getElementById('pageIndicator');
+            const paginationControls = document.querySelector('.pagination-controls');
             const addPegawaiBtn = document.getElementById('addPegawaiBtn');
             const importBtn = document.getElementById('importBtn');
             const excelFile = document.getElementById('excelFile');
             const templateBtn = document.getElementById('templateBtn');
+            const clearBtn = document.getElementById('clearBtn');
             const pegawaiModal = document.getElementById('pegawaiModal');
             const pegawaiForm = document.getElementById('pegawaiForm');
             const pegawaiIdInput = document.getElementById('pegawaiId');
@@ -247,47 +255,11 @@
             let currentPage = 1;
             let lastVisibleDoc = null;
             let firstVisibleDoc = null;
-            let pageFirstDocStack = [null]; // null untuk halaman pertama
+            let pageFirstDocStack = [null]; 
+            let fullData = []; // Untuk menyimpan semua data saat tidak ada paginasi
 
-            const fetchPegawai = async (direction = 'initial') => {
-                try {
-                    emptyState.innerHTML = '<p>Memuat data pegawai...</p>';
-                    emptyState.style.display = 'block';
-                    tableBody.innerHTML = '';
-
-                    let q = query(pegawaiCollectionRef, orderBy("nama"));
-                    const searchTerm = searchInput.value.trim().toLowerCase();
-
-                    if (searchTerm) {
-                        q = query(q, where("nama", ">=", searchTerm), where("nama", "<=", searchTerm + '\uf8ff'));
-                    }
-
-                    if (direction === 'next' && lastVisibleDoc) {
-                        q = query(q, startAfter(lastVisibleDoc), limit(pageSize));
-                    } else if (direction === 'prev' && firstVisibleDoc) {
-                        q = query(q, endBefore(firstVisibleDoc), limitToLast(pageSize));
-                    } else {
-                        q = query(q, limit(pageSize));
-                    }
-
-                    const querySnapshot = await getDocs(q);
-                    const docs = querySnapshot.docs;
-                    
-                    if (!querySnapshot.empty) {
-                        firstVisibleDoc = docs[0];
-                        lastVisibleDoc = docs[docs.length - 1];
-                    }
-
-                    const pegawaiOnPage = docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                    renderTable(pegawaiOnPage);
-                    updatePaginationUI(docs.length);
-                } catch (error) {
-                    console.error("Error fetching data:", error);
-                    emptyState.innerHTML = `<p style="color:red;">Gagal memuat data: ${error.message}</p>`;
-                }
-            };
-
-            const renderTable = (data) => {
+            const renderTable = (data, isSearchResult = false) => {
+                tableBody.innerHTML = '';
                 if (data.length === 0) {
                     emptyState.style.display = 'block';
                     emptyState.innerHTML = '<p>Tidak ada data pegawai yang cocok.</p>';
@@ -295,8 +267,9 @@
                     emptyState.style.display = 'none';
                     data.forEach((pegawai, index) => {
                         const row = tableBody.insertRow();
+                        const rowNum = isSearchResult ? index + 1 : ((currentPage - 1) * pageSize) + index + 1;
                         row.innerHTML = `
-                            <td>${((currentPage - 1) * pageSize) + index + 1}</td>
+                            <td>${rowNum}</td>
                             <td>${pegawai.nama || ''}</td>
                             <td>${pegawai.nip || '-'}</td>
                             <td>${pegawai.lp || ''}</td>
@@ -317,30 +290,93 @@
             };
             
             const updatePaginationUI = (fetchedCount) => {
+                paginationControls.style.display = 'flex';
                 pageIndicator.textContent = `Halaman ${currentPage}`;
                 prevBtn.disabled = currentPage === 1;
                 nextBtn.disabled = fetchedCount < pageSize;
             };
 
+            const fetchPaginatedData = async (direction = 'initial') => {
+                try {
+                    emptyState.innerHTML = '<p>Memuat data pegawai...</p>';
+                    emptyState.style.display = 'block';
+                    tableBody.innerHTML = '';
+
+                    let q;
+                    const baseQuery = query(pegawaiCollectionRef, orderBy("nama"));
+
+                    if (direction === 'next' && lastVisibleDoc) {
+                        q = query(baseQuery, startAfter(lastVisibleDoc), limit(pageSize));
+                    } else if (direction === 'prev') {
+                        q = query(baseQuery, endBefore(firstVisibleDoc), limitToLast(pageSize));
+                    } else {
+                        q = query(baseQuery, limit(pageSize));
+                    }
+
+                    const querySnapshot = await getDocs(q);
+                    const docs = querySnapshot.docs;
+                    
+                    if (!querySnapshot.empty) {
+                        firstVisibleDoc = docs[0];
+                        lastVisibleDoc = docs[docs.length - 1];
+                    }
+                    
+                    const pegawaiOnPage = docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                    renderTable(pegawaiOnPage, false);
+                    updatePaginationUI(docs.length);
+                } catch (error) {
+                    console.error("Error fetching paginated data:", error);
+                    emptyState.innerHTML = `<p style="color:red;">Gagal memuat data: ${error.message}</p>`;
+                }
+            };
+            
+            const performSearch = async () => {
+                const searchTerm = searchInput.value.trim().toUpperCase();
+                if (!searchTerm) {
+                    fetchPaginatedData('initial');
+                    return;
+                }
+                
+                emptyState.innerHTML = `<p>Mencari data...</p>`;
+                paginationControls.style.display = 'none';
+                tableBody.innerHTML = '';
+                
+                const nameQuery = query(pegawaiCollectionRef, orderBy('nama'), where('nama', '>=', searchTerm), where('nama', '<=', searchTerm + '\uf8ff'));
+                const nipQuery = query(pegawaiCollectionRef, where('nip', '==', searchTerm));
+                
+                const [nameResults, nipResults] = await Promise.all([getDocs(nameQuery), getDocs(nipQuery)]);
+                
+                const resultsMap = new Map();
+                nameResults.docs.forEach(doc => resultsMap.set(doc.id, { id: doc.id, ...doc.data() }));
+                nipResults.docs.forEach(doc => resultsMap.set(doc.id, { id: doc.id, ...doc.data() }));
+                
+                const combinedResults = Array.from(resultsMap.values());
+                combinedResults.sort((a,b) => a.nama.localeCompare(b.nama));
+                
+                renderTable(combinedResults, true);
+            };
+
+            let searchTimeout;
+            searchInput.addEventListener('input', () => {
+                clearTimeout(searchTimeout);
+                currentPage = 1;
+                lastVisibleDoc = null;
+                firstVisibleDoc = null;
+                searchTimeout = setTimeout(performSearch, 500);
+            });
+
             nextBtn.addEventListener('click', () => {
                 if (!nextBtn.disabled) {
                     currentPage++;
-                    fetchPegawai('next');
+                    fetchPaginatedData('next');
                 }
             });
 
             prevBtn.addEventListener('click', () => {
                 if (currentPage > 1) {
                     currentPage--;
-                    fetchPegawai('prev');
+                    fetchPaginatedData('prev');
                 }
-            });
-            
-            searchInput.addEventListener('input', () => {
-                currentPage = 1;
-                lastVisibleDoc = null;
-                firstVisibleDoc = null;
-                fetchPegawai('initial');
             });
 
             tableBody.addEventListener('click', async (e) => {
@@ -354,7 +390,7 @@
                     const namaPegawai = target.dataset.nama;
                     if(confirm(`Yakin ingin menghapus data pegawai: ${namaPegawai}?`)){
                         await deleteDoc(docRef);
-                        fetchPegawai(); 
+                        fetchPaginatedData(); 
                     }
                 }
                 
@@ -407,16 +443,16 @@
                     await addDoc(pegawaiCollectionRef, data);
                 }
                 pegawaiModal.style.display = 'none';
-                fetchPegawai();
+                fetchPaginatedData();
             });
 
             importBtn.addEventListener('click', () => excelFile.click());
             
-            excelFile.addEventListener('change', (event) => { /* ... (Logika Impor) ... */ });
-            const downloadTemplate = () => { /* ... (Logika Template) ... */ };
+            excelFile.addEventListener('change', (event) => { /* Logika Impor di sini */ });
+            const downloadTemplate = () => { /* Logika Template di sini */ };
             templateBtn.addEventListener('click', downloadTemplate);
             
-            fetchPegawai('initial');
+            fetchPaginatedData('initial');
         };
         
         onAuthStateChanged(auth, (user) => {
