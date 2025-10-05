@@ -3,18 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Manajemen Pelaksana - SIMDIK-TANBU</title>
-    
-    <script>
-        if (sessionStorage.getItem('userRole') !== 'admin') {
-            window.location.href = './login.html';
-        }
-    </script>
-
+    <title>Daftar Pelaksana - SIMDIK-TANBU</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    
     <style>
         :root {
             --primary-color: #4F46E5; --primary-hover: #4338CA;
@@ -42,32 +34,14 @@
         .action-button:hover { background-color: var(--gray-100); box-shadow: var(--shadow-sm); }
         .back-button { background-color: var(--primary-color); border-color: var(--primary-color); color: white; }
         .back-button:hover { background-color: var(--primary-hover); }
-        .primary-button { background-color: #10B981; color: white; border: none; padding: 12px 20px; font-size: 14px; font-weight: 500; border-radius: 6px; cursor: pointer; }
-        .primary-button:hover { background-color: #059669; }
         main { background-color: var(--card-background); border-radius: 8px; box-shadow: var(--shadow-md); overflow: hidden; }
         .data-table { width: 100%; border-collapse: collapse; }
         .data-table th, .data-table td { padding: 16px; text-align: left; vertical-align: middle; border-bottom: 1px solid var(--gray-200); font-size: 14px; }
         .data-table th { background-color: var(--gray-100); color: var(--gray-500); font-size: 12px; font-weight: 500; text-transform: uppercase; }
         .empty-state { text-align: center; padding: 48px; color: var(--gray-500); }
-        .action-button-group { display: flex; justify-content: flex-end; gap: 12px; }
-        .icon-button { background: none; border: none; cursor: pointer; padding: 4px; border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: background-color 0.2s ease; }
-        .icon-button svg { width: 18px; height: 18px; }
-        .edit-btn { color: var(--warning-color); } .edit-btn:hover { background-color: #FEF3C7; }
-        .delete-btn { color: var(--danger-color); } .delete-btn:hover { background-color: #FEE2E2; }
-        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(17, 24, 39, 0.6); backdrop-filter: blur(4px); }
-        .modal-content { background-color: var(--card-background); margin: 5% auto; padding: 32px; border-radius: 8px; width: 90%; max-width: 500px; position: relative; box-shadow: var(--shadow-md); animation: fadeIn 0.3s ease-out; }
-        @keyframes fadeIn { from {opacity: 0; transform: translateY(-20px) scale(0.98);} to {opacity: 1; transform: translateY(0) scale(1);} }
-        .modal-header h2 { margin: 0; color: var(--gray-900); }
-        .close-button { color: var(--gray-500); position: absolute; top: 16px; right: 16px; font-size: 28px; font-weight: bold; cursor: pointer; }
-        .form-group { margin-bottom: 20px; }
-        .form-group label { display: block; margin-bottom: 8px; font-weight: 500; font-size: 14px; color: var(--gray-700); }
-        .form-group input { width: 100%; padding: 10px 12px; box-sizing: border-box; border: 1px solid var(--gray-200); border-radius: 6px; transition: all 0.2s ease; }
-        .form-group input:focus { outline: none; border-color: var(--primary-color); box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.2); }
-        .form-group input[readonly] { background-color: var(--gray-100); }
     </style>
 </head>
 <body style="display: none;">
-
     <div class="container">
         <div class="header-top-bar">
             <div class="user-info">
@@ -76,13 +50,9 @@
             </div>
         </div>
         <header>
-            <h1>Manajemen Data Pelaksana</h1>
-            <div class="header-buttons">
-                <button id="tambahBtn" class="primary-button">Tambah Pelaksana</button>
-                <a href="index.html" class="action-button back-button">Kembali ke Dashboard</a>
-            </div>
+            <h1>Daftar Pelaksana</h1>
+            <a href="index.html" class="action-button back-button">Kembali ke Dashboard</a>
         </header>
-
         <main>
              <div style="overflow-x:auto;">
                 <table class="data-table">
@@ -93,113 +63,44 @@
                             <th>NIP (UID Akun)</th>
                             <th>Email Akun</th>
                             <th>Bidang</th>
-                            <th>Aksi</th>
                         </tr>
                     </thead>
                     <tbody id="pelaksanaTableBody"></tbody>
                 </table>
             </div>
-             <div id="emptyState" class="empty-state">
-                <p>Memuat data pelaksana...</p>
-             </div>
+             <div id="emptyState" class="empty-state"><p>Memuat data pelaksana...</p></div>
         </main>
-    </div>
-    
-    <div id="pelaksanaModal" class="modal">
-        <div class="modal-content">
-            <span class="close-button">&times;</span>
-            <div class="modal-header">
-                <h2 id="modalTitle">Tambah Data Pelaksana</h2>
-            </div>
-            <form id="pelaksanaForm">
-                <input type="hidden" id="pelaksanaId">
-                <div class="form-group">
-                    <label for="nama">Nama Lengkap</label>
-                    <input type="text" id="nama" required>
-                </div>
-                <div class="form-group">
-                    <label for="nip">NIP (akan menjadi UID dan Password)</label>
-                    <input type="text" id="nip" required>
-                </div>
-                <div class="form-group">
-                    <label for="email">Email Login (otomatis)</label>
-                    <input type="email" id="email" required readonly>
-                </div>
-                <div class="form-group">
-                    <label for="bidang">Bidang</label>
-                    <input type="text" id="bidang" required>
-                </div>
-                <button type="submit" id="submitBtn" class="primary-button" style="width: 100%; justify-content:center;">Simpan Data</button>
-            </form>
-        </div>
     </div>
 
      <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js";
         import { getAuth, signOut } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-auth.js";
-        import { getFirestore, collection, onSnapshot, doc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore.js";
-        import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-functions.js";
+        import { getFirestore, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore.js";
 
-        // --- INISIALISASI ---
+        if (sessionStorage.getItem('userRole') !== 'admin') {
+            window.location.href = './login.html';
+        }
+
         document.body.style.display = 'block';
-        const firebaseConfig = {
-            apiKey: "AIzaSyBM4RhHUdQxSEPVBGhjf4R8UGfzMmD7egU",
-            authDomain: "dashboard-kegiatan-saya.firebaseapp.com",
-            projectId: "dashboard-kegiatan-saya",
-            storageBucket: "dashboard-kegiatan-saya.appspot.com",
-            messagingSenderId: "1078549240220",
-            appId: "1:1078549240220:web:7d372e7b50b6f9545a9059"
-        };
+        const firebaseConfig = { /* ... Salin firebaseConfig Anda di sini ... */ };
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
-        const functions = getFunctions(app, 'asia-southeast2'); // Sesuaikan region jika perlu
 
-        // --- ELEMEN DOM & PENGATURAN AWAL ---
-        const tableBody = document.getElementById('pelaksanaTableBody');
-        const emptyState = document.getElementById('emptyState');
-        const modal = document.getElementById('pelaksanaModal');
-        const form = document.getElementById('pelaksanaForm');
-        const openModalBtn = document.getElementById('tambahBtn');
-        const closeModalBtn = modal.querySelector('.close-button');
-        const modalTitle = document.getElementById('modalTitle');
-        const submitBtn = document.getElementById('submitBtn');
-        const pelaksanaIdInput = document.getElementById('pelaksanaId');
-        
         document.getElementById('userNameDisplay').textContent = `Halo, ${sessionStorage.getItem('userName')}`;
         document.getElementById('logoutButton').addEventListener('click', () => signOut(auth).then(() => {
             sessionStorage.clear();
             window.location.href = './login.html';
         }));
-        
-        // --- LOGIKA MODAL ---
-        const openModal = () => {
-            form.reset();
-            pelaksanaIdInput.value = '';
-            modalTitle.textContent = 'Tambah Data Pelaksana';
-            submitBtn.textContent = 'Simpan Data';
-            document.getElementById('nip').readOnly = false;
-            modal.style.display = 'block';
-        };
-        const closeModal = () => modal.style.display = 'none';
-        
-        openModalBtn.onclick = openModal;
-        closeModalBtn.onclick = closeModal;
 
-        // Auto-generate email dari NIP
-        document.getElementById('nip').addEventListener('input', (e) => {
-            const nip = e.target.value;
-            document.getElementById('email').value = nip ? `${nip}@simdik.tanbu` : '';
-        });
-
-        // --- RENDER TABEL (READ) ---
         onSnapshot(collection(db, "pelaksana"), (snapshot) => {
             const allPelaksana = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            const tableBody = document.getElementById('pelaksanaTableBody');
+            const emptyState = document.getElementById('emptyState');
             tableBody.innerHTML = '';
 
             if (allPelaksana.length === 0) {
-                emptyState.innerHTML = '<p>Belum ada data pelaksana. Silakan tambahkan.</p>';
-                emptyState.style.display = 'block';
+                emptyState.innerHTML = '<p>Belum ada data pelaksana.</p>';
             } else {
                 emptyState.style.display = 'none';
                 allPelaksana.forEach((pelaksana, index) => {
@@ -210,97 +111,10 @@
                         <td>${pelaksana.nip}</td>
                         <td>${pelaksana.email || `${pelaksana.nip}@simdik.tanbu`}</td>
                         <td>${pelaksana.bidang}</td>
-                        <td>
-                            <div class="action-button-group">
-                                <button class="icon-button edit-btn" data-id="${pelaksana.id}" title="Edit"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z" /><path fill-rule="evenodd" d="M2 6a2 2 0 012-2h4a1 1 0 010 2H4v10h10v-4a1 1 0 112 0v4a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" clip-rule="evenodd" /></svg></button>
-                                <button class="icon-button delete-btn" data-id="${pelaksana.id}" data-nama="${pelaksana.nama}" title="Hapus"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" /></svg></button>
-                            </div>
-                        </td>
                     `;
                 });
             }
         });
-
-        // --- AKSI EDIT & DELETE ---
-        tableBody.addEventListener('click', async (e) => {
-            const target = e.target.closest('.icon-button');
-            if (!target) return;
-            
-            const id = target.dataset.id; // NIP adalah ID dokumen
-
-            // LOGIKA EDIT (Hanya update data Firestore)
-            if (target.classList.contains('edit-btn')) {
-                const docRef = doc(db, "pelaksana", id);
-                const docSnap = await getDoc(docRef);
-                if (docSnap.exists()) {
-                    const data = docSnap.data();
-                    pelaksanaIdInput.value = id;
-                    modal.querySelector('#nama').value = data.nama;
-                    modal.querySelector('#nip').value = data.nip;
-                    modal.querySelector('#email').value = data.email || `${data.nip}@simdik.tanbu`;
-                    modal.querySelector('#bidang').value = data.bidang;
-                    document.getElementById('nip').readOnly = true; // NIP tidak boleh diubah
-                    modalTitle.textContent = 'Edit Data Pelaksana';
-                    submitBtn.textContent = 'Update Data';
-                    modal.style.display = 'block';
-                }
-            }
-
-            // LOGIKA DELETE (Memanggil Cloud Function)
-            if (target.classList.contains('delete-btn')) {
-                const nama = target.dataset.nama;
-                if (confirm(`Menghapus "${nama}" juga akan menghapus akun login permanen. Anda yakin?`)) {
-                    submitBtn.disabled = true;
-                    try {
-                        const deletePelaksana = httpsCallable(functions, 'deletePelaksana');
-                        const result = await deletePelaksana({ uid: id });
-                        alert(result.data.message);
-                    } catch (error) {
-                        console.error("Error saat menghapus pelaksana:", error);
-                        alert(`Gagal menghapus: ${error.message}`);
-                    } finally {
-                        submitBtn.disabled = false;
-                    }
-                }
-            }
-        });
-
-        // --- AKSI CREATE & UPDATE ---
-        form.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            submitBtn.disabled = true;
-            submitBtn.textContent = 'Menyimpan...';
-
-            const id = pelaksanaIdInput.value;
-            const data = {
-                nama: form.querySelector('#nama').value,
-                nip: form.querySelector('#nip').value,
-                email: form.querySelector('#email').value,
-                bidang: form.querySelector('#bidang').value,
-            };
-
-            try {
-                // Jika ada ID, berarti ini adalah proses UPDATE
-                if (id) {
-                    const docRef = doc(db, "pelaksana", id);
-                    await updateDoc(docRef, data);
-                    alert('Data berhasil diperbarui!');
-                } else {
-                    // Jika tidak ada ID, ini adalah proses CREATE (panggil Cloud Function)
-                    const createPelaksana = httpsCallable(functions, 'createPelaksana');
-                    const result = await createPelaksana(data);
-                    alert(result.data.message);
-                }
-                closeModal();
-            } catch (error) {
-                console.error("Error saat menyimpan data:", error);
-                alert(`Gagal menyimpan: ${error.message}`);
-            } finally {
-                submitBtn.disabled = false;
-                submitBtn.textContent = 'Simpan Data';
-            }
-        });
-
     </script>
 </body>
 </html>
