@@ -31,7 +31,8 @@
             margin: 0; padding: 2rem; color: var(--gray-700);
         }
         .container { max-width: 1280px; margin: 0 auto; }
-        .user-info { display: flex; align-items: center; gap: 1rem; font-size: 14px; position: absolute; top: 2rem; right: 2rem; }
+        .header-top-bar { display: flex; justify-content: flex-end; align-items: center; margin-bottom: 0.5rem; }
+        .user-info { display: flex; align-items: center; gap: 1rem; font-size: 14px; }
         .user-info span { color: var(--gray-700); font-weight: 500; }
         .logout-button { background: none; border: none; color: var(--primary-color); font-weight: 500; cursor: pointer; text-decoration: underline; padding: 0; font-size: 14px; }
         header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem; }
@@ -70,12 +71,13 @@
 </head>
 <body style="display: none;">
 
-    <div class="user-info">
-        <span id="userNameDisplay"></span>
-        <button id="logoutButton" class="logout-button">Logout</button>
-    </div>
-
     <div class="container">
+        <div class="header-top-bar">
+            <div class="user-info">
+                <span id="userNameDisplay"></span>
+                <button id="logoutButton" class="logout-button">Logout</button>
+            </div>
+        </div>
         <header>
             <h1 id="headerTitle">Rincian Biaya <small>Memuat nama kegiatan...</small></h1>
             <div class="header-buttons">
@@ -193,7 +195,6 @@
             const openModalBtn = document.getElementById('tambahBtn');
             const closeModalBtn = modal.querySelector('.close-button');
             const modalTitle = document.getElementById('modalTitle');
-            const submitBtn = document.getElementById('submitBtn');
             const biayaIdInput = document.getElementById('biayaId');
             const nilaiBrutoEl = document.getElementById('nilaiBruto');
             const pajakEl = document.getElementById('pajak');
@@ -229,7 +230,6 @@
                 form.reset();
                 biayaIdInput.value = '';
                 modalTitle.textContent = 'Tambah Rincian Biaya';
-                submitBtn.textContent = 'Simpan Data';
                 calculateNet();
                 modal.style.display = 'block';
             };
@@ -237,6 +237,7 @@
             
             openModalBtn.onclick = openModal;
             closeModalBtn.onclick = closeModal;
+            window.onclick = (event) => { if (event.target == modal) closeModal(); };
 
             onSnapshot(pengeluaranCollectionRef, (snapshot) => {
                 const allBiaya = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
@@ -316,7 +317,6 @@
                         biayaAdminEl.value = data.biayaAdmin;
                         calculateNet();
                         modalTitle.textContent = 'Edit Rincian Biaya';
-                        submitBtn.textContent = 'Update Data';
                         modal.style.display = 'block';
                     }
                 }
