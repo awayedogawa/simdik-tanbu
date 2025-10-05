@@ -139,7 +139,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-auth.js";
-        import { getFirestore, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore.js";
+        import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyBM4RhHUdQxSEPVBGhjf4R8UGfzMmD7egU",
@@ -207,27 +207,14 @@
             const password = document.getElementById('pelaksanaPassword').value;
 
             signInWithEmailAndPassword(auth, email, password)
-.then(async (userCredential) => {
-    const user = userCredential.user;
-    // LANGSUNG AMBIL DOKUMEN BERDASARKAN UID (YANG SAMA DENGAN NIP)
-    const docRef = doc(db, "pelaksana", user.uid);
-    const docSnap = await getDoc(docRef);
+                .then(async (userCredential) => {
+                    const user = userCredential.user;
+                    // Langsung ambil dokumen berdasarkan UID (yang sama dengan NIP)
+                    const docRef = doc(db, "pelaksana", user.uid);
+                    const docSnap = await getDoc(docRef);
 
-    if (docSnap.exists()) {
-        const pelaksanaData = docSnap.data();
-        
-        sessionStorage.setItem('userRole', 'pelaksana');
-        sessionStorage.setItem('userName', pelaksanaData.nama);
-        sessionStorage.setItem('userNip', pelaksanaData.nip);
-        sessionStorage.setItem('userBidang', pelaksanaData.bidang);
-        
-        window.location.href = 'index.html';
-    } else {
-        showError('Data pelaksana tidak ditemukan.');
-        auth.signOut();
-    }
-})
-                        const pelaksanaData = querySnapshot.docs[0].data();
+                    if (docSnap.exists()) {
+                        const pelaksanaData = docSnap.data();
                         
                         sessionStorage.setItem('userRole', 'pelaksana');
                         sessionStorage.setItem('userName', pelaksanaData.nama);
