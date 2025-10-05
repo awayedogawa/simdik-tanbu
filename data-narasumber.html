@@ -124,7 +124,54 @@
     </div>
 
     <div id="narasumberModal" class="modal">
+        <div class="modal-content">
+            <span class="close-button">&times;</span>
+            <div class="modal-header">
+                <h2>Edit Data Narasumber</h2>
+            </div>
+            <form id="narasumberForm">
+                <input type="hidden" id="narasumberId">
+                <div class="form-group">
+                    <label for="namaEdit">Nama Lengkap (Beserta Gelar)</label>
+                    <input type="text" id="namaEdit" required>
+                </div>
+                 <div class="form-row">
+                    <div class="form-group">
+                        <label for="nipEdit">NIP (Jika Ada)</label>
+                        <input type="text" id="nipEdit">
+                    </div>
+                    <div class="form-group">
+                        <label for="jabatanEdit">Jabatan</label>
+                        <input type="text" id="jabatanEdit" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="instansiEdit">Instansi / Unit Kerja</label>
+                    <input type="text" id="instansiEdit" required>
+                </div>
+                <div class="form-group">
+                    <label for="noHpEdit">No. HP / WA</label>
+                    <input type="tel" id="noHpEdit" required>
+                </div>
+                <hr>
+                 <div class="form-row">
+                    <div class="form-group">
+                        <label for="noRekeningEdit">Nomor Rekening</label>
+                        <input type="text" id="noRekeningEdit" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="namaBankEdit">Nama Bank</label>
+                        <input type="text" id="namaBankEdit" required>
+                    </div>
+                </div>
+                 <div class="form-group">
+                    <label for="npwpEdit">NPWP (Jika Ada)</label>
+                    <input type="text" id="npwpEdit">
+                </div>
+                <button type="submit" class="primary-button" style="width:100%; justify-content:center;">Update Data</button>
+            </form>
         </div>
+    </div>
 
      <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js";
@@ -163,14 +210,13 @@
             let currentNarasumberList = [];
             let currentKegiatanData = {};
             let canManage = false;
-            
+
             const kegiatanId = new URLSearchParams(window.location.search).get('id');
 
             const loadData = async () => {
                 if (!kegiatanId) {
                     headerTitle.innerHTML = 'Kegiatan tidak valid <small>Error</small>';
                     emptyState.innerHTML = '<p>ID kegiatan tidak ditemukan di URL.</p>';
-                    dataTable.style.display = 'none';
                     return;
                 }
 
@@ -183,7 +229,7 @@
                         headerTitle.innerHTML = `${currentKegiatanData.nama} <small>Data Narasumber</small>`;
                         canManage = userRole === 'admin' || currentKegiatanData.createdBy === userNip;
                     } else {
-                         headerTitle.innerHTML = 'Kegiatan tidak ditemukan <small>Error</small>';
+                        headerTitle.innerHTML = 'Kegiatan tidak ditemukan <small>Error</small>';
                     }
 
                     const narasumberCollectionRef = collection(db, "kegiatan", kegiatanId, "narasumber");
@@ -221,18 +267,65 @@
                                 `;
                             });
                         }
+                    }, (error) => {
+                        console.error("Gagal memuat data narasumber:", error);
+                        emptyState.innerHTML = `<p style="color:red;">Gagal memuat data: ${error.message}</p>`;
                     });
                 } catch (error) {
                     console.error("Gagal memuat data:", error);
-                    emptyState.innerHTML = `<p style="color:red">Gagal memuat data: ${error.message}</p>`;
+                    emptyState.innerHTML = `<p style="color:red;">Gagal memuat data: ${error.message}</p>`;
                 }
             };
             
             const downloadExcel = () => { /* ... (fungsi tidak berubah) ... */ };
             
-            tableBody.addEventListener('click', async (e) => { /* ... (fungsi tidak berubah) ... */ });
+            tableBody.addEventListener('click', async (e) => {
+                const target = e.target.closest('.icon-button');
+                if (!target) return;
+                const narasumberId = target.dataset.id;
+                const narasumberRef = doc(db, "kegiatan", kegiatanId, "narasumber", narasumberId);
 
-            narasumberForm.addEventListener('submit', async (e) => { /* ... (fungsi tidak berubah) ... */ });
+                if (target.classList.contains('delete-btn')) {
+                    const nama = target.dataset.nama;
+                    if (confirm(`Apakah Anda yakin ingin menghapus narasumber "${nama}"?`)) {
+                        await deleteDoc(narasumberRef);
+                    }
+                }
+
+                if (target.classList.contains('edit-btn')) {
+                    const docSnap = await getDoc(narasumberRef);
+                    if (docSnap.exists()) {
+                        const data = docSnap.data();
+                        narasumberIdInput.value = narasumberId;
+                        narasumberModal.querySelector('#namaEdit').value = data.nama;
+                        narasumberModal.querySelector('#nipEdit').value = data.nip;
+                        narasumberModal.querySelector('#jabatanEdit').value = data.jabatan;
+                        narasumberModal.querySelector('#instansiEdit').value = data.instansi;
+                        narasumberModal.querySelector('#noHpEdit').value = data.noHp;
+                        narasumberModal.querySelector('#noRekeningEdit').value = data.noRekening;
+                        narasumberModal.querySelector('#namaBankEdit').value = data.namaBank;
+                        narasumberModal.querySelector('#npwpEdit').value = data.npwp;
+                        narasumberModal.style.display = 'block';
+                    }
+                }
+            });
+
+            narasumberForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const narasumberId = narasumberIdInput.value;
+                const updatedData = {
+                    nama: narasumberModal.querySelector('#namaEdit').value,
+                    nip: narasumberModal.querySelector('#nipEdit').value,
+                    jabatan: narasumberModal.querySelector('#jabatanEdit').value,
+                    instansi: narasumberModal.querySelector('#instansiEdit').value,
+                    noHp: narasumberModal.querySelector('#noHpEdit').value,
+                    noRekening: narasumberModal.querySelector('#noRekeningEdit').value,
+                    namaBank: narasumberModal.querySelector('#namaBankEdit').value,
+                    npwp: narasumberModal.querySelector('#npwpEdit').value,
+                };
+                await updateDoc(doc(db, "kegiatan", kegiatanId, "narasumber", narasumberId), updatedData);
+                narasumberModal.style.display = 'none';
+            });
             
             narasumberModal.querySelector('.close-button').onclick = () => narasumberModal.style.display = 'none';
             downloadExcelBtn.addEventListener('click', downloadExcel);
