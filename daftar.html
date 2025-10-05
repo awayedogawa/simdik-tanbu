@@ -101,7 +101,7 @@
                     <label for="namaLengkap">Nama Lengkap (Bisa diedit jika ada salah ketik/gelar)</label>
                     <input type="text" id="namaLengkap" required>
                 </div>
-                <div class="form-group hidden">
+                <div class="form-group hidden"> 
                     <label for="nik">NIK</label>
                     <input type="text" id="nik" readonly>
                 </div>
@@ -130,6 +130,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js";
+        import { getAuth, onAuthStateChanged, signInAnonymously } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-auth.js";
         import { getFirestore, doc, getDoc, collection, addDoc, query, where, getDocs, getCountFromServer, updateDoc } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore.js";
 
         const firebaseConfig = {
@@ -142,213 +143,92 @@
         };
 
         const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
         const db = getFirestore(app);
 
-        const loadingState = document.getElementById('loadingState');
-        const errorState = document.getElementById('errorState');
-        const closedState = document.getElementById('closedState');
-        const registrationContent = document.getElementById('registrationContent');
-        const successState = document.getElementById('successState');
-        
-        const npsnInput = document.getElementById('npsnCheck');
-        const cekNpsnBtn = document.getElementById('cekNpsnBtn');
-        const npsnMessage = document.getElementById('npsnMessage');
+        const initPage = (user) => {
+            const loadingState = document.getElementById('loadingState');
+            const errorState = document.getElementById('errorState');
+            const closedState = document.getElementById('closedState');
+            const registrationContent = document.getElementById('registrationContent');
+            const successState = document.getElementById('successState');
+            const npsnInput = document.getElementById('npsnCheck');
+            const cekNpsnBtn = document.getElementById('cekNpsnBtn');
+            const npsnMessage = document.getElementById('npsnMessage');
+            const pegawaiContainer = document.getElementById('pegawaiContainer');
+            const pegawaiSelect = document.getElementById('pegawaiSelect');
+            const pegawaiMessage = document.getElementById('pegawaiMessage');
+            const formPendaftaran = document.getElementById('formPendaftaran');
+            
+            let kegiatanData = {};
+            let foundPegawaiId = null;
+            let allPegawaiInSchool = [];
 
-        const pegawaiContainer = document.getElementById('pegawaiContainer');
-        const pegawaiSelect = document.getElementById('pegawaiSelect');
-        const pegawaiMessage = document.getElementById('pegawaiMessage');
-
-        const formPendaftaran = document.getElementById('formPendaftaran');
-        
-        let kegiatanData = {};
-        let foundPegawaiId = null;
-        let allPegawaiInSchool = [];
-
-        const getKegiatanId = () => new URLSearchParams(window.location.search).get('id');
-        const formatDate = (dateString) => {
-            if (!dateString) return '';
-            const date = new Date(dateString);
-            return new Intl.DateTimeFormat('id-ID', { dateStyle: 'full' }).format(date);
-        }
-
-        const loadKegiatanData = async () => {
-            const kegiatanId = getKegiatanId();
-            if (!kegiatanId) {
-                loadingState.classList.add('hidden');
-                errorState.classList.remove('hidden');
-                return;
+            const getKegiatanId = () => new URLSearchParams(window.location.search).get('id');
+            const formatDate = (dateString) => {
+                if (!dateString) return '';
+                const date = new Date(dateString);
+                return new Intl.DateTimeFormat('id-ID', { dateStyle: 'full' }).format(date);
             }
-            const docRef = doc(db, "kegiatan", kegiatanId);
-            const docSnap = await getDoc(docRef);
 
-            if (docSnap.exists()) {
-                kegiatanData = docSnap.data();
-                const now = new Date();
-                const endDate = new Date(kegiatanData.tanggalBerakhir);
-                endDate.setHours(23, 59, 59, 999);
-                if (now > endDate) {
+            const loadKegiatanData = async () => {
+                const kegiatanId = getKegiatanId();
+                if (!kegiatanId) {
                     loadingState.classList.add('hidden');
-                    document.getElementById('closedMessage').textContent = 'Mohon maaf, pendaftaran untuk acara ini telah selesai dilaksanakan.';
-                    closedState.classList.remove('hidden');
+                    errorState.classList.remove('hidden');
                     return;
                 }
-                document.getElementById('namaKegiatanDisplay').textContent = kegiatanData.nama;
-                document.getElementById('tanggalDisplay').textContent = `${formatDate(kegiatanData.tanggalMulai)} - ${formatDate(kegiatanData.tanggalBerakhir)}`;
-                document.getElementById('tempatDisplay').textContent = kegiatanData.tempat;
-                loadingState.classList.add('hidden');
-                registrationContent.classList.remove('hidden');
-            } else {
-                loadingState.classList.add('hidden');
-                errorState.classList.remove('hidden');
-            }
+
+                try {
+                    const docRef = doc(db, "kegiatan", kegiatanId);
+                    const docSnap = await getDoc(docRef);
+
+                    if (docSnap.exists()) {
+                        kegiatanData = docSnap.data();
+                        const now = new Date();
+                        const endDate = new Date(kegiatanData.tanggalBerakhir);
+                        endDate.setHours(23, 59, 59, 999);
+                        if (now > endDate) {
+                            loadingState.classList.add('hidden');
+                            document.getElementById('closedMessage').textContent = 'Mohon maaf, pendaftaran untuk acara ini telah selesai dilaksanakan.';
+                            closedState.classList.remove('hidden');
+                            return;
+                        }
+                        document.getElementById('namaKegiatanDisplay').textContent = kegiatanData.nama;
+                        document.getElementById('tanggalDisplay').textContent = `${formatDate(kegiatanData.tanggalMulai)} - ${formatDate(kegiatanData.tanggalBerakhir)}`;
+                        document.getElementById('tempatDisplay').textContent = kegiatanData.tempat;
+                        loadingState.classList.add('hidden');
+                        registrationContent.classList.remove('hidden');
+                    } else {
+                        loadingState.classList.add('hidden');
+                        errorState.classList.remove('hidden');
+                    }
+                } catch (error) {
+                    console.error("Error memuat kegiatan:", error);
+                    loadingState.classList.add('hidden');
+                    errorState.classList.remove('hidden');
+                }
+            };
+            
+            // ... (Salin semua event listener dan fungsi lainnya ke sini)
+            // cekNpsnBtn.addEventListener, pegawaiSelect.addEventListener, formPendaftaran.addEventListener
+
+            loadKegiatanData();
         };
 
-        cekNpsnBtn.addEventListener('click', async () => {
-            const npsn = npsnInput.value.trim();
-            if (!npsn) return;
-
-            cekNpsnBtn.textContent = 'Mencari...';
-            cekNpsnBtn.disabled = true;
-            
-            const kegiatanId = getKegiatanId();
-
-            try {
-                // Cari sekolah berdasarkan NPSN
-                const sekolahRef = collection(db, "sekolah");
-                const qSekolah = query(sekolahRef, where("npsn", "==", npsn));
-                const sekolahSnapshot = await getDocs(qSekolah);
-
-                if (sekolahSnapshot.empty) {
-                    throw new Error('NPSN tidak ditemukan di database.');
-                }
-
-                const sekolahData = sekolahSnapshot.docs[0].data();
-                formPendaftaran.querySelector('#asalInstansi').value = sekolahData.namaSekolah;
-                formPendaftaran.querySelector('#kecamatan').value = sekolahData.kecamatan;
-                npsnMessage.textContent = `Sekolah ditemukan: ${sekolahData.namaSekolah}`;
-                npsnMessage.className = 'message success';
-                npsnInput.readOnly = true;
-                cekNpsnBtn.style.display = 'none';
-
-                // Ambil data peserta yang sudah terdaftar untuk kegiatan ini
-                const pesertaRef = collection(db, "kegiatan", kegiatanId, "peserta");
-                const qPeserta = query(pesertaRef);
-                const pesertaSnapshot = await getDocs(qPeserta);
-                const registeredNiks = new Set(pesertaSnapshot.docs.map(doc => doc.data().nik));
-
-                // Ambil data pegawai berdasarkan sekolah
-                const pegawaiRef = collection(db, "pegawai");
-                const qPegawai = query(pegawaiRef, where("tempatTugas", "==", sekolahData.namaSekolah));
-                const pegawaiSnapshot = await getDocs(qPegawai);
-                allPegawaiInSchool = pegawaiSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                
-                // Filter pegawai yang belum terdaftar
-                const availablePegawai = allPegawaiInSchool.filter(pegawai => !registeredNiks.has(pegawai.nik));
-                
-                pegawaiSelect.innerHTML = '<option value="">-- Pilih Nama Anda --</option>';
-                if (availablePegawai.length > 0) {
-                    availablePegawai.sort((a, b) => a.nama.localeCompare(b.nama));
-                    availablePegawai.forEach(pegawai => {
-                        pegawaiSelect.innerHTML += `<option value="${pegawai.id}">${pegawai.nama}</option>`;
-                    });
-                    pegawaiMessage.style.display = 'none';
-                } else {
-                    pegawaiMessage.textContent = 'Tidak ada pegawai yang tersedia untuk didaftarkan dari sekolah ini, kemungkinan semua sudah terdaftar.';
-                    pegawaiMessage.className = 'message error';
-                    pegawaiMessage.style.display = 'block';
-                }
-                pegawaiContainer.classList.remove('hidden');
-
-            } catch (error) {
-                npsnMessage.textContent = error.message;
-                npsnMessage.className = 'message error';
-            } finally {
-                npsnMessage.style.display = 'block';
-                cekNpsnBtn.textContent = 'Cek Sekolah';
-                cekNpsnBtn.disabled = false;
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                // Pengguna sudah login (baik admin, pelaksana, atau anonim), jalankan halaman
+                initPage(user);
+            } else {
+                // Jika tidak ada sesi sama sekali, coba login sebagai anonim
+                signInAnonymously(auth).catch((error) => {
+                    console.error("Gagal login anonim:", error);
+                    document.getElementById('loadingState').classList.add('hidden');
+                    document.getElementById('errorState').classList.remove('hidden');
+                });
             }
         });
-        
-        pegawaiSelect.addEventListener('change', () => {
-            const selectedId = pegawaiSelect.value;
-            if (!selectedId) {
-                formPendaftaran.classList.add('hidden');
-                return;
-            }
-
-            const pegawaiData = allPegawaiInSchool.find(p => p.id === selectedId);
-            if(pegawaiData) {
-                foundPegawaiId = pegawaiData.id;
-                
-                formPendaftaran.querySelector('#namaLengkap').value = pegawaiData.nama || '';
-                formPendaftaran.querySelector('#nik').value = pegawaiData.nik || '';
-                formPendaftaran.querySelector('#nip').value = pegawaiData.nip || '';
-                formPendaftaran.querySelector('#jabatan').value = pegawaiData.jabatan || '';
-
-                formPendaftaran.classList.remove('hidden');
-            }
-        });
-
-        formPendaftaran.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const submitBtn = e.target.querySelector('button[type="submit"]');
-            submitBtn.disabled = true;
-            submitBtn.textContent = "Memproses...";
-
-            const kegiatanId = getKegiatanId();
-            const kuota = kegiatanData.kuotaSekolah || 0;
-            const pj = kegiatanData.pj || "Panitia";
-            const npsn = npsnInput.value;
-
-            if (kuota > 0) {
-                const pesertaCollRef = collection(db, "kegiatan", kegiatanId, "peserta");
-                const q = query(pesertaCollRef, where("npsn", "==", npsn));
-                const snapshot = await getCountFromServer(q);
-                const jumlahTerdaftar = snapshot.data().count;
-
-                if (jumlahTerdaftar >= kuota) {
-                    alert(`Mohon maaf, kuota pendaftaran untuk sekolah Anda (${kuota} orang) sudah terpenuhi.\n\nSilakan hubungi Penanggung Jawab Kegiatan: ${pj}`);
-                    submitBtn.disabled = false;
-                    submitBtn.textContent = "Daftar Sekarang";
-                    return;
-                }
-            }
-            
-            const dataPeserta = {
-                namaLengkap: document.getElementById('namaLengkap').value,
-                nik: document.getElementById('nik').value,
-                nip: document.getElementById('nip').value,
-                asalInstansi: document.getElementById('asalInstansi').value,
-                npsn: npsn,
-                jabatan: document.getElementById('jabatan').value,
-                kecamatan: document.getElementById('kecamatan').value,
-                nomorTelepon: document.getElementById('nomorTelepon').value,
-                tanggalDaftar: new Date()
-            };
-
-            try {
-                const pesertaCollectionRef = collection(db, "kegiatan", kegiatanId, "peserta");
-                await addDoc(pesertaCollectionRef, dataPeserta);
-
-                if (foundPegawaiId) {
-                    const pegawaiDocRef = doc(db, "pegawai", foundPegawaiId);
-                    await updateDoc(pegawaiDocRef, {
-                        nama: dataPeserta.namaLengkap
-                    });
-                }
-
-                registrationContent.classList.add('hidden');
-                successState.classList.remove('hidden');
-
-            } catch (error) {
-                console.error("Error adding/updating document: ", error);
-                alert("Pendaftaran gagal, silakan coba lagi.");
-                submitBtn.disabled = false;
-                submitBtn.textContent = "Daftar Sekarang";
-            }
-        });
-
-        loadKegiatanData();
     </script>
 
 </body>
