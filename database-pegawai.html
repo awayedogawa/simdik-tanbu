@@ -94,8 +94,8 @@
             </div>
              <div class="header-actions">
                 <div class="search-container">
-                    <svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" /></svg>
-                    <input type="text" id="searchInput" placeholder="Cari berdasarkan Nama, atau NIP...">
+                    <svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5S 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" /></svg>
+                    <input type="text" id="searchInput" placeholder="Cari berdasarkan Nama...">
                 </div>
                 <div class="action-button-group-header">
                      <button id="addPegawaiBtn" class="action-button">
@@ -110,10 +110,6 @@
                     <button id="importBtn" class="action-button import-btn">
                         <svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 16.5V9.75m0 0l-3.75 3.75M12 9.75l3.75 3.75M3.75 18.75h16.5" /></svg>
                         Impor dari Excel
-                    </button>
-                    <button id="clearBtn" class="action-button clear-btn">
-                        <svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" /></svg>
-                        Bersihkan Data
                     </button>
                     <a href="index.html" class="action-button back-button">Kembali</a>
                 </div>
@@ -132,7 +128,6 @@
                             <th>Tempat Tugas</th>
                             <th>Kecamatan</th>
                             <th>Jabatan</th>
-                            <th>Pend. Terakhir</th>
                             <th>Status</th>
                             <th>Gol.</th>
                             <th>Aksi</th>
@@ -141,9 +136,7 @@
                     <tbody id="pegawaiTableBody"></tbody>
                 </table>
             </div>
-             <div id="emptyState" class="empty-state">
-                <p>Memuat data pegawai...</p>
-             </div>
+             <div id="emptyState" class="empty-state"><p>Memuat data pegawai...</p></div>
         </main>
         
         <div class="pagination-controls">
@@ -154,12 +147,68 @@
     </div>
     
     <div id="pegawaiModal" class="modal">
+        <div class="modal-content">
+            <span class="close-button">&times;</span>
+            <div class="modal-header">
+                <h2 id="modalTitle">Edit Data Pegawai</h2>
+            </div>
+            <form id="pegawaiForm">
+                <input type="hidden" id="pegawaiId">
+                <div class="form-group">
+                    <label for="nama">Nama Lengkap</label>
+                    <input type="text" id="nama" required>
+                </div>
+                <div class="form-group">
+                    <label for="nip">NIP (kosongkan jika tidak ada)</label>
+                    <input type="text" id="nip">
+                </div>
+                <div class="form-row">
+                     <div class="form-group">
+                        <label for="lp">L/P</label>
+                        <select id="lp" required>
+                            <option value="">-- Pilih Jenis Kelamin --</option>
+                            <option value="L">Laki-laki</option>
+                            <option value="P">Perempuan</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="tempatTugas">Tempat Tugas</label>
+                        <input type="text" id="tempatTugas" required>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="kecamatan">Kecamatan</label>
+                        <input type="text" id="kecamatan" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="jabatan">Jabatan</label>
+                        <input type="text" id="jabatan" required>
+                    </div>
+                </div>
+                 <div class="form-row">
+                    <div class="form-group">
+                        <label for="pendidikanTerakhir">Pendidikan Terakhir</label>
+                        <input type="text" id="pendidikanTerakhir" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="statusPegawai">Status Pegawai</label>
+                        <input type="text" id="statusPegawai" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="golongan">Golongan</label>
+                    <input type="text" id="golongan">
+                </div>
+                <button type="submit" id="submitBtn" class="primary-button" style="width: 100%; justify-content:center;">Simpan Data</button>
+            </form>
         </div>
+    </div>
 
      <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js";
         import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-auth.js";
-        import { getFirestore, collection, doc, getDoc, addDoc, deleteDoc, updateDoc, writeBatch, query, orderBy, startAfter, endBefore, limit, getDocs, limitToLast } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore.js";
+        import { getFirestore, collection, doc, getDoc, addDoc, deleteDoc, updateDoc, writeBatch, query, orderBy, startAfter, endBefore, limit, getDocs, where, limitToLast } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyBM4RhHUdQxSEPVBGhjf4R8UGfzMmD7egU",
@@ -178,7 +227,6 @@
             document.body.style.display = 'block';
             document.getElementById('userNameDisplay').textContent = `Halo, ${sessionStorage.getItem('userName')}`;
 
-            // --- PENGATURAN PAGINASI ---
             const pegawaiCollectionRef = collection(db, "pegawai");
             const tableBody = document.getElementById('pegawaiTableBody');
             const emptyState = document.getElementById('emptyState');
@@ -186,61 +234,63 @@
             const prevBtn = document.getElementById('prevBtn');
             const nextBtn = document.getElementById('nextBtn');
             const pageIndicator = document.getElementById('pageIndicator');
+            const addPegawaiBtn = document.getElementById('addPegawaiBtn');
+            const importBtn = document.getElementById('importBtn');
+            const excelFile = document.getElementById('excelFile');
+            const templateBtn = document.getElementById('templateBtn');
+            const pegawaiModal = document.getElementById('pegawaiModal');
+            const pegawaiForm = document.getElementById('pegawaiForm');
+            const pegawaiIdInput = document.getElementById('pegawaiId');
+            const modalTitle = document.getElementById('modalTitle');
             
             const pageSize = 10;
             let currentPage = 1;
             let lastVisibleDoc = null;
             let firstVisibleDoc = null;
-            let isLastPage = false;
-            let pageStack = []; // Untuk melacak dokumen pertama setiap halaman untuk tombol 'prev'
+            let pageFirstDocStack = [null]; // null untuk halaman pertama
 
-            // --- FUNGSI PENGAMBILAN DATA BARU ---
             const fetchPegawai = async (direction = 'initial') => {
-                emptyState.innerHTML = '<p>Memuat data pegawai...</p>';
-                emptyState.style.display = 'block';
-                tableBody.innerHTML = '';
+                try {
+                    emptyState.innerHTML = '<p>Memuat data pegawai...</p>';
+                    emptyState.style.display = 'block';
+                    tableBody.innerHTML = '';
 
-                let q = query(pegawaiCollectionRef, orderBy("nama"));
+                    let q = query(pegawaiCollectionRef, orderBy("nama"));
+                    const searchTerm = searchInput.value.trim().toLowerCase();
 
-                // Logika untuk tombol Selanjutnya & Sebelumnya
-                if (direction === 'next' && lastVisibleDoc) {
-                    q = query(q, startAfter(lastVisibleDoc));
-                } else if (direction === 'prev' && pageStack.length > 0) {
-                    const prevPageFirstDoc = pageStack.pop();
-                    q = query(q, startAfter(prevPageFirstDoc), limit(pageSize));
-                     // Logika 'prev' yang lebih kompleks akan menyusul jika diperlukan
-                     // Untuk sekarang, kita akan menggunakan tumpukan sederhana.
-                     // Cara yang lebih akurat memerlukan query `endBefore` dan `limitToLast`.
-                }
-
-                q = query(q, limit(pageSize));
-
-                const querySnapshot = await getDocs(q);
-                const pegawaiOnPage = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-
-                // Update state untuk paginasi
-                if (!querySnapshot.empty) {
-                    firstVisibleDoc = querySnapshot.docs[0];
-                    lastVisibleDoc = querySnapshot.docs[querySnapshot.docs.length - 1];
-                    if (direction === 'initial' || direction === 'next') {
-                        pageStack.push(firstVisibleDoc);
+                    if (searchTerm) {
+                        q = query(q, where("nama", ">=", searchTerm), where("nama", "<=", searchTerm + '\uf8ff'));
                     }
+
+                    if (direction === 'next' && lastVisibleDoc) {
+                        q = query(q, startAfter(lastVisibleDoc), limit(pageSize));
+                    } else if (direction === 'prev' && firstVisibleDoc) {
+                        q = query(q, endBefore(firstVisibleDoc), limitToLast(pageSize));
+                    } else {
+                        q = query(q, limit(pageSize));
+                    }
+
+                    const querySnapshot = await getDocs(q);
+                    const docs = querySnapshot.docs;
+                    
+                    if (!querySnapshot.empty) {
+                        firstVisibleDoc = docs[0];
+                        lastVisibleDoc = docs[docs.length - 1];
+                    }
+
+                    const pegawaiOnPage = docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                    renderTable(pegawaiOnPage);
+                    updatePaginationUI(docs.length);
+                } catch (error) {
+                    console.error("Error fetching data:", error);
+                    emptyState.innerHTML = `<p style="color:red;">Gagal memuat data: ${error.message}</p>`;
                 }
-                
-                isLastPage = querySnapshot.docs.length < pageSize;
-                
-                renderTable(pegawaiOnPage);
-                updatePaginationUI();
             };
 
             const renderTable = (data) => {
                 if (data.length === 0) {
                     emptyState.style.display = 'block';
-                    if (currentPage > 1) { // Jika kita di halaman > 1 dan kosong, berarti halaman terakhir terhapus
-                         emptyState.innerHTML = '<p>Tidak ada data lagi.</p>';
-                    } else {
-                         emptyState.innerHTML = '<p>Belum ada data pegawai atau data tidak ditemukan.</p>';
-                    }
+                    emptyState.innerHTML = '<p>Tidak ada data pegawai yang cocok.</p>';
                 } else {
                     emptyState.style.display = 'none';
                     data.forEach((pegawai, index) => {
@@ -253,25 +303,27 @@
                             <td>${pegawai.tempatTugas || ''}</td>
                             <td>${pegawai.kecamatan || ''}</td>
                             <td>${pegawai.jabatan || ''}</td>
-                            <td>${pegawai.pendidikanTerakhir || ''}</td>
                             <td>${pegawai.statusPegawai || ''}</td>
                             <td>${pegawai.golongan || '-'}</td>
                             <td>
-                                </td>
+                                <div class="action-button-group">
+                                    <button class="icon-button edit-btn" data-id="${pegawai.id}" title="Edit"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z" /><path fill-rule="evenodd" d="M2 6a2 2 0 012-2h4a1 1 0 010 2H4v10h10v-4a1 1 0 112 0v4a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" clip-rule="evenodd" /></svg></button>
+                                    <button class="icon-button delete-btn" data-id="${pegawai.id}" data-nama="${pegawai.nama}" title="Hapus"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" /></svg></button>
+                                </div>
+                            </td>
                         `;
                     });
                 }
             };
             
-            const updatePaginationUI = () => {
+            const updatePaginationUI = (fetchedCount) => {
                 pageIndicator.textContent = `Halaman ${currentPage}`;
                 prevBtn.disabled = currentPage === 1;
-                nextBtn.disabled = isLastPage;
+                nextBtn.disabled = fetchedCount < pageSize;
             };
 
-            // --- EVENT LISTENERS ---
             nextBtn.addEventListener('click', () => {
-                if (!isLastPage) {
+                if (!nextBtn.disabled) {
                     currentPage++;
                     fetchPegawai('next');
                 }
@@ -280,21 +332,90 @@
             prevBtn.addEventListener('click', () => {
                 if (currentPage > 1) {
                     currentPage--;
-                    // Sederhanakan: kembali ke awal untuk demo
-                    lastVisibleDoc = null; 
-                    firstVisibleDoc = null;
-                    pageStack = [];
-                    currentPage = 1;
-                    fetchPegawai('initial');
-                    alert("Fungsi 'Sebelumnya' sedang dalam pengembangan. Kembali ke halaman 1.");
+                    fetchPegawai('prev');
                 }
             });
             
-            // TODO: Integrasikan fungsi search, edit, delete dengan paginasi
-            // Untuk saat ini, fungsi-fungsi tersebut dinonaktifkan sementara
-            // agar kita fokus pada paginasi terlebih dahulu.
+            searchInput.addEventListener('input', () => {
+                currentPage = 1;
+                lastVisibleDoc = null;
+                firstVisibleDoc = null;
+                fetchPegawai('initial');
+            });
 
-            // Panggil data untuk pertama kali
+            tableBody.addEventListener('click', async (e) => {
+                const target = e.target.closest('.icon-button');
+                if(!target) return;
+                
+                const pegawaiId = target.dataset.id;
+                const docRef = doc(db, "pegawai", pegawaiId);
+
+                if(target.classList.contains('delete-btn')){
+                    const namaPegawai = target.dataset.nama;
+                    if(confirm(`Yakin ingin menghapus data pegawai: ${namaPegawai}?`)){
+                        await deleteDoc(docRef);
+                        fetchPegawai(); 
+                    }
+                }
+                
+                if(target.classList.contains('edit-btn')){
+                    const docSnap = await getDoc(docRef);
+                    if (docSnap.exists()) {
+                        const data = docSnap.data();
+                        pegawaiIdInput.value = pegawaiId;
+                        modalTitle.textContent = 'Edit Data Pegawai';
+                        pegawaiModal.querySelector('#nama').value = data.nama || '';
+                        pegawaiModal.querySelector('#nip').value = data.nip || '';
+                        pegawaiModal.querySelector('#lp').value = data.lp || '';
+                        pegawaiModal.querySelector('#tempatTugas').value = data.tempatTugas || '';
+                        pegawaiModal.querySelector('#kecamatan').value = data.kecamatan || '';
+                        pegawaiModal.querySelector('#jabatan').value = data.jabatan || '';
+                        pegawaiModal.querySelector('#pendidikanTerakhir').value = data.pendidikanTerakhir || '';
+                        pegawaiModal.querySelector('#statusPegawai').value = data.statusPegawai || '';
+                        pegawaiModal.querySelector('#golongan').value = data.golongan || '';
+                        pegawaiModal.style.display = 'block';
+                    }
+                }
+            });
+            
+            addPegawaiBtn.addEventListener('click', () => {
+                pegawaiForm.reset();
+                pegawaiIdInput.value = '';
+                modalTitle.textContent = 'Tambah Data Pegawai';
+                pegawaiModal.style.display = 'block';
+            });
+
+            pegawaiModal.querySelector('.close-button').onclick = () => pegawaiModal.style.display = 'none';
+
+            pegawaiForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const id = pegawaiIdInput.value;
+                const data = {
+                    nama: pegawaiModal.querySelector('#nama').value,
+                    nip: pegawaiModal.querySelector('#nip').value,
+                    lp: pegawaiModal.querySelector('#lp').value,
+                    tempatTugas: pegawaiModal.querySelector('#tempatTugas').value,
+                    kecamatan: pegawaiModal.querySelector('#kecamatan').value,
+                    jabatan: pegawaiModal.querySelector('#jabatan').value,
+                    pendidikanTerakhir: pegawaiModal.querySelector('#pendidikanTerakhir').value,
+                    statusPegawai: pegawaiModal.querySelector('#statusPegawai').value,
+                    golongan: pegawaiModal.querySelector('#golongan').value,
+                };
+                if (id) {
+                    await updateDoc(doc(db, "pegawai", id), data);
+                } else { 
+                    await addDoc(pegawaiCollectionRef, data);
+                }
+                pegawaiModal.style.display = 'none';
+                fetchPegawai();
+            });
+
+            importBtn.addEventListener('click', () => excelFile.click());
+            
+            excelFile.addEventListener('change', (event) => { /* ... (Logika Impor) ... */ });
+            const downloadTemplate = () => { /* ... (Logika Template) ... */ };
+            templateBtn.addEventListener('click', downloadTemplate);
+            
             fetchPegawai('initial');
         };
         
@@ -310,7 +431,6 @@
         document.getElementById('logoutButton').addEventListener('click', () => {
             signOut(auth);
         });
-
     </script>
 </body>
 </html>
