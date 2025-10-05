@@ -97,7 +97,7 @@
              <div class="header-actions">
                 <div class="search-container">
                     <svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" /></svg>
-                    <input type="text" id="searchInput" placeholder="Cari berdasarkan Nama atau NIP...">
+                    <input type="text" id="searchInput" placeholder="Cari awalan Nama, NIP, atau Tempat Tugas...">
                 </div>
                 <div class="action-button-group-header">
                      <button id="addPegawaiBtn" class="action-button">
@@ -113,7 +113,7 @@
                         <svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 16.5V9.75m0 0l-3.75 3.75M12 9.75l3.75 3.75M3.75 18.75h16.5" /></svg>
                         Impor dari Excel
                     </button>
-                     <button id="clearBtn" class="action-button clear-btn">
+                    <button id="clearBtn" class="action-button clear-btn">
                         <svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" /></svg>
                         Bersihkan Data
                     </button>
@@ -255,8 +255,6 @@
             let currentPage = 1;
             let lastVisibleDoc = null;
             let firstVisibleDoc = null;
-            let pageFirstDocStack = [null]; 
-            let fullData = []; // Untuk menyimpan semua data saat tidak ada paginasi
 
             const renderTable = (data, isSearchResult = false) => {
                 tableBody.innerHTML = '';
@@ -265,8 +263,14 @@
                     emptyState.innerHTML = '<p>Tidak ada data pegawai yang cocok.</p>';
                 } else {
                     emptyState.style.display = 'none';
+                    let allNips = data.map(p => p.nip).filter(Boolean);
+                    let duplicateNips = new Set(allNips.filter((nip, index) => allNips.indexOf(nip) !== index));
+
                     data.forEach((pegawai, index) => {
                         const row = tableBody.insertRow();
+                        if (pegawai.nip && duplicateNips.has(pegawai.nip)) {
+                            row.classList.add('duplicate-warning');
+                        }
                         const rowNum = isSearchResult ? index + 1 : ((currentPage - 1) * pageSize) + index + 1;
                         row.innerHTML = `
                             <td>${rowNum}</td>
@@ -307,7 +311,7 @@
 
                     if (direction === 'next' && lastVisibleDoc) {
                         q = query(baseQuery, startAfter(lastVisibleDoc), limit(pageSize));
-                    } else if (direction === 'prev') {
+                    } else if (direction === 'prev' && firstVisibleDoc) {
                         q = query(baseQuery, endBefore(firstVisibleDoc), limitToLast(pageSize));
                     } else {
                         q = query(baseQuery, limit(pageSize));
@@ -331,27 +335,35 @@
             };
             
             const performSearch = async () => {
-                const searchTerm = searchInput.value.trim().toUpperCase();
+                const searchTerm = searchInput.value.trim();
                 if (!searchTerm) {
                     fetchPaginatedData('initial');
                     return;
                 }
                 
-                emptyState.innerHTML = `<p>Mencari data...</p>`;
+                emptyState.innerHTML = `<p>Mencari data untuk "${searchTerm}"...</p>`;
                 paginationControls.style.display = 'none';
                 tableBody.innerHTML = '';
                 
-                const nameQuery = query(pegawaiCollectionRef, orderBy('nama'), where('nama', '>=', searchTerm), where('nama', '<=', searchTerm + '\uf8ff'));
-                const nipQuery = query(pegawaiCollectionRef, where('nip', '==', searchTerm));
+                const searchTermUpper = searchTerm.toUpperCase();
                 
-                const [nameResults, nipResults] = await Promise.all([getDocs(nameQuery), getDocs(nipQuery)]);
+                const nameQuery = query(pegawaiCollectionRef, orderBy('nama'), where('nama', '>=', searchTermUpper), where('nama', '<=', searchTermUpper + '\uf8ff'));
+                const nipQuery = query(pegawaiCollectionRef, where('nip', '==', searchTerm));
+                const tugasQuery = query(pegawaiCollectionRef, orderBy('tempatTugas'), where('tempatTugas', '>=', searchTermUpper), where('tempatTugas', '<=', searchTermUpper + '\uf8ff'));
+                
+                const [nameResults, nipResults, tugasResults] = await Promise.all([
+                    getDocs(nameQuery), 
+                    getDocs(nipQuery),
+                    getDocs(tugasQuery)
+                ]);
                 
                 const resultsMap = new Map();
                 nameResults.docs.forEach(doc => resultsMap.set(doc.id, { id: doc.id, ...doc.data() }));
                 nipResults.docs.forEach(doc => resultsMap.set(doc.id, { id: doc.id, ...doc.data() }));
+                tugasResults.docs.forEach(doc => resultsMap.set(doc.id, { id: doc.id, ...doc.data() }));
                 
                 const combinedResults = Array.from(resultsMap.values());
-                combinedResults.sort((a,b) => a.nama.localeCompare(b.nama));
+                combinedResults.sort((a,b) => (a.nama || '').localeCompare(b.nama || ''));
                 
                 renderTable(combinedResults, true);
             };
@@ -362,7 +374,7 @@
                 currentPage = 1;
                 lastVisibleDoc = null;
                 firstVisibleDoc = null;
-                searchTimeout = setTimeout(performSearch, 500);
+                searchTimeout = setTimeout(performSearch, 300);
             });
 
             nextBtn.addEventListener('click', () => {
@@ -390,7 +402,7 @@
                     const namaPegawai = target.dataset.nama;
                     if(confirm(`Yakin ingin menghapus data pegawai: ${namaPegawai}?`)){
                         await deleteDoc(docRef);
-                        fetchPaginatedData(); 
+                        fetchPaginatedData('initial'); 
                     }
                 }
                 
@@ -443,14 +455,94 @@
                     await addDoc(pegawaiCollectionRef, data);
                 }
                 pegawaiModal.style.display = 'none';
-                fetchPaginatedData();
+                fetchPaginatedData('initial');
             });
 
             importBtn.addEventListener('click', () => excelFile.click());
             
-            excelFile.addEventListener('change', (event) => { /* Logika Impor di sini */ });
-            const downloadTemplate = () => { /* Logika Template di sini */ };
+            excelFile.addEventListener('change', (event) => {
+                const file = event.target.files[0];
+                if (!file) return;
+
+                const reader = new FileReader();
+                reader.onload = async (e) => {
+                    try {
+                        const data = new Uint8Array(e.target.result);
+                        const workbook = XLSX.read(data, { type: 'array' });
+                        const sheetName = workbook.SheetNames[0];
+                        const worksheet = workbook.Sheets[sheetName];
+                        const json = XLSX.utils.sheet_to_json(worksheet);
+                        
+                        if (json.length === 0) {
+                            alert('File Excel kosong.'); return;
+                        }
+
+                        if (confirm(`Anda akan mengimpor ${json.length} data pegawai. Lanjutkan?`)) {
+                            const batch = writeBatch(db);
+                            json.forEach(item => {
+                                const docRef = doc(collection(db, "pegawai"));
+                                batch.set(docRef, {
+                                    nama: String(item.nama || ''), nip: String(item.nip || ''), 
+                                    lp: String(item.lp || ''), tempatTugas: String(item.tempatTugas || ''), 
+                                    kecamatan: String(item.kecamatan || ''), jabatan: String(item.jabatan || ''),
+                                    pendidikanTerakhir: String(item.pendidikanTerakhir || ''), 
+                                    statusPegawai: String(item.statusPegawai || ''),
+                                    golongan: String(item.golongan || ''),
+                                });
+                            });
+                            await batch.commit();
+                            alert(`${json.length} data telah berhasil diimpor.`);
+                            fetchPaginatedData('initial');
+                        }
+                    } catch (err) {
+                        alert('Gagal memproses file Excel. Pastikan formatnya benar.');
+                        console.error(err);
+                    } finally {
+                        excelFile.value = '';
+                    }
+                };
+                reader.readAsArrayBuffer(file);
+            });
+            
+            const downloadTemplate = () => {
+                const templateData = [{
+                    nama: "Contoh: Budi Santoso, S.Pd.", nip: "198501012010011001", lp: "L",
+                    tempatTugas: "SDN Suka Maju 1", kecamatan: "Simpang Empat", 
+                    jabatan: "Guru Kelas", pendidikanTerakhir: "S1 PGSD", 
+                    statusPegawai: "PNS", golongan: "III/d"
+                }];
+                const worksheet = XLSX.utils.json_to_sheet(templateData);
+                const workbook = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(workbook, worksheet, "Template Data Pegawai");
+                XLSX.writeFile(workbook, "Template_Import_Pegawai.xlsx");
+            };
             templateBtn.addEventListener('click', downloadTemplate);
+
+            const clearAllData = async () => {
+                const allDocsSnapshot = await getDocs(query(pegawaiCollectionRef));
+                if(allDocsSnapshot.empty) {
+                    alert("Database pegawai sudah kosong."); return;
+                }
+                if (prompt('PERINGATAN: Tindakan ini akan menghapus SEMUA data pegawai secara permanen. Ketik "HAPUS" untuk mengonfirmasi.') === 'HAPUS') {
+                    clearBtn.textContent = 'Menghapus...'; clearBtn.disabled = true;
+                    try {
+                        const batch = writeBatch(db);
+                        allDocsSnapshot.docs.forEach(doc => {
+                            batch.delete(doc.ref);
+                        });
+                        await batch.commit();
+                        alert('Semua data pegawai berhasil dihapus.');
+                        fetchPaginatedData('initial');
+                    } catch(error) {
+                        alert("Terjadi kesalahan saat membersihkan data.");
+                    } finally {
+                        clearBtn.textContent = 'Bersihkan Data'; clearBtn.disabled = false;
+                    }
+                } else {
+                    alert("Penghapusan dibatalkan.");
+                }
+            };
+            clearBtn.addEventListener('click', clearAllData);
             
             fetchPaginatedData('initial');
         };
