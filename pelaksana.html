@@ -31,116 +31,39 @@
             margin: 0; padding: 2rem; color: var(--gray-700);
         }
         .container { max-width: 1280px; margin: 0 auto; }
-        
-        /* Tata Letak Header Baru */
-        .header-top-bar {
-            display: flex;
-            justify-content: flex-end;
-            align-items: center;
-            margin-bottom: 0.5rem;
-        }
-        .user-info {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-            font-size: 14px;
-        }
+        .header-top-bar { display: flex; justify-content: flex-end; align-items: center; margin-bottom: 0.5rem; }
+        .user-info { display: flex; align-items: center; gap: 1rem; font-size: 14px; }
         .user-info span { color: var(--gray-700); font-weight: 500; }
-        .logout-button {
-            background: none; border: none; color: var(--primary-color);
-            font-weight: 500; cursor: pointer; text-decoration: underline;
-            padding: 0; font-size: 14px;
-        }
-
-        header {
-            display: flex; justify-content: space-between; align-items: center;
-            margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem;
-        }
-        header h1 {
-            color: var(--gray-900); margin: 0; font-size: 1.875rem; font-weight: 700;
-        }
+        .logout-button { background: none; border: none; color: var(--primary-color); font-weight: 500; cursor: pointer; text-decoration: underline; padding: 0; font-size: 14px; }
+        header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem; }
+        header h1 { color: var(--gray-900); margin: 0; font-size: 1.875rem; font-weight: 700; }
         .header-buttons { display: flex; gap: 0.75rem; }
-        .action-button {
-            background-color: var(--card-background); color: var(--gray-700);
-            border: 1px solid var(--gray-200); padding: 10px 16px; font-size: 14px;
-            font-weight: 500; border-radius: 6px; cursor: pointer;
-            text-decoration: none; display: inline-flex; align-items: center; gap: 8px;
-            transition: all 0.2s ease;
-        }
+        .action-button { background-color: var(--card-background); color: var(--gray-700); border: 1px solid var(--gray-200); padding: 10px 16px; font-size: 14px; font-weight: 500; border-radius: 6px; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; transition: all 0.2s ease; }
         .action-button:hover { background-color: var(--gray-100); box-shadow: var(--shadow-sm); }
-        .back-button {
-             background-color: var(--primary-color);
-            border-color: var(--primary-color);
-            color: white;
-        }
-         .back-button:hover {
-            background-color: var(--primary-hover);
-        }
-        .primary-button {
-            background-color: #10B981; color: white; border: none;
-            padding: 12px 20px; font-size: 14px; font-weight: 500;
-            border-radius: 6px; cursor: pointer;
-        }
+        .back-button { background-color: var(--primary-color); border-color: var(--primary-color); color: white; }
+        .back-button:hover { background-color: var(--primary-hover); }
+        .primary-button { background-color: #10B981; color: white; border: none; padding: 12px 20px; font-size: 14px; font-weight: 500; border-radius: 6px; cursor: pointer; }
         .primary-button:hover { background-color: #059669; }
-        main {
-            background-color: var(--card-background); border-radius: 8px;
-            box-shadow: var(--shadow-md); overflow: hidden;
-        }
+        main { background-color: var(--card-background); border-radius: 8px; box-shadow: var(--shadow-md); overflow: hidden; }
         .data-table { width: 100%; border-collapse: collapse; }
-        .data-table th, .data-table td {
-            padding: 16px; text-align: left; vertical-align: middle;
-            border-bottom: 1px solid var(--gray-200); font-size: 14px;
-        }
-        .data-table th {
-            background-color: var(--gray-100); color: var(--gray-500);
-            font-size: 12px; font-weight: 500; text-transform: uppercase;
-        }
+        .data-table th, .data-table td { padding: 16px; text-align: left; vertical-align: middle; border-bottom: 1px solid var(--gray-200); font-size: 14px; }
+        .data-table th { background-color: var(--gray-100); color: var(--gray-500); font-size: 12px; font-weight: 500; text-transform: uppercase; }
         .empty-state { text-align: center; padding: 48px; color: var(--gray-500); }
         .action-button-group { display: flex; justify-content: flex-end; gap: 12px; }
-        .icon-button {
-            background: none; border: none; cursor: pointer; padding: 4px;
-            border-radius: 50%; display: flex; align-items: center;
-            justify-content: center; transition: background-color 0.2s ease;
-        }
+        .icon-button { background: none; border: none; cursor: pointer; padding: 4px; border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: background-color 0.2s ease; }
         .icon-button svg { width: 18px; height: 18px; }
-        .edit-btn { color: var(--warning-color); }
-        .edit-btn:hover { background-color: #FEF3C7; }
-        .delete-btn { color: var(--danger-color); }
-        .delete-btn:hover { background-color: #FEE2E2; }
-        
-        .modal {
-            display: none; position: fixed; z-index: 1000; left: 0; top: 0;
-            width: 100%; height: 100%; overflow: auto;
-            background-color: rgba(17, 24, 39, 0.6); backdrop-filter: blur(4px);
-        }
-        .modal-content {
-            background-color: var(--card-background); margin: 5% auto; padding: 32px;
-            border-radius: 8px; width: 90%; max-width: 500px; position: relative;
-            box-shadow: var(--shadow-md); animation: fadeIn 0.3s ease-out;
-        }
-        @keyframes fadeIn {
-            from {opacity: 0; transform: translateY(-20px) scale(0.98);}
-            to {opacity: 1; transform: translateY(0) scale(1);}
-        }
+        .edit-btn { color: var(--warning-color); } .edit-btn:hover { background-color: #FEF3C7; }
+        .delete-btn { color: var(--danger-color); } .delete-btn:hover { background-color: #FEE2E2; }
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(17, 24, 39, 0.6); backdrop-filter: blur(4px); }
+        .modal-content { background-color: var(--card-background); margin: 5% auto; padding: 32px; border-radius: 8px; width: 90%; max-width: 500px; position: relative; box-shadow: var(--shadow-md); animation: fadeIn 0.3s ease-out; }
+        @keyframes fadeIn { from {opacity: 0; transform: translateY(-20px) scale(0.98);} to {opacity: 1; transform: translateY(0) scale(1);} }
         .modal-header h2 { margin: 0; color: var(--gray-900); }
-        .close-button {
-            color: var(--gray-500); position: absolute; top: 16px; right: 16px;
-            font-size: 28px; font-weight: bold; cursor: pointer;
-        }
+        .close-button { color: var(--gray-500); position: absolute; top: 16px; right: 16px; font-size: 28px; font-weight: bold; cursor: pointer; }
         .form-group { margin-bottom: 20px; }
-        .form-group label {
-            display: block; margin-bottom: 8px; font-weight: 500;
-            font-size: 14px; color: var(--gray-700);
-        }
-        .form-group input {
-            width: 100%; padding: 10px 12px; box-sizing: border-box;
-            border: 1px solid var(--gray-200); border-radius: 6px;
-            transition: all 0.2s ease;
-        }
-        .form-group input:focus {
-            outline: none; border-color: var(--primary-color);
-            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.2);
-        }
+        .form-group label { display: block; margin-bottom: 8px; font-weight: 500; font-size: 14px; color: var(--gray-700); }
+        .form-group input { width: 100%; padding: 10px 12px; box-sizing: border-box; border: 1px solid var(--gray-200); border-radius: 6px; transition: all 0.2s ease; }
+        .form-group input:focus { outline: none; border-color: var(--primary-color); box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.2); }
+        .form-group input[readonly] { background-color: var(--gray-100); }
     </style>
 </head>
 <body style="display: none;">
@@ -167,7 +90,8 @@
                         <tr>
                             <th>No</th>
                             <th>Nama Lengkap</th>
-                            <th>NIP (Password Login)</th>
+                            <th>NIP (UID Akun)</th>
+                            <th>Email Akun</th>
                             <th>Bidang</th>
                             <th>Aksi</th>
                         </tr>
@@ -194,8 +118,12 @@
                     <input type="text" id="nama" required>
                 </div>
                 <div class="form-group">
-                    <label for="nip">NIP (digunakan sebagai password)</label>
+                    <label for="nip">NIP (akan menjadi UID dan Password)</label>
                     <input type="text" id="nip" required>
+                </div>
+                <div class="form-group">
+                    <label for="email">Email Login (otomatis)</label>
+                    <input type="email" id="email" required readonly>
                 </div>
                 <div class="form-group">
                     <label for="bidang">Bidang</label>
@@ -208,16 +136,12 @@
 
      <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js";
-        import { getFirestore, collection, onSnapshot, doc, getDoc, addDoc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore.js";
+        import { getAuth, signOut } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-auth.js";
+        import { getFirestore, collection, onSnapshot, doc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore.js";
+        import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-functions.js";
 
+        // --- INISIALISASI ---
         document.body.style.display = 'block';
-        
-        document.getElementById('userNameDisplay').textContent = `Halo, ${sessionStorage.getItem('userName')}`;
-        document.getElementById('logoutButton').addEventListener('click', () => {
-            sessionStorage.clear();
-            window.location.href = './login.html';
-        });
-
         const firebaseConfig = {
             apiKey: "AIzaSyBM4RhHUdQxSEPVBGhjf4R8UGfzMmD7egU",
             authDomain: "dashboard-kegiatan-saya.firebaseapp.com",
@@ -226,11 +150,12 @@
             messagingSenderId: "1078549240220",
             appId: "1:1078549240220:web:7d372e7b50b6f9545a9059"
         };
-
         const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
         const db = getFirestore(app);
-        const pelaksanaCollectionRef = collection(db, "pelaksana");
+        const functions = getFunctions(app, 'asia-southeast2'); // Sesuaikan region jika perlu
 
+        // --- ELEMEN DOM & PENGATURAN AWAL ---
         const tableBody = document.getElementById('pelaksanaTableBody');
         const emptyState = document.getElementById('emptyState');
         const modal = document.getElementById('pelaksanaModal');
@@ -240,12 +165,20 @@
         const modalTitle = document.getElementById('modalTitle');
         const submitBtn = document.getElementById('submitBtn');
         const pelaksanaIdInput = document.getElementById('pelaksanaId');
-
+        
+        document.getElementById('userNameDisplay').textContent = `Halo, ${sessionStorage.getItem('userName')}`;
+        document.getElementById('logoutButton').addEventListener('click', () => signOut(auth).then(() => {
+            sessionStorage.clear();
+            window.location.href = './login.html';
+        }));
+        
+        // --- LOGIKA MODAL ---
         const openModal = () => {
             form.reset();
             pelaksanaIdInput.value = '';
             modalTitle.textContent = 'Tambah Data Pelaksana';
             submitBtn.textContent = 'Simpan Data';
+            document.getElementById('nip').readOnly = false;
             modal.style.display = 'block';
         };
         const closeModal = () => modal.style.display = 'none';
@@ -253,7 +186,14 @@
         openModalBtn.onclick = openModal;
         closeModalBtn.onclick = closeModal;
 
-        onSnapshot(pelaksanaCollectionRef, (snapshot) => {
+        // Auto-generate email dari NIP
+        document.getElementById('nip').addEventListener('input', (e) => {
+            const nip = e.target.value;
+            document.getElementById('email').value = nip ? `${nip}@simdik.tanbu` : '';
+        });
+
+        // --- RENDER TABEL (READ) ---
+        onSnapshot(collection(db, "pelaksana"), (snapshot) => {
             const allPelaksana = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
             tableBody.innerHTML = '';
 
@@ -268,6 +208,7 @@
                         <td>${index + 1}</td>
                         <td>${pelaksana.nama}</td>
                         <td>${pelaksana.nip}</td>
+                        <td>${pelaksana.email || `${pelaksana.nip}@simdik.tanbu`}</td>
                         <td>${pelaksana.bidang}</td>
                         <td>
                             <div class="action-button-group">
@@ -280,51 +221,84 @@
             }
         });
 
+        // --- AKSI EDIT & DELETE ---
         tableBody.addEventListener('click', async (e) => {
             const target = e.target.closest('.icon-button');
             if (!target) return;
             
-            const id = target.dataset.id;
-            const docRef = doc(db, "pelaksana", id);
+            const id = target.dataset.id; // NIP adalah ID dokumen
 
+            // LOGIKA EDIT (Hanya update data Firestore)
             if (target.classList.contains('edit-btn')) {
+                const docRef = doc(db, "pelaksana", id);
                 const docSnap = await getDoc(docRef);
                 if (docSnap.exists()) {
                     const data = docSnap.data();
                     pelaksanaIdInput.value = id;
                     modal.querySelector('#nama').value = data.nama;
                     modal.querySelector('#nip').value = data.nip;
+                    modal.querySelector('#email').value = data.email || `${data.nip}@simdik.tanbu`;
                     modal.querySelector('#bidang').value = data.bidang;
+                    document.getElementById('nip').readOnly = true; // NIP tidak boleh diubah
                     modalTitle.textContent = 'Edit Data Pelaksana';
                     submitBtn.textContent = 'Update Data';
                     modal.style.display = 'block';
                 }
             }
 
+            // LOGIKA DELETE (Memanggil Cloud Function)
             if (target.classList.contains('delete-btn')) {
                 const nama = target.dataset.nama;
-                if (confirm(`Apakah Anda yakin ingin menghapus pelaksana "${nama}"?`)) {
-                    await deleteDoc(docRef);
+                if (confirm(`Menghapus "${nama}" juga akan menghapus akun login permanen. Anda yakin?`)) {
+                    submitBtn.disabled = true;
+                    try {
+                        const deletePelaksana = httpsCallable(functions, 'deletePelaksana');
+                        const result = await deletePelaksana({ uid: id });
+                        alert(result.data.message);
+                    } catch (error) {
+                        console.error("Error saat menghapus pelaksana:", error);
+                        alert(`Gagal menghapus: ${error.message}`);
+                    } finally {
+                        submitBtn.disabled = false;
+                    }
                 }
             }
         });
 
+        // --- AKSI CREATE & UPDATE ---
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Menyimpan...';
+
             const id = pelaksanaIdInput.value;
             const data = {
                 nama: form.querySelector('#nama').value,
                 nip: form.querySelector('#nip').value,
+                email: form.querySelector('#email').value,
                 bidang: form.querySelector('#bidang').value,
             };
 
-            if (id) {
-                const docRef = doc(db, "pelaksana", id);
-                await updateDoc(docRef, data);
-            } else {
-                await addDoc(pelaksanaCollectionRef, data);
+            try {
+                // Jika ada ID, berarti ini adalah proses UPDATE
+                if (id) {
+                    const docRef = doc(db, "pelaksana", id);
+                    await updateDoc(docRef, data);
+                    alert('Data berhasil diperbarui!');
+                } else {
+                    // Jika tidak ada ID, ini adalah proses CREATE (panggil Cloud Function)
+                    const createPelaksana = httpsCallable(functions, 'createPelaksana');
+                    const result = await createPelaksana(data);
+                    alert(result.data.message);
+                }
+                closeModal();
+            } catch (error) {
+                console.error("Error saat menyimpan data:", error);
+                alert(`Gagal menyimpan: ${error.message}`);
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Simpan Data';
             }
-            closeModal();
         });
 
     </script>
