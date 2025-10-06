@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pendaftaran Kegiatan</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #4F46E5; --primary-hover: #4338CA;
+            --danger-color: #FEE2E2; --danger-text: #991B1B;
+            --success-color: #D1FAE5; --success-text: #065F46;
+            --gray-100: #F3F4F6; --gray-200: #E5E7EB; --gray-500: #6B7280;
+            --gray-700: #374151; --gray-900: #111827;
+            --background-color: #F9FAFB; --card-background: #FFFFFF;
+            --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        }
+        body {
+            font-family: 'Inter', sans-serif; background-color: var(--background-color);
+            margin: 0; display: flex; justify-content: center; align-items: flex-start;
+            min-height: 100vh; padding: 2rem; box-sizing: border-box;
+        }
+        .container {
+            width: 100%; max-width: 600px; background-color: var(--card-background);
+            padding: 32px; border-radius: 8px; box-shadow: var(--shadow-md);
+            margin-top: 2rem; margin-bottom: 2rem;
+        }
+        #loadingState, #errorState, #successState, #closedState { text-align: center; padding: 2rem; color: var(--gray-500); }
+        .hidden { display: none; }
+        h1, h2 { color: var(--gray-900); font-weight: 600; margin-top: 0; }
+        h1 { font-size: 1.5rem; margin-bottom: 8px; line-height: 1.2; }
+        h2 { font-size: 1.25rem; }
+        #detailKegiatan p { margin: 4px 0; color: var(--gray-500); font-size: 14px; }
+        hr { border: none; border-top: 1px solid var(--gray-100); margin: 24px 0; }
+        .form-group { margin-bottom: 20px; }
+        .form-group label { display: block; margin-bottom: 8px; font-weight: 500; font-size: 14px; color: var(--gray-700); }
+        .form-group input, .form-group select {
+            width: 100%; padding: 10px 12px; box-sizing: border-box;
+            border: 1px solid var(--gray-200); border-radius: 6px;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+        .form-group input:focus, .form-group select:focus {
+            outline: none; border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.2);
+        }
+        .form-group input[readonly] { background-color: var(--gray-100); cursor: not-allowed; }
+        .primary-button {
+            background-color: var(--primary-color); color: white; border: none; padding: 12px 20px;
+            font-size: 14px; font-weight: 500; border-radius: 6px; cursor: pointer; width: 100%;
+            transition: background-color 0.2s ease;
+        }
+        .primary-button:hover { background-color: #4338CA; }
+        .primary-button:disabled { background-color: var(--gray-200); cursor: not-allowed; }
+        .check-group { display: flex; gap: 10px; align-items: flex-end; }
+        .message {
+            padding: 12px; border-radius: 6px; font-size: 14px;
+            margin-top: 10px; text-align: center;
+        }
+        .message.error { background-color: var(--danger-color); color: var(--danger-text); }
+        .message.success { background-color: var(--success-color); color: var(--success-text); }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div id="loadingState"> <p>Memuat detail kegiatan...</p> </div>
+        <div id="errorState" class="hidden"> <h2>Kegiatan Tidak Ditemukan</h2> <p>Link pendaftaran mungkin salah atau kegiatan telah dihapus.</p> </div>
+        <div id="closedState" class="hidden"> <h2>Pendaftaran Ditutup</h2> <p id="closedMessage"></p> </div>
+
+        <div id="registrationContent" class="hidden">
+            <div id="detailKegiatan">
+                <h1 id="namaKegiatanDisplay"></h1>
+                <p><strong>Tanggal:</strong> <span id="tanggalDisplay"></span></p>
+                <p><strong>Tempat:</strong> <span id="tempatDisplay"></span></p>
+            </div>
+            <hr>
+            
+            <h2>Form Pendaftaran Peserta</h2>
+            
+            <div id="npsnContainer" class="form-group">
+                <label for="npsnCheck">Langkah 1: Masukkan NPSN Sekolah Anda</label>
+                <div class="check-group">
+                    <input type="text" id="npsnCheck" required style="flex-grow: 1;">
+                    <button type="button" id="cekNpsnBtn" class="primary-button" style="width: auto; flex-shrink: 0;">Cek Sekolah</button>
+                </div>
+                <div id="npsnMessage" class="message" style="display: none;"></div>
+            </div>
+
+            <div id="pegawaiContainer" class="form-group hidden">
+                <hr>
+                <label for="pegawaiSelect">Langkah 2: Pilih Nama Anda</label>
+                <select id="pegawaiSelect"></select>
+                <div id="pegawaiMessage" class="message" style="display: none;"></div>
+            </div>
+            
+            <form id="formPendaftaran" class="hidden">
+                <hr>
+                <div class="form-group">
+                    <label for="namaLengkap">Nama Lengkap (Bisa diedit jika ada salah ketik/gelar)</label>
+                    <input type="text" id="namaLengkap" required>
+                </div>
+                <div class="form-group hidden">
+                    <label for="nik">NIK</label>
+                    <input type="text" id="nik" readonly>
+                </div>
+                 <div class="form-group">
+                    <label for="nip">NIP</label>
+                    <input type="text" id="nip" readonly>
+                </div>
+                <div class="form-group">
+                    <label for="jabatan">Jabatan</label>
+                    <input type="text" id="jabatan" readonly>
+                </div>
+                <div class="form-group">
+                    <label for="asalInstansi">Asal Instansi/Sekolah</label>
+                    <input type="text" id="asalInstansi" readonly required>
+                </div>
+                <div class="form-group">
+                    <label for="kecamatan">Kecamatan</label>
+                    <input type="text" id="kecamatan" readonly required>
+                </div>
+                <button type="submit" class="primary-button">Daftar Sekarang</button>
+            </form>
+        </div>
+
+        <div id="successState" class="hidden"> <h2>Pendaftaran Berhasil!</h2> <p>Terima kasih, data Anda telah kami terima.</p> </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js";
+        import { getFirestore, doc, getDoc, collection, addDoc, query, where, getDocs, getCountFromServer, updateDoc } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyBM4RhHUdQxSEPVBGhjf4R8UGfzMmD7egU",
+            authDomain: "dashboard-kegiatan-saya.firebaseapp.com",
+            projectId: "dashboard-kegiatan-saya",
+            storageBucket: "dashboard-kegiatan-saya.appspot.com",
+            messagingSenderId: "1078549240220",
+            appId: "1:1078549240220:web:7d372e7b50b6f9545a9059"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        const loadingState = document.getElementById('loadingState');
+        const errorState = document.getElementById('errorState');
+        const closedState = document.getElementById('closedState');
+        const registrationContent = document.getElementById('registrationContent');
+        const successState = document.getElementById('successState');
+        
+        const npsnInput = document.getElementById('npsnCheck');
+        const cekNpsnBtn = document.getElementById('cekNpsnBtn');
+        const npsnMessage = document.getElementById('npsnMessage');
+
+        const pegawaiContainer = document.getElementById('pegawaiContainer');
+        const pegawaiSelect = document.getElementById('pegawaiSelect');
+        const pegawaiMessage = document.getElementById('pegawaiMessage');
+
+        const formPendaftaran = document.getElementById('formPendaftaran');
+        
+        let kegiatanData = {};
+        let foundPegawaiId = null;
+        let allPegawaiInSchool = [];
+
+        const getKegiatanId = () => new URLSearchParams(window.location.search).get('id');
+        const formatDate = (dateString) => {
+            if (!dateString) return '';
+            const date = new Date(dateString);
+            return new Intl.DateTimeFormat('id-ID', { dateStyle: 'full' }).format(date);
+        }
+
+        const loadKegiatanData = async () => {
+            const kegiatanId = getKegiatanId();
+            if (!kegiatanId) {
+                loadingState.classList.add('hidden');
+                errorState.classList.remove('hidden');
+                return;
+            }
+            const docRef = doc(db, "kegiatan", kegiatanId);
+            const docSnap = await getDoc(docRef);
+
+            if (docSnap.exists()) {
+                kegiatanData = docSnap.data();
+                const now = new Date();
+                const endDate = new Date(kegiatanData.tanggalBerakhir);
+                endDate.setHours(23, 59, 59, 999);
+                if (now > endDate) {
+                    loadingState.classList.add('hidden');
+                    document.getElementById('closedMessage').textContent = 'Mohon maaf, pendaftaran untuk acara ini telah selesai dilaksanakan.';
+                    closedState.classList.remove('hidden');
+                    return;
+                }
+                document.getElementById('namaKegiatanDisplay').textContent = kegiatanData.nama;
+                document.getElementById('tanggalDisplay').textContent = `${formatDate(kegiatanData.tanggalMulai)} - ${formatDate(kegiatanData.tanggalBerakhir)}`;
+                document.getElementById('tempatDisplay').textContent = kegiatanData.tempat;
+                loadingState.classList.add('hidden');
+                registrationContent.classList.remove('hidden');
+            } else {
+                loadingState.classList.add('hidden');
+                errorState.classList.remove('hidden');
+            }
+        };
+
+        cekNpsnBtn.addEventListener('click', async () => {
+            const npsn = npsnInput.value.trim();
+            if (!npsn) return;
+
+            cekNpsnBtn.textContent = 'Mencari...';
+            cekNpsnBtn.disabled = true;
+            
+            const kegiatanId = getKegiatanId();
+
+            try {
+                // Cari sekolah berdasarkan NPSN
+                const sekolahRef = collection(db, "sekolah");
+                const qSekolah = query(sekolahRef, where("npsn", "==", npsn));
+                const sekolahSnapshot = await getDocs(qSekolah);
+
+                if (sekolahSnapshot.empty) {
+                    throw new Error('NPSN tidak ditemukan di database.');
+                }
+
+                const sekolahData = sekolahSnapshot.docs[0].data();
+                formPendaftaran.querySelector('#asalInstansi').value = sekolahData.namaSekolah;
+                formPendaftaran.querySelector('#kecamatan').value = sekolahData.kecamatan;
+                npsnMessage.textContent = `Sekolah ditemukan: ${sekolahData.namaSekolah}`;
+                npsnMessage.className = 'message success';
+                npsnInput.readOnly = true;
+                cekNpsnBtn.style.display = 'none';
+
+                // Ambil data peserta yang sudah terdaftar untuk kegiatan ini
+                const pesertaRef = collection(db, "kegiatan", kegiatanId, "peserta");
+                const qPeserta = query(pesertaRef);
+                const pesertaSnapshot = await getDocs(qPeserta);
+                const registeredNiks = new Set(pesertaSnapshot.docs.map(doc => doc.data().nik));
+
+                // Ambil data pegawai berdasarkan sekolah
+                const pegawaiRef = collection(db, "pegawai");
+                const qPegawai = query(pegawaiRef, where("tempatTugas", "==", sekolahData.namaSekolah));
+                const pegawaiSnapshot = await getDocs(qPegawai);
+                allPegawaiInSchool = pegawaiSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                
+                // Filter pegawai yang belum terdaftar
+                const availablePegawai = allPegawaiInSchool.filter(pegawai => !registeredNiks.has(pegawai.nik));
+                
+                pegawaiSelect.innerHTML = '<option value="">-- Pilih Nama Anda --</option>';
+                if (availablePegawai.length > 0) {
+                    availablePegawai.sort((a, b) => a.nama.localeCompare(b.nama));
+                    availablePegawai.forEach(pegawai => {
+                        pegawaiSelect.innerHTML += `<option value="${pegawai.id}">${pegawai.nama}</option>`;
+                    });
+                    pegawaiMessage.style.display = 'none';
+                } else {
+                    pegawaiMessage.textContent = 'Tidak ada pegawai yang tersedia untuk didaftarkan dari sekolah ini, kemungkinan semua sudah terdaftar.';
+                    pegawaiMessage.className = 'message error';
+                    pegawaiMessage.style.display = 'block';
+                }
+                pegawaiContainer.classList.remove('hidden');
+
+            } catch (error) {
+                npsnMessage.textContent = error.message;
+                npsnMessage.className = 'message error';
+            } finally {
+                npsnMessage.style.display = 'block';
+                cekNpsnBtn.textContent = 'Cek Sekolah';
+                cekNpsnBtn.disabled = false;
+            }
+        });
+        
+        pegawaiSelect.addEventListener('change', () => {
+            const selectedId = pegawaiSelect.value;
+            if (!selectedId) {
+                formPendaftaran.classList.add('hidden');
+                return;
+            }
+
+            const pegawaiData = allPegawaiInSchool.find(p => p.id === selectedId);
+            if(pegawaiData) {
+                foundPegawaiId = pegawaiData.id;
+                
+                formPendaftaran.querySelector('#namaLengkap').value = pegawaiData.nama || '';
+                formPendaftaran.querySelector('#nik').value = pegawaiData.nik || '';
+                formPendaftaran.querySelector('#nip').value = pegawaiData.nip || '';
+                formPendaftaran.querySelector('#jabatan').value = pegawaiData.jabatan || '';
+
+                formPendaftaran.classList.remove('hidden');
+            }
+        });
+
+        formPendaftaran.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const submitBtn = e.target.querySelector('button[type="submit"]');
+            submitBtn.disabled = true;
+            submitBtn.textContent = "Memproses...";
+
+            const kegiatanId = getKegiatanId();
+            const kuota = kegiatanData.kuotaSekolah || 0;
+            const pj = kegiatanData.pj || "Panitia";
+            const npsn = npsnInput.value;
+
+            if (kuota > 0) {
+                const pesertaCollRef = collection(db, "kegiatan", kegiatanId, "peserta");
+                const q = query(pesertaCollRef, where("npsn", "==", npsn));
+                const snapshot = await getCountFromServer(q);
+                const jumlahTerdaftar = snapshot.data().count;
+
+                if (jumlahTerdaftar >= kuota) {
+                    alert(`Mohon maaf, kuota pendaftaran untuk sekolah Anda (${kuota} orang) sudah terpenuhi.\n\nSilakan hubungi Penanggung Jawab Kegiatan: ${pj}`);
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = "Daftar Sekarang";
+                    return;
+                }
+            }
+            
+            const dataPeserta = {
+                namaLengkap: document.getElementById('namaLengkap').value,
+                nik: document.getElementById('nik').value,
+                nip: document.getElementById('nip').value,
+                asalInstansi: document.getElementById('asalInstansi').value,
+                npsn: npsn,
+                jabatan: document.getElementById('jabatan').value,
+                kecamatan: document.getElementById('kecamatan').value,
+                nomorTelepon: document.getElementById('nomorTelepon').value,
+                tanggalDaftar: new Date()
+            };
+
+            try {
+                const pesertaCollectionRef = collection(db, "kegiatan", kegiatanId, "peserta");
+                await addDoc(pesertaCollectionRef, dataPeserta);
+
+                if (foundPegawaiId) {
+                    const pegawaiDocRef = doc(db, "pegawai", foundPegawaiId);
+                    await updateDoc(pegawaiDocRef, {
+                        nama: dataPeserta.namaLengkap
+                    });
+                }
+
+                registrationContent.classList.add('hidden');
+                successState.classList.remove('hidden');
+
+            } catch (error) {
+                console.error("Error adding/updating document: ", error);
+                alert("Pendaftaran gagal, silakan coba lagi.");
+                submitBtn.disabled = false;
+                submitBtn.textContent = "Daftar Sekarang";
+            }
+        });
+
+        loadKegiatanData();
+    </script>
+
+</body>
+</html>

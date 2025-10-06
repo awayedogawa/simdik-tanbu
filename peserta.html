@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Daftar Peserta - SIMDIK-TANBU</title>
+    
+    <script>
+        if (!sessionStorage.getItem('userRole')) {
+            window.location.href = './login.html';
+        }
+    </script>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Times+New+Roman&display=swap" rel="stylesheet">
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+
+    <style>
+        :root {
+            --primary-color: #4F46E5; --primary-hover: #4338CA;
+            --danger-color: #EF4444; --danger-hover: #DC2626;
+            --warning-color: #F59E0B; --warning-hover: #D97706;
+            --gray-100: #F3F4F6; --gray-200: #E5E7EB; --gray-500: #6B7280;
+            --gray-700: #374151; --gray-900: #111827;
+            --background-color: #F9FAFB; --card-background: #FFFFFF;
+            --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+            --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        }
+        body {
+            font-family: 'Inter', sans-serif; background-color: var(--background-color);
+            margin: 0; padding: 2rem; color: var(--gray-700);
+        }
+        .container { max-width: 1280px; margin: 0 auto; }
+        header { margin-bottom: 1.5rem; }
+        .header-top {
+            display: flex; justify-content: space-between; align-items: flex-start;
+            position: relative; padding-bottom: 1.5rem;
+        }
+        .header-top h1 {
+            color: var(--gray-900); margin: 0; font-size: 1.875rem; font-weight: 700;
+        }
+        .header-top h1 small {
+            display: block; font-size: 1rem; color: var(--gray-500);
+            font-weight: 400; margin-top: 4px;
+        }
+        .user-info {
+            position: absolute; top: 0; right: 0; display: flex;
+            align-items: center; gap: 1rem; font-size: 14px;
+        }
+        .user-info span { color: var(--gray-700); font-weight: 500; }
+        .logout-button {
+            background: none; border: none; color: var(--primary-color);
+            font-weight: 500; cursor: pointer; text-decoration: underline;
+            font-size: 14px; padding: 0;
+        }
+        .header-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+        .main-actions {
+            display: flex;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+        }
+        .action-button {
+            background-color: var(--card-background); color: var(--gray-700);
+            border: 1px solid var(--gray-200); padding: 10px 16px; font-size: 14px;
+            font-weight: 500; border-radius: 6px; cursor: pointer;
+            text-decoration: none; display: inline-flex; align-items: center; gap: 8px;
+            transition: all 0.2s ease;
+        }
+        .action-button:hover { background-color: var(--gray-100); box-shadow: var(--shadow-sm); }
+        .action-button svg { width: 16px; height: 16px; }
+        .download-excel-btn { color: #059669; }
+        .generate-pdf-btn { color: #D97706; }
+        .back-button {
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+            color: white;
+        }
+        .back-button:hover {
+            background-color: var(--primary-hover);
+            border-color: var(--primary-hover);
+            color: white;
+        }
+        main {
+            background-color: var(--card-background); border-radius: 8px;
+            box-shadow: var(--shadow-md); overflow: hidden;
+        }
+        .data-table { width: 100%; border-collapse: collapse; }
+        .data-table th, .data-table td {
+            padding: 16px; text-align: left; vertical-align: middle;
+            border-bottom: 1px solid var(--gray-200); font-size: 14px;
+        }
+        .data-table th {
+            background-color: var(--gray-100); color: var(--gray-500);
+            font-size: 12px; font-weight: 500; text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        .empty-state { text-align: center; padding: 48px; color: var(--gray-500); }
+        .action-button-group { display: flex; justify-content: flex-end; gap: 12px; }
+        .icon-button {
+            background: none; border: none; cursor: pointer; padding: 4px;
+            border-radius: 50%; display: flex; align-items: center;
+            justify-content: center; transition: background-color 0.2s ease;
+        }
+        .icon-button svg { width: 18px; height: 18px; }
+        .edit-btn { color: var(--warning-color); }
+        .edit-btn:hover { background-color: #FEF3C7; }
+        .delete-btn { color: var(--danger-color); }
+        .delete-btn:hover { background-color: #FEE2E2; }
+        
+        .modal {
+            display: none; position: fixed; z-index: 1000; left: 0; top: 0;
+            width: 100%; height: 100%; overflow: auto;
+            background-color: rgba(17, 24, 39, 0.6); backdrop-filter: blur(4px);
+        }
+        .modal-content {
+            background-color: var(--card-background); margin: 5% auto; padding: 32px;
+            border-radius: 8px; width: 90%; max-width: 600px; position: relative;
+            box-shadow: var(--shadow-md); animation: fadeIn 0.3s ease-out;
+        }
+        @keyframes fadeIn {
+            from {opacity: 0; transform: translateY(-20px) scale(0.98);}
+            to {opacity: 1; transform: translateY(0) scale(1);}
+        }
+        .modal-header { margin-bottom: 1.5rem; }
+        .modal-header h2 { margin: 0; color: var(--gray-900); }
+        .close-button {
+            color: var(--gray-500); position: absolute; top: 16px; right: 16px;
+            font-size: 28px; font-weight: bold; cursor: pointer;
+            transition: color 0.2s ease;
+        }
+        .form-group { margin-bottom: 20px; }
+        .form-group label {
+            display: block; margin-bottom: 8px; font-weight: 500;
+            font-size: 14px; color: var(--gray-700);
+        }
+        .form-group input, .form-group select {
+            width: 100%; padding: 10px 12px; box-sizing: border-box;
+            border: 1px solid var(--gray-200); border-radius: 6px;
+            transition: all 0.2s ease;
+        }
+        .form-group input:focus, .form-group select:focus {
+            outline: none; border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.2);
+        }
+        .form-row { display: flex; gap: 20px; }
+        .form-row .form-group { flex: 1; }
+        .modal-footer { display: flex; justify-content: flex-end; }
+        .primary-button {
+            background-color: var(--primary-color); color: white; border: none;
+            padding: 12px 20px; font-size: 14px; font-weight: 500;
+            border-radius: 6px; cursor: pointer; transition: background-color 0.2s ease;
+            display: inline-flex; align-items: center; gap: 8px;
+        }
+        .checkbox-group { display: flex; flex-direction: column; gap: 1rem; margin-bottom: 1.5rem; }
+        .checkbox-item { display: flex; align-items: center; gap: 0.75rem; }
+        .checkbox-item input { width: 1rem; height: 1rem; }
+        .checkbox-item label { font-size: 14px; color: var(--gray-700); }
+    </style>
+</head>
+<body style="display: none;">
+
+    <div class="container">
+        <header>
+            <div class="header-top">
+                <h1 id="headerTitle">Memuat data... <small>Daftar Peserta</small></h1>
+                <div class="user-info">
+                    <span id="userNameDisplay"></span>
+                    <button id="logoutButton" class="logout-button">Logout</button>
+                </div>
+            </div>
+            <div class="header-actions">
+                <div class="main-actions">
+                    <button id="downloadExcelBtn" class="action-button download-excel-btn">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                        Download Excel
+                    </button>
+                    <button id="generatePdfBtn" class="action-button generate-pdf-btn">
+                         <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
+                        Buat Daftar Hadir
+                    </button>
+                </div>
+                <a href="index.html" class="action-button back-button">Kembali ke Dashboard</a>
+            </div>
+        </header>
+        <main>
+             <div style="overflow-x:auto;">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>No</th>
+                            <th>Nama Lengkap</th>
+                            <th>NIP</th>
+                            <th>Asal Instansi/Sekolah</th>
+                            <th>NPSN</th>
+                            <th>Kecamatan</th>
+                            <th>Jabatan</th>
+                            <th>Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody id="pesertaTableBody"></tbody>
+                </table>
+            </div>
+             <div id="emptyState" class="empty-state">
+                <p>Memuat data peserta...</p>
+            </div>
+        </main>
+    </div>
+
+    <div id="pesertaModal" class="modal">
+        <div class="modal-content">
+            <span class="close-button">&times;</span>
+            <div class="modal-header">
+                <h2>Edit Data Peserta</h2>
+            </div>
+            <form id="pesertaForm">
+                <input type="hidden" id="pesertaId">
+                <div class="form-group">
+                    <label for="namaLengkap">Nama Lengkap (Beserta Gelar Akademik)</label>
+                    <input type="text" id="namaLengkap" required>
+                </div>
+                <div class="form-group">
+                    <label for="nip">NIP (Jika ada)</label>
+                    <input type="text" id="nip">
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="asalInstansi">Asal Instansi/Sekolah</label>
+                        <input type="text" id="asalInstansi" required>
+                    </div>
+                     <div class="form-group">
+                        <label for="npsn">NPSN Sekolah</label>
+                        <input type="text" id="npsn">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="jabatan">Jabatan</label>
+                        <input type="text" id="jabatan" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="kecamatan">Kecamatan</label>
+                        <select id="kecamatan" required>
+                            <option value="">-- Pilih Kecamatan --</option>
+                            <option value="Angsana">Angsana</option>
+                            <option value="Batulicin">Batulicin</option>
+                            <option value="Karang Bintang">Karang Bintang</option>
+                            <option value="Kuranji">Kuranji</option>
+                            <option value="Kusan Hilir">Kusan Hilir</option>
+                            <option value="Kusan Hulu">Kusan Hulu</option>
+                            <option value="Kusan Tengah">Kusan Tengah</option>
+                            <option value="Mantewe">Mantewe</option>
+                            <option value="Satui">Satui</option>
+                            <option value="Simpang Empat">Simpang Empat</option>
+                            <option value="Sungai Loban">Sungai Loban</option>
+                            <option value="Teluk Kepayang">Teluk Kepayang</option>
+                        </select>
+                    </div>
+                </div>
+                <button type="submit" class="primary-button" style="width:100%; justify-content:center;">Update Data</button>
+            </form>
+        </div>
+    </div>
+    
+    <div id="pdfOptionsModal" class="modal">
+        <div class="modal-content">
+            <span class="close-button">&times;</span>
+            <div class="modal-header">
+                <h2>Opsi Daftar Hadir (PDF)</h2>
+            </div>
+            <div class="checkbox-group">
+                <div class="checkbox-item">
+                    <input type="checkbox" id="kosongkanTanggal">
+                    <label for="kosongkanTanggal">Kosongkan Tanggal Pelaksanaan</label>
+                </div>
+                <div class="checkbox-item">
+                    <input type="checkbox" id="kosongkanTempat">
+                    <label for="kosongkanTempat">Kosongkan Tempat Pelaksanaan</label>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="confirmGeneratePdfBtn" class="primary-button">Generate PDF</button>
+            </div>
+        </div>
+    </div>
+
+
+     <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js";
+        import { getFirestore, doc, getDoc, collection, onSnapshot, updateDoc, deleteDoc, query, orderBy } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore.js";
+
+        const userRole = sessionStorage.getItem('userRole');
+        const userNip = sessionStorage.getItem('userNip');
+
+        document.body.style.display = 'block';
+        document.getElementById('userNameDisplay').textContent = `Halo, ${sessionStorage.getItem('userName')}`;
+        document.getElementById('logoutButton').addEventListener('click', () => {
+            sessionStorage.clear();
+            window.location.href = './login.html';
+        });
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyBM4RhHUdQxSEPVBGhjf4R8UGfzMmD7egU",
+            authDomain: "dashboard-kegiatan-saya.firebaseapp.com",
+            projectId: "dashboard-kegiatan-saya",
+            storageBucket: "dashboard-kegiatan-saya.appspot.com",
+            messagingSenderId: "1078549240220",
+            appId: "1:1078549240220:web:7d372e7b50b6f9545a9059"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        const headerTitle = document.getElementById('headerTitle');
+        const tableBody = document.getElementById('pesertaTableBody');
+        const emptyState = document.getElementById('emptyState');
+        const dataTable = document.querySelector('.data-table');
+        const downloadExcelBtn = document.getElementById('downloadExcelBtn');
+        const generatePdfBtn = document.getElementById('generatePdfBtn');
+        
+        const pesertaModal = document.getElementById('pesertaModal');
+        const pesertaForm = document.getElementById('pesertaForm');
+        const pesertaIdInput = document.getElementById('pesertaId');
+        
+        const pdfOptionsModal = document.getElementById('pdfOptionsModal');
+        const confirmGeneratePdfBtn = document.getElementById('confirmGeneratePdfBtn');
+        const closeModalPdfBtn = pdfOptionsModal.querySelector('.close-button');
+        const closeModalPesertaBtn = pesertaModal.querySelector('.close-button');
+
+        let currentPesertaList = [];
+        let currentKegiatanData = {};
+        let canManage = false;
+
+        const getKegiatanId = () => new URLSearchParams(window.location.search).get('id');
+        const kegiatanId = getKegiatanId();
+
+        const formatSingleDate = (date) => {
+            const months = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
+            const d = new Date(date);
+            const day = d.getUTCDate();
+            const month = months[d.getUTCMonth()];
+            const year = d.getUTCFullYear();
+            return `${day} ${month} ${year}`;
+        };
+        
+        const downloadExcel = () => {
+             if (currentPesertaList.length === 0) {
+                alert("Tidak ada data peserta untuk diunduh.");
+                return;
+            }
+            const dataToExport = currentPesertaList.map((peserta, index) => ({
+                'No': index + 1, 'Nama Lengkap': peserta.namaLengkap, 'NIP': peserta.nip || '-',
+                'Asal Instansi/Sekolah': peserta.asalInstansi, 'NPSN': peserta.npsn || '-',
+                'Kecamatan': peserta.kecamatan || '-', 'Jabatan': peserta.jabatan,
+            }));
+            const worksheet = XLSX.utils.json_to_sheet(dataToExport);
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, "Daftar Peserta");
+            XLSX.writeFile(workbook, `Daftar Peserta - ${currentKegiatanData.nama}.xlsx`);
+        };
+
+        const generatePdf = () => {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF({ orientation: 'landscape' });
+
+            const kosongkanTanggal = document.getElementById('kosongkanTanggal').checked;
+            const kosongkanTempat = document.getElementById('kosongkanTempat').checked;
+
+            const startDate = new Date(currentKegiatanData.tanggalMulai);
+            const endDate = new Date(currentKegiatanData.tanggalBerakhir);
+            
+            let loopDate = new Date(startDate);
+            let isFirstPage = true;
+
+            while (loopDate <= endDate) {
+                if (!isFirstPage) {
+                    doc.addPage();
+                }
+
+                let yPos = 20;
+
+                doc.setFontSize(16);
+                doc.setFont('times', 'bold');
+                doc.text("DAFTAR HADIR PESERTA", doc.internal.pageSize.getWidth() / 2, yPos, { align: 'center' });
+                yPos += 8;
+                
+                doc.setFontSize(12);
+                doc.text(currentKegiatanData.nama.toUpperCase(), doc.internal.pageSize.getWidth() / 2, yPos, { align: 'center' });
+                yPos += 12;
+                
+                doc.setFontSize(10);
+                doc.setFont('times', 'normal');
+                
+                const tanggalText = kosongkanTanggal ? ".................................................." : formatSingleDate(loopDate);
+                const tempatText = kosongkanTempat ? ".................................................." : currentKegiatanData.tempat;
+
+                doc.text(`Tanggal : ${tanggalText}`, 14, yPos);
+                yPos += 6;
+                doc.text(`Tempat  : ${tempatText}`, 14, yPos);
+                
+                const tableData = currentPesertaList.map((peserta, index) => {
+                    const signatureText = (index % 2 === 0)
+                        ? `${index + 1}. ....................`
+                        : `.................... .${index + 1}`;
+                    return [ index + 1, peserta.namaLengkap, peserta.jabatan, peserta.asalInstansi, peserta.kecamatan || '-', signatureText ];
+                });
+
+                doc.autoTable({
+                    head: [['No', 'Nama Lengkap', 'Jabatan', 'Asal Instansi', 'Kecamatan', 'Tanda Tangan']],
+                    body: tableData,
+                    startY: yPos + 4,
+                    theme: 'grid',
+                    headStyles: { 
+                        fillColor: [41, 128, 185], textColor: 255, fontStyle: 'bold',
+                        halign: 'center', valign: 'middle'
+                    },
+                    styles: {
+                        cellPadding: 3.5, fontSize: 8, valign: 'middle',
+                        lineWidth: 0.1, lineColor: [0, 0, 0]
+                    },
+                    columnStyles: {
+                        0: { cellWidth: 15, halign: 'center' },
+                        1: { cellWidth: 50 },
+                        2: { cellWidth: 35 },
+                        3: { cellWidth: 50 },
+                        4: { cellWidth: 35 },
+                        5: { cellWidth: 'auto' }
+                    },
+                    didParseCell: function(data) {
+                        if (data.cell.section === 'body' && data.column.index === 5) {
+                            const rowNumber = data.row.index + 1;
+                            data.cell.styles.halign = (rowNumber % 2 === 0) ? 'right' : 'left';
+                        }
+                    }
+                });
+
+                loopDate.setUTCDate(loopDate.getUTCDate() + 1);
+                isFirstPage = false;
+            }
+
+            doc.save(`Daftar Hadir - ${currentKegiatanData.nama}.pdf`);
+            pdfOptionsModal.style.display = 'none';
+        };
+
+        const loadPeserta = async () => {
+            if (!kegiatanId) {
+                headerTitle.innerHTML = 'Kegiatan tidak valid <small>Error</small>';
+                emptyState.innerHTML = '<p>ID kegiatan tidak ditemukan di URL.</p>';
+                dataTable.style.display = 'none';
+                return;
+            }
+
+            const kegiatanDocRef = doc(db, "kegiatan", kegiatanId);
+            const kegiatanDocSnap = await getDoc(kegiatanDocRef);
+
+            if (kegiatanDocSnap.exists()) {
+                currentKegiatanData = kegiatanDocSnap.data();
+                headerTitle.innerHTML = `${currentKegiatanData.nama || ''} <small>Daftar Peserta</small>`;
+                const createdBy = currentKegiatanData.createdBy || null;
+                canManage = userRole === 'admin' || createdBy === userNip;
+                listenToPeserta();
+            } else {
+                 headerTitle.innerHTML = 'Kegiatan tidak ditemukan <small>Error</small>';
+                 emptyState.innerHTML = '<p>Data kegiatan ini tidak dapat ditemukan.</p>';
+                 dataTable.style.display = 'none';
+            }
+        };
+
+        const listenToPeserta = () => {
+            const pesertaCollectionRef = collection(db, "kegiatan", kegiatanId, "peserta");
+            const q = query(pesertaCollectionRef, orderBy("tanggalDaftar", "desc"));
+            
+            onSnapshot(q, (snapshot) => {
+                currentPesertaList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                tableBody.innerHTML = '';
+
+                if (currentPesertaList.length === 0) {
+                    emptyState.innerHTML = '<p>Belum ada peserta yang mendaftar.</p>';
+                    emptyState.style.display = 'block';
+                    dataTable.style.display = 'none';
+                } else {
+                    emptyState.style.display = 'none';
+                    dataTable.style.display = 'table';
+                    currentPesertaList.forEach((peserta, index) => {
+                        const row = tableBody.insertRow();
+                        row.innerHTML = `
+                            <td>${index + 1}</td>
+                            <td>${peserta.namaLengkap || ''}</td>
+                            <td>${peserta.nip || '-'}</td>
+                            <td>${peserta.asalInstansi || ''}</td>
+                            <td>${peserta.npsn || '-'}</td>
+                            <td>${peserta.kecamatan || ''}</td>
+                            <td>${peserta.jabatan || ''}</td>
+                            <td>
+                                ${canManage ? `
+                                <div class="action-button-group">
+                                    <button class="icon-button edit-btn" data-id="${peserta.id}" title="Edit"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z" /><path fill-rule="evenodd" d="M2 6a2 2 0 012-2h4a1 1 0 010 2H4v10h10v-4a1 1 0 112 0v4a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" clip-rule="evenodd" /></svg></button>
+                                    <button class="icon-button delete-btn" data-id="${peserta.id}" data-nama="${peserta.namaLengkap}" title="Hapus"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" /></svg></button>
+                                </div>
+                                ` : ''}
+                            </td>
+                        `;
+                    });
+                }
+            });
+        };
+        
+        tableBody.addEventListener('click', async (e) => {
+            const target = e.target.closest('.icon-button');
+            if (!target) return;
+
+            const pesertaId = target.dataset.id;
+            const pesertaRef = doc(db, "kegiatan", kegiatanId, "peserta", pesertaId);
+
+            if (target.classList.contains('delete-btn')) {
+                const nama = target.dataset.nama;
+                if (confirm(`Apakah Anda yakin ingin menghapus peserta "${nama}"?`)) {
+                    await deleteDoc(pesertaRef);
+                }
+            }
+
+            if (target.classList.contains('edit-btn')) {
+                const docSnap = await getDoc(pesertaRef);
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    pesertaIdInput.value = pesertaId;
+                    pesertaModal.querySelector('#namaLengkap').value = data.namaLengkap;
+                    pesertaModal.querySelector('#nip').value = data.nip;
+                    pesertaModal.querySelector('#asalInstansi').value = data.asalInstansi;
+                    pesertaModal.querySelector('#npsn').value = data.npsn;
+                    pesertaModal.querySelector('#jabatan').value = data.jabatan;
+                    pesertaModal.querySelector('#kecamatan').value = data.kecamatan;
+                    pesertaModal.style.display = 'block';
+                }
+            }
+        });
+
+        pesertaForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const pesertaId = pesertaIdInput.value;
+            const updatedData = {
+                namaLengkap: pesertaModal.querySelector('#namaLengkap').value,
+                nip: pesertaModal.querySelector('#nip').value,
+                asalInstansi: pesertaModal.querySelector('#asalInstansi').value,
+                npsn: pesertaModal.querySelector('#npsn').value,
+                jabatan: pesertaModal.querySelector('#jabatan').value,
+                kecamatan: pesertaModal.querySelector('#kecamatan').value,
+            };
+            const pesertaRef = doc(db, "kegiatan", kegiatanId, "peserta", pesertaId);
+            await updateDoc(pesertaRef, updatedData);
+            pesertaModal.style.display = 'none';
+        });
+        
+        closeModalPesertaBtn.onclick = () => pesertaModal.style.display = 'none';
+        closeModalPdfBtn.onclick = () => pdfOptionsModal.style.display = 'none';
+        
+        downloadExcelBtn.addEventListener('click', downloadExcel);
+        generatePdfBtn.addEventListener('click', () => pdfOptionsModal.style.display = 'block');
+        confirmGeneratePdfBtn.addEventListener('click', generatePdf);
+
+        loadPeserta();
+    </script>
+</body>
+</html>
