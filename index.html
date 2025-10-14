@@ -137,10 +137,13 @@
         .icon-button svg { width: 18px; height: 18px; }
         .view-btn { color: var(--info-color); } .view-btn:hover { background-color: var(--info-hover); }
         .link-btn { color: var(--primary-color); } .link-btn:hover { background-color: #DBEAFE; }
-        .narsum-btn { color: var(--success-color); } .narsum-btn:hover { background-color: var(--success-hover); }
+        .narsum-btn { color: var(--success-color); } .narsum-btn:hover { background-color: #d1fae5; }
         .edit-btn { color: var(--warning-color); } .edit-btn:hover { background-color: #FEF3C7; }
         .delete-btn { color: var(--danger-color); } .delete-btn:hover { background-color: #FEE2E2; }
         .biaya-btn { color: #9333ea; } .biaya-btn:hover { background-color: #f3e8ff; }
+        
+        /* PERUBAHAN 1: CSS untuk tombol baru */
+        .manual-link-btn { color: #d946ef; } .manual-link-btn:hover { background-color: #fae8ff; }
 
         .modal {
             display: none; position: fixed; z-index: 1000; left: 0; top: 0;
@@ -180,6 +183,10 @@
         .form-group input[readonly] {
             background-color: var(--gray-100);
             cursor: not-allowed;
+        }
+        .form-group input[type="url"]::placeholder {
+            color: var(--gray-500);
+            font-style: italic;
         }
         .form-row { display: flex; gap: 20px; }
         .form-row .form-group { flex: 1; }
@@ -302,6 +309,11 @@
                     <label for="penanggungJawab">Penanggung Jawab</label>
                     <input type="text" id="penanggungJawab" readonly>
                 </div>
+                <div class="form-group">
+                    <label for="linkManual">Link Pendaftaran Manual (Opsional)</label>
+                    <input type="url" id="linkManual" placeholder="https://contoh.com/form-pendaftaran">
+                </div>
+                
                 <button type="submit" id="submitBtn" class="primary-button" style="width: 100%; justify-content: center; padding-top: 14px; padding-bottom: 14px;">Simpan Data</button>
             </form>
         </div>
@@ -470,7 +482,11 @@
                                 <a href="data-narasumber.html?id=${docId}" class="icon-button narsum-btn" title="Lihat Data Narasumber"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" /></svg></a>
                                 <a href="pengeluaran.html?id=${docId}" class="icon-button biaya-btn" title="Rincian Biaya"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M3.5 3A1.5 1.5 0 002 4.5v2.25a1.5 1.5 0 001.5 1.5h1.5a1.5 1.5 0 001.5-1.5V4.5A1.5 1.5 0 006.5 3h-3zM13.5 3A1.5 1.5 0 0012 4.5v2.25a1.5 1.5 0 001.5 1.5h1.5a1.5 1.5 0 001.5-1.5V4.5A1.5 1.5 0 0016.5 3h-3zM3.5 11A1.5 1.5 0 002 12.5v2.25a1.5 1.5 0 001.5 1.5h1.5a1.5 1.5 0 001.5-1.5v-2.25A1.5 1.5 0 005 11h-1.5zM12 12.5a1.5 1.5 0 011.5-1.5h3a1.5 1.5 0 011.5 1.5v2.25a1.5 1.5 0 01-1.5 1.5h-3a1.5 1.5 0 01-1.5-1.5v-2.25z" /></svg></a>
                                 <button class="icon-button edit-btn" data-id="${docId}" title="Edit"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z" /><path fill-rule="evenodd" d="M2 6a2 2 0 012-2h4a1 1 0 010 2H4v10h10v-4a1 1 0 112 0v4a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" clip-rule="evenodd" /></svg></button>
-                                <button class="icon-button link-btn" data-id="${docId}" title="Salin Link Pendaftaran"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M12.232 4.232a2.5 2.5 0 013.536 3.536l-1.225 1.224a.75.75 0 001.061 1.06l1.224-1.224a4 4 0 00-5.656-5.656l-3 3a4 4 0 00.225 5.865.75.75 0 00.977-1.138 2.5 2.5 0 01-.142-3.665l3-3z" /><path d="M8.603 3.799a4.49 4.49 0 014.49 4.49l-4.49 4.49a4.49 4.49 0 01-6.35 0A4.49 4.49 0 012 8.289l4.49-4.49a4.49 4.49 0 012.113-.79z" /></svg></button>
+                                
+                                <button class="icon-button link-btn" data-id="${docId}" data-manual-link="${kegiatan.linkManual || ''}" title="Salin Link Pendaftaran (NPSN)"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M12.232 4.232a2.5 2.5 0 013.536 3.536l-1.225 1.224a.75.75 0 001.061 1.06l1.224-1.224a4 4 0 00-5.656-5.656l-3 3a4 4 0 00.225 5.865.75.75 0 00.977-1.138 2.5 2.5 0 01-.142-3.665l3-3z" /><path d="M8.603 3.799a4.49 4.49 0 014.49 4.49l-4.49 4.49a4.49 4.49 0 01-6.35 0A4.49 4.49 0 012 8.289l4.49-4.49a4.49 4.49 0 012.113-.79z" /></svg></button>
+                                
+                                <button class="icon-button manual-link-btn" data-id="${docId}" title="Salin Link Pendaftaran Manual"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M11 5a3 3 0 11-6 0 3 3 0 016 0zM12.75 8.25a.75.75 0 00-1.5 0v.25H11a.75.75 0 000 1.5h.25v.25a.75.75 0 001.5 0v-.25H13a.75.75 0 000-1.5h-.25V8.25zM3.375 10.5a.75.75 0 00-1.5 0v1.125a3.375 3.375 0 003.375 3.375h9.75a3.375 3.375 0 003.375-3.375V10.5a.75.75 0 00-1.5 0v1.125a1.875 1.875 0 01-1.875 1.875h-9.75A1.875 1.875 0 013.375 11.625V10.5z" /></svg></button>
+
                                 <button class="icon-button narsum-link-btn" data-id="${docId}" title="Salin Link Narasumber"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M15.707 4.293a1 1 0 010 1.414l-10 10a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L5 13.586l9.293-9.293a1 1 0 011.414 0z" clip-rule="evenodd" /></svg></button>
                                 <button class="icon-button delete-btn" data-id="${docId}" data-nama="${kegiatan.nama}" title="Hapus"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" /></svg></button>
                             </div>
@@ -488,6 +504,7 @@
                 tanggalBerakhir: document.getElementById('tanggalBerakhir').value,
                 tempat: document.getElementById('tempat').value,
                 kuotaSekolah: parseInt(document.getElementById('kuotaSekolah').value, 10) || 0,
+                linkManual: document.getElementById('linkManual').value.trim(),
             };
 
             if (userRole === 'admin') {
@@ -528,10 +545,27 @@
             const docId = target.dataset.id;
             
             if (target.classList.contains('link-btn')) {
-                const link = `${window.location.origin}${window.location.pathname.replace('index.html', '')}daftar.html?id=${docId}`;
+                const manualLink = target.dataset.manualLink;
+                
+                let linkToCopy;
+                if (manualLink && manualLink.trim() !== '') {
+                    linkToCopy = manualLink;
+                } else {
+                    linkToCopy = `${window.location.origin}${window.location.pathname.replace('index.html', '')}daftar.html?id=${docId}`;
+                }
+
+                try {
+                    await navigator.clipboard.writeText(linkToCopy);
+                    alert('Link pendaftaran (NPSN) telah disalin!');
+                } catch (err) { console.error('Gagal menyalin link: ', err); }
+            }
+            
+            // PERUBAHAN 3: Logika untuk tombol pendaftaran manual
+            if (target.classList.contains('manual-link-btn')) {
+                const link = `${window.location.origin}${window.location.pathname.replace('index.html', '')}daftar-manual.html?id=${docId}`;
                 try {
                     await navigator.clipboard.writeText(link);
-                    alert('Link pendaftaran peserta telah disalin!');
+                    alert('Link pendaftaran manual telah disalin!');
                 } catch (err) { console.error('Gagal menyalin link: ', err); }
             }
             
@@ -584,6 +618,8 @@
                     document.getElementById('tanggalBerakhir').value = kegiatan.tanggalBerakhir;
                     document.getElementById('tempat').value = kegiatan.tempat;
                     document.getElementById('kuotaSekolah').value = kegiatan.kuotaSekolah || 0;
+                    document.getElementById('linkManual').value = kegiatan.linkManual || '';
+
                     if (userRole === 'admin') {
                         populateBidangDropdown(kegiatan.bidang);
                         pjInput.value = kegiatan.pj;
